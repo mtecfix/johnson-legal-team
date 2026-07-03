@@ -8,7 +8,7 @@
 (function () {
   'use strict';
 
-  const API_BASE = window.PORTAL_API_BASE || 'https://REPLACE_WITH_API_ID.execute-api.us-east-1.amazonaws.com';
+  const API_BASE = window.PORTAL_API_BASE || 'REPLACE_AFTER_DEPLOY';
 
   function getToken() {
     // Cognito ID token, set by the auth flow at login.

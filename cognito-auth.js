@@ -1,9 +1,14 @@
 // AWS Cognito Authentication for Johnson Legal Team
 
+// Runtime config comes from portal-config.js (window.PORTAL_CONFIG) when present,
+// so the pool/client IDs live in ONE place after `sam deploy`. Falls back to
+// inline values if that file is not loaded.
+const _CFG = (typeof window !== 'undefined' && window.PORTAL_CONFIG) || {};
 const COGNITO_CONFIG = {
-    UserPoolId: 'us-east-1_3W53TuLIX',
-    ClientId:   '247cl816m6hfs2mbkdc2193ko4',
-    Domain:     'https://jlt-auth.auth.us-east-1.amazoncognito.com',
+    UserPoolId: _CFG.COGNITO_USER_POOL_ID || 'REPLACE_AFTER_DEPLOY',
+    ClientId:   _CFG.COGNITO_CLIENT_ID    || 'REPLACE_AFTER_DEPLOY',
+    Region:     _CFG.COGNITO_REGION       || 'us-east-1',
+    Domain:     _CFG.COGNITO_DOMAIN       || '',
     RedirectUri: window.location.origin + '/client-login.html'
 };
 

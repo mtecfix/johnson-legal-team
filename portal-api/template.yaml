@@ -14,9 +14,9 @@ Globals:
     Environment:
       Variables:
         TABLE_NAME: !Ref PortalTable
-        COGNITO_USER_POOL_ID: us-east-1_3W53TuLIX
-        COGNITO_CLIENT_ID: "23ag7h91l0u0a533t4n635534t"
-        COGNITO_REGION: us-east-1
+        COGNITO_USER_POOL_ID: !Ref PortalUserPool
+        COGNITO_CLIENT_ID: !Ref PortalUserPoolClient
+        COGNITO_REGION: !Ref AWS::Region
 
 Parameters:
   CorsOrigin:
@@ -52,6 +52,71 @@ Resources:
       PointInTimeRecoverySpecification:
         PointInTimeRecoveryEnabled: true
 
+  # --- Cognito: dedicated user pool for Johnson Legal Team portal ----------
+  # Isolated from the metrotec/jude pools. Email/password login, admin-created
+  # accounts with email verification, optional MFA.
+  PortalUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: johnson-legal-portal
+      # Admin-created accounts (invite-only); email is the sign-in identifier.
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: true
+      UsernameAttributes: [email]
+      AutoVerifiedAttributes: [email]
+      MfaConfiguration: "OPTIONAL"
+      EnabledMfas: [SOFTWARE_TOKEN_MFA]
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 12
+          RequireUppercase: true
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: true
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - { Name: verified_email, Priority: 1 }
+      Schema:
+        - { Name: email, AttributeDataType: String, Required: true, Mutable: true }
+        - { Name: given_name, AttributeDataType: String, Required: false, Mutable: true }
+        - { Name: family_name, AttributeDataType: String, Required: false, Mutable: true }
+
+  PortalUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: johnson-legal-portal-web
+      UserPoolId: !Ref PortalUserPool
+      # Public SPA client: no secret (browser cannot keep one).
+      GenerateSecret: false
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH          # secure password auth used by amazon-cognito-identity-js
+        - ALLOW_REFRESH_TOKEN_AUTH
+      PreventUserExistenceErrors: ENABLED
+      AccessTokenValidity: 60
+      IdTokenValidity: 60
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: minutes
+        IdToken: minutes
+        RefreshToken: days
+
+  # Role groups (map to the API's role logic: super_admin > admin > client).
+  AdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: admin
+      Description: Firm staff with administrative access
+      Precedence: 10
+      UserPoolId: !Ref PortalUserPool
+
+  SuperAdminGroup:
+    Type: AWS::Cognito::UserPoolGroup
+    Properties:
+      GroupName: super_admin
+      Description: Full administrative access incl. role management
+      Precedence: 1
+      UserPoolId: !Ref PortalUserPool
+
   # --- HTTP API with a Cognito JWT authorizer -------------------------------
   PortalHttpApi:
     Type: AWS::Serverless::HttpApi
@@ -66,9 +131,9 @@ Resources:
           CognitoJwt:
             IdentitySource: "$request.header.Authorization"
             JwtConfiguration:
-              issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/us-east-1_3W53TuLIX"
+              issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/${PortalUserPool}"
               audience:
-                - "23ag7h91l0u0a533t4n635534t"
+                - !Ref PortalUserPoolClient
 
   # --- Single Lambda routing all portal actions -----------------------------
   PortalFunction:
@@ -113,7 +178,15 @@ Resources:
 
 Outputs:
   ApiUrl:
-    Description: Base URL of the portal API
+    Description: Base URL of the portal API (set as PORTAL_API_BASE in portal-api-client.js)
     Value: !Sub "https://${PortalHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
   TableName:
     Value: !Ref PortalTable
+  UserPoolId:
+    Description: Cognito User Pool ID (set in cognito-auth.js UserPoolId)
+    Value: !Ref PortalUserPool
+  UserPoolClientId:
+    Description: Cognito App Client ID (set in cognito-auth.js ClientId)
+    Value: !Ref PortalUserPoolClient
+  Region:
+    Value: !Ref AWS::Region

@@ -32,7 +32,37 @@ tiers for a solo-firm workload.
 ```bash
 cd portal-api
 sam build
-sam deploy --guided     # first time; creates the stack + DynamoDB table
+sam deploy --guided     # first time; creates Cognito pool, API, table
+```
+
+This stack provisions a **dedicated Cognito user pool** (`johnson-legal-portal`),
+an app client, `admin`/`super_admin` groups, the HTTP API (with the JWT
+authorizer bound to that pool), and the DynamoDB table. No IDs are hardcoded —
+they are created and cross-referenced within the stack.
+
+### After deploy — wire the frontend (one file)
+
+`sam deploy` prints Outputs. Copy them into `portal-config.js` at the repo root:
+
+| SAM Output        | portal-config.js field         |
+|-------------------|--------------------------------|
+| `UserPoolId`      | `COGNITO_USER_POOL_ID`         |
+| `UserPoolClientId`| `COGNITO_CLIENT_ID`            |
+| `ApiUrl`          | `window.PORTAL_API_BASE`       |
+| `Region`          | `COGNITO_REGION`               |
+
+Load `portal-config.js` before `cognito-auth.js` / `portal-api-client.js` on
+portal pages.
+
+### Create the first admin user
+
+Accounts are admin-created (invite-only). After deploy:
+
+```bash
+aws cognito-idp admin-create-user --user-pool-id <UserPoolId> \
+  --username you@example.com --user-attributes Name=email,Value=you@example.com
+aws cognito-idp admin-add-user-to-group --user-pool-id <UserPoolId> \
+  --username you@example.com --group-name super_admin
 ```
 
 ## Test (no AWS needed)
