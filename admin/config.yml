@@ -1,0 +1,154 @@
+# =============================================================================
+# Decap CMS configuration — Johnson Legal Team
+# Open-source (MIT), git-based, serverless headless CMS.
+# Content is stored as markdown/JSON in this repo; media in images/uploads.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Backend
+# Decap commits content to a git repo. Configure ONE of the options below.
+# git-gateway (works with Netlify Identity) OR the `github` backend with an
+# OAuth provider. Placeholder values below MUST be updated before going live.
+# -----------------------------------------------------------------------------
+backend:
+  name: git-gateway          # change to `github` + repo if using GitHub OAuth
+  branch: main               # branch Decap writes to
+  # repo: your-org/your-repo # required only for the `github`/`gitlab` backends
+
+# Use the local proxy for development: run `npx decap-server` then set this true.
+local_backend: true
+
+# Where uploaded media is stored and how it is referenced from content.
+media_folder: "images/uploads"
+public_folder: "/images/uploads"
+
+# Editorial workflow adds a draft -> review -> publish pipeline (PR-based).
+publish_mode: editorial_workflow
+
+site_url: https://d1rqv10nry9s54.cloudfront.net
+display_url: https://d1rqv10nry9s54.cloudfront.net
+logo_url: /images/logo-cropped.png
+
+# -----------------------------------------------------------------------------
+# Collections = the content model / schema.
+# -----------------------------------------------------------------------------
+collections:
+  # ---------------------------------------------------------------------------
+  # 1. Blog / News posts
+  # ---------------------------------------------------------------------------
+  - name: "blog"
+    label: "Blog Posts"
+    label_singular: "Blog Post"
+    folder: "content/blog"
+    create: true
+    slug: "{{year}}-{{month}}-{{day}}-{{slug}}"
+    summary: "{{title}} — {{publish_date}}"
+    sortable_fields: ["publish_date", "title"]
+    fields:
+      - { name: "title", label: "Title", widget: "string" }
+      - { name: "publish_date", label: "Publish Date", widget: "datetime" }
+      - { name: "author", label: "Author", widget: "string", default: "Johnson Legal Team" }
+      - { name: "featured_image", label: "Featured Image", widget: "image", required: false }
+      - { name: "excerpt", label: "Excerpt", widget: "text", required: false }
+      - name: "category"
+        label: "Category"
+        widget: "select"
+        options:
+          - "Criminal Defense"
+          - "Traffic Tickets"
+          - "Expungements"
+          - "Personal Injury"
+          - "Estate Planning"
+          - "Firm News"
+        default: "Firm News"
+      - { name: "tags", label: "Tags", widget: "list", required: false }
+      - { name: "body", label: "Body", widget: "markdown" }
+      - { name: "draft", label: "Draft", widget: "boolean", default: false }
+
+  # ---------------------------------------------------------------------------
+  # 2. Practice Areas
+  # ---------------------------------------------------------------------------
+  - name: "practice_areas"
+    label: "Practice Areas"
+    label_singular: "Practice Area"
+    folder: "content/practice-areas"
+    create: true
+    slug: "{{slug}}"
+    summary: "{{title}}"
+    sortable_fields: ["order", "title"]
+    fields:
+      - { name: "title", label: "Title", widget: "string" }
+      - { name: "order", label: "Display Order", widget: "number", value_type: "int", default: 0 }
+      - { name: "icon", label: "Font Awesome Icon Class", widget: "string", default: "fas fa-balance-scale", hint: "e.g. fas fa-gavel" }
+      - { name: "hero_image", label: "Hero Image", widget: "image", required: false }
+      - { name: "short_description", label: "Short Description (card)", widget: "text" }
+      - { name: "body", label: "Full Description", widget: "markdown" }
+      - name: "faqs"
+        label: "FAQs"
+        widget: "list"
+        required: false
+        fields:
+          - { name: "question", label: "Question", widget: "string" }
+          - { name: "answer", label: "Answer", widget: "text" }
+
+  # ---------------------------------------------------------------------------
+  # 3. Team Members / Attorneys
+  # ---------------------------------------------------------------------------
+  - name: "team"
+    label: "Team Members"
+    label_singular: "Team Member"
+    folder: "content/team"
+    create: true
+    slug: "{{slug}}"
+    summary: "{{name}} — {{role}}"
+    sortable_fields: ["order", "name"]
+    fields:
+      - { name: "name", label: "Full Name", widget: "string" }
+      - { name: "role", label: "Role / Title", widget: "string" }
+      - { name: "order", label: "Display Order", widget: "number", value_type: "int", default: 0 }
+      - { name: "photo", label: "Photo", widget: "image", required: false }
+      - { name: "email", label: "Email", widget: "string", required: false }
+      - { name: "phone", label: "Phone", widget: "string", required: false }
+      - { name: "bio", label: "Biography", widget: "markdown" }
+
+  # ---------------------------------------------------------------------------
+  # 4. Static Pages (editable body content for existing pages)
+  # ---------------------------------------------------------------------------
+  - name: "pages"
+    label: "Pages"
+    label_singular: "Page"
+    folder: "content/pages"
+    create: true
+    slug: "{{slug}}"
+    summary: "{{title}}"
+    fields:
+      - { name: "title", label: "Title", widget: "string" }
+      - { name: "meta_description", label: "Meta Description (SEO)", widget: "text", required: false }
+      - { name: "body", label: "Body", widget: "markdown" }
+
+  # ---------------------------------------------------------------------------
+  # 5. Site Settings (single files)
+  # ---------------------------------------------------------------------------
+  - name: "settings"
+    label: "Site Settings"
+    files:
+      - name: "contact"
+        label: "Contact Info"
+        file: "content/settings/contact.json"
+        fields:
+          - { name: "firm_name", label: "Firm Name", widget: "string" }
+          - { name: "address", label: "Address", widget: "string" }
+          - { name: "phone", label: "Phone", widget: "string" }
+          - { name: "email", label: "Email", widget: "string" }
+          - name: "hours"
+            label: "Office Hours"
+            widget: "list"
+            fields:
+              - { name: "day", label: "Day(s)", widget: "string" }
+              - { name: "time", label: "Time", widget: "string" }
+      - name: "general"
+        label: "General"
+        file: "content/settings/general.json"
+        fields:
+          - { name: "tagline", label: "Tagline", widget: "string" }
+          - { name: "footer_text", label: "Footer Text", widget: "string" }

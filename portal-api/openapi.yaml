@@ -1,0 +1,68 @@
+openapi: 3.0.3
+info:
+  title: Johnson Legal Team — Client Portal Data API
+  version: 0.0.1-scaffold
+  description: >
+    DRAFT contract for the isolated, serverless client-portal data API.
+    Bones only — no implementation yet. All endpoints require a valid,
+    signature-verified Cognito JWT. Data is confidential and must never be
+    served from the public content bucket.
+servers:
+  - url: https://REPLACE_WITH_API_GATEWAY_ID.execute-api.us-east-1.amazonaws.com/prod
+security:
+  - cognitoJwt: []
+components:
+  securitySchemes:
+    cognitoJwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        error: { type: string }
+paths:
+  /profile:
+    get:
+      summary: Get the authenticated user's profile
+      responses:
+        "200": { description: OK }
+        "401": { description: Unauthorized }
+    put:
+      summary: Update the authenticated user's profile
+      responses:
+        "200": { description: OK }
+  /cases:
+    get:
+      summary: List cases owned by the authenticated client
+      responses:
+        "200": { description: OK }
+  /documents:
+    get:
+      summary: List documents for the authenticated client
+      responses:
+        "200": { description: OK }
+  /messages:
+    get:
+      summary: List messages for the authenticated client
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Send a message
+      responses:
+        "201": { description: Created }
+  /invoices:
+    get:
+      summary: List invoices for the authenticated client
+      responses:
+        "200": { description: OK }
+  /appointments:
+    get:
+      summary: List upcoming appointments
+      responses:
+        "200": { description: OK }
+    post:
+      summary: Request an appointment
+      responses:
+        "201": { description: Created }

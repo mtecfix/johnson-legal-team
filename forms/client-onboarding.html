@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Onboarding | Johnson Legal Team</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../preview-style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-dark">
+                <a class="navbar-brand" href="../index.html">
+                    <img src="../images/logo-cropped.png" alt="Johnson Legal Team" style="width: 330px; height: auto;">
+                </a>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Onboarding Form -->
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header text-center">
+                        <h2><i class="fas fa-clipboard-list"></i> Client Onboarding</h2>
+                        <p class="mb-0">Please complete this form to help us serve you better</p>
+                    </div>
+                    <div class="card-body">
+                        <div id="onboardingError" class="alert alert-danger d-none"></div>
+                        <div id="onboardingSuccess" class="alert alert-success d-none"></div>
+
+                        <form id="onboardingForm">
+                            <!-- Legal Matter Information -->
+                            <h4 class="mb-3"><i class="fas fa-balance-scale"></i> Legal Matter Information</h4>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="legalMatter" class="form-label">Type of Legal Matter *</label>
+                                    <select class="form-select" id="legalMatter" required>
+                                        <option value="">Select...</option>
+                                        <option value="estate-planning">Estate Planning</option>
+                                        <option value="probate">Probate Administration</option>
+                                        <option value="personal-injury">Personal Injury</option>
+                                        <option value="criminal-defense">Criminal Defense</option>
+                                        <option value="expungement">Expungement</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="urgency" class="form-label">Urgency Level *</label>
+                                    <select class="form-select" id="urgency" required>
+                                        <option value="">Select...</option>
+                                        <option value="immediate">Immediate (within 1 week)</option>
+                                        <option value="soon">Soon (within 1 month)</option>
+                                        <option value="planning">Planning ahead</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="caseDescription" class="form-label">Brief Description of Your Case *</label>
+                                <textarea class="form-control" id="caseDescription" rows="4" required 
+                                    placeholder="Please provide a brief overview of your legal matter..."></textarea>
+                            </div>
+
+                            <!-- Contact Preferences -->
+                            <h4 class="mb-3"><i class="fas fa-phone"></i> Contact Preferences</h4>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="preferredContact" class="form-label">Preferred Contact Method *</label>
+                                    <select class="form-select" id="preferredContact" required>
+                                        <option value="">Select...</option>
+                                        <option value="email">Email</option>
+                                        <option value="phone">Phone</option>
+                                        <option value="text">Text Message</option>
+                                        <option value="portal">Client Portal</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="bestTime" class="form-label">Best Time to Contact</label>
+                                    <select class="form-select" id="bestTime">
+                                        <option value="">Select...</option>
+                                        <option value="morning">Morning (9 AM - 12 PM)</option>
+                                        <option value="afternoon">Afternoon (12 PM - 5 PM)</option>
+                                        <option value="evening">Evening (5 PM - 7 PM)</option>
+                                        <option value="anytime">Anytime</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Additional Information -->
+                            <h4 class="mb-3"><i class="fas fa-info-circle"></i> Additional Information</h4>
+                            
+                            <div class="mb-3">
+                                <label for="referralSource" class="form-label">How did you hear about us?</label>
+                                <select class="form-select" id="referralSource">
+                                    <option value="">Select...</option>
+                                    <option value="google">Google Search</option>
+                                    <option value="referral">Referral from friend/family</option>
+                                    <option value="attorney">Referral from another attorney</option>
+                                    <option value="social-media">Social Media</option>
+                                    <option value="website">Website</option>
+                                    <option value="other">Other</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="previousAttorney" class="form-label">Have you worked with an attorney on this matter before?</label>
+                                <select class="form-select" id="previousAttorney">
+                                    <option value="">Select...</option>
+                                    <option value="no">No</option>
+                                    <option value="yes">Yes</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="additionalNotes" class="form-label">Additional Notes or Questions</label>
+                                <textarea class="form-control" id="additionalNotes" rows="3" 
+                                    placeholder="Any additional information you'd like us to know..."></textarea>
+                            </div>
+
+                            <!-- Consent and Agreement -->
+                            <h4 class="mb-3"><i class="fas fa-shield-alt"></i> Consent & Agreement</h4>
+                            
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="consentContact" required>
+                                    <label class="form-check-label" for="consentContact">
+                                        I consent to be contacted by Johnson Legal Team regarding my legal matter *
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="privacyPolicy" required>
+                                    <label class="form-check-label" for="privacyPolicy">
+                                        I have read and agree to the <a href="../privacy-policy.html" target="_blank">Privacy Policy</a> *
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="noAttorneyRelationship" required>
+                                    <label class="form-check-label" for="noAttorneyRelationship">
+                                        I understand that submitting this form does not create an attorney-client relationship *
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="text-center">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-paper-plane"></i> Submit Onboarding Form
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="site-header text-white py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center"></div>
+                    <div class="mt-2">
+                        <p class="mb-1 small">1221 Bowers St, Birmingham, MI 48012</p>
+                        <p class="mb-1 small">T: <a href="tel:3133552216" class="text-white text-decoration-none">(313) 355-2216</a></p>
+                        <p class="mb-0"><strong><i style="color: var(--accent-secondary);">Secure Client Onboarding</i></strong></p>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="mb-2">
+                        <span class="small">Welcome to Our Legal Family!</span>
+                    </div>
+                    <div class="d-flex justify-content-md-end align-items-center flex-wrap">
+                        <a href="https://www.linkedin.com/company/johnson-legal-team-birmingham" class="me-2" style="color: var(--accent-secondary) !important;"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://maps.google.com/?q=1221+Bowers+St,+Birmingham,+MI+48012" class="me-2" style="color: var(--accent-secondary) !important;"><i class="fab fa-google"></i></a>
+                        <a href="https://www.facebook.com/JohnsonLegalTeamMI" class="me-2" style="color: var(--accent-secondary) !important;"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/johnsonlegalteam" style="color: var(--accent-secondary) !important;"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="onboarding-form.js"></script>
+</body>
+</html>

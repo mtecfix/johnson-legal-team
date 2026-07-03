@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Jude — Leads Dashboard | Johnson Legal Team</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root{--primary:#1e3a5f;--accent:#c9a227;--gray-900:#0f172a;--gray-700:#334155;--gray-600:#475569;--gray-200:#e2e8f0;--gray-100:#f1f5f9;--radius:10px;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:"Inter",-apple-system,sans-serif;color:var(--gray-900);background:var(--gray-100);font-size:15px;}
+    header{background:#fff;border-bottom:1px solid var(--gray-200);padding:.85rem 1.25rem;display:flex;align-items:center;justify-content:space-between;}
+    header .brand{font-weight:700;display:flex;align-items:center;gap:.5rem;color:var(--primary);}
+    .brand .jude{color:var(--accent);}
+    .wrap{max-width:1150px;margin:1.5rem auto;padding:0 1rem;}
+    .card{background:#fff;border:1px solid var(--gray-200);border-radius:var(--radius);padding:1.5rem;}
+    .login-wrap{max-width:380px;margin:6vh auto;}
+    .login-wrap h1{font-size:1.3rem;margin-bottom:1rem;text-align:center;}
+    label{display:block;font-weight:600;font-size:.85rem;margin-bottom:.35rem;color:var(--gray-700);}
+    input,select{width:100%;padding:.7rem .85rem;border:1px solid var(--gray-200);border-radius:8px;font-size:.95rem;font-family:inherit;}
+    .field{margin-bottom:1rem;}
+    button{cursor:pointer;border:none;font-family:inherit;}
+    .btn{background:var(--primary);color:#fff;font-weight:600;padding:.7rem 1.2rem;border-radius:8px;font-size:.95rem;width:100%;}
+    .btn-sm{width:auto;padding:.4rem .8rem;font-size:.85rem;}
+    .btn-ghost{background:#fff;color:var(--gray-700);border:1px solid var(--gray-200);}
+    .msg{padding:.75rem 1rem;border-radius:8px;margin-bottom:1rem;font-size:.9rem;display:none;}
+    .msg.ok{background:#dcfce7;color:#065f46;display:block;}
+    .msg.err{background:#fee2e2;color:#991b1b;display:block;}
+    .hidden{display:none;}
+    .toolbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:.75rem;}
+    .toolbar h1{font-size:1.3rem;}
+    table{width:100%;border-collapse:collapse;background:#fff;border-radius:var(--radius);overflow:hidden;}
+    th,td{text-align:left;padding:.7rem .75rem;border-bottom:1px solid var(--gray-100);vertical-align:top;font-size:.88rem;}
+    th{background:var(--gray-100);font-weight:700;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;color:var(--gray-600);}
+    .pill{display:inline-block;padding:.15rem .55rem;border-radius:1rem;font-size:.72rem;font-weight:700;text-transform:uppercase;}
+    .score{font-weight:700;}
+    .score.hi{color:#065f46;}.score.mid{color:#854d0e;}.score.lo{color:#991b1b;}
+    .s-new{background:#dbeafe;color:#1e40af;}.s-contacted{background:#e0f2fe;color:#075985;}
+    .s-qualified{background:#fef9c3;color:#854d0e;}.s-converted{background:#dcfce7;color:#065f46;}.s-lost{background:#f1f5f9;color:#475569;}
+    td select{padding:.3rem .4rem;font-size:.8rem;width:auto;}
+    .muted{color:var(--gray-600);font-size:.8rem;}
+    .msg-text{max-width:360px;white-space:pre-wrap;color:var(--gray-700);}
+  </style>
+</head>
+<body>
+
+  <!-- Login -->
+  <div id="loginView">
+    <div class="login-wrap card">
+      <h1><span class="brand"><i class="bi bi-robot"></i> <span class="jude">Jude</span></span> — Staff Login</h1>
+      <div class="msg" id="loginMsg"></div>
+      <form id="loginForm">
+        <div class="field"><label for="loginEmail">Email</label><input type="email" id="loginEmail" required autocomplete="username"></div>
+        <div class="field"><label for="loginPass">Password</label><input type="password" id="loginPass" required autocomplete="current-password"></div>
+        <button type="submit" class="btn" id="loginBtn">Sign In</button>
+      </form>
+      <div id="newPassBlock" class="hidden" style="margin-top:1rem;">
+        <p class="muted" style="margin-bottom:.75rem;">First login — set a new password (min 12 chars, upper/lower/number/symbol).</p>
+        <div class="field"><label for="newPass">New Password</label><input type="password" id="newPass"></div>
+        <button type="button" class="btn" id="newPassBtn">Set Password &amp; Sign In</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashView" class="hidden">
+    <header>
+      <span class="brand"><i class="bi bi-robot"></i> <span class="jude">Jude</span> · Leads</span>
+      <div>
+        <button class="btn btn-sm btn-ghost" id="refreshBtn"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+        <button class="btn btn-sm btn-ghost" id="logoutBtn"><i class="bi bi-box-arrow-right"></i> Sign Out</button>
+      </div>
+    </header>
+    <div class="wrap">
+      <div class="msg" id="dashMsg"></div>
+      <div class="toolbar">
+        <h1>Lead Pipeline</h1>
+        <div>
+          <label for="stageFilter" style="display:inline;margin-right:.4rem;">Filter:</label>
+          <select id="stageFilter" style="width:auto;">
+            <option value="">All</option>
+            <option value="new">New</option><option value="contacted">Contacted</option>
+            <option value="qualified">Qualified</option><option value="converted">Converted</option><option value="lost">Lost</option>
+          </select>
+          <span class="muted" id="countLabel" style="margin-left:.75rem;"></span>
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Lead</th><th>From</th><th>Case Type</th><th>Score</th><th>Message</th><th>Stage</th><th>Created</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="7" class="muted">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    var REGION="us-east-1";
+    var CLIENT_ID="3lj8avht5sv2nj9iv4m30dvka9";
+    var API_URL="https://mpiai89295.execute-api.us-east-1.amazonaws.com";
+    var COGNITO="https://cognito-idp."+REGION+".amazonaws.com/";
+    var idToken=sessionStorage.getItem("jude_token")||null;
+    var session=null,pendingEmail=null;
+
+    function show(el){el.classList.remove("hidden");}function hide(el){el.classList.add("hidden");}
+    function setMsg(el,t,k){el.className="msg "+k;el.textContent=t;}
+    function esc(s){return (s||"").replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+    function cognito(target,body){return fetch(COGNITO,{method:"POST",headers:{"Content-Type":"application/x-amz-json-1.1","X-Amz-Target":"AWSCognitoIdentityProviderService."+target},body:JSON.stringify(body)}).then(function(r){return r.json().then(function(d){return{ok:r.ok,d:d};});});}
+
+    document.getElementById("loginForm").addEventListener("submit",function(e){
+      e.preventDefault();
+      var email=document.getElementById("loginEmail").value.trim();var pass=document.getElementById("loginPass").value;
+      var btn=document.getElementById("loginBtn");var msg=document.getElementById("loginMsg");
+      btn.disabled=true;btn.textContent="Signing in…";
+      cognito("InitiateAuth",{AuthFlow:"USER_PASSWORD_AUTH",ClientId:CLIENT_ID,AuthParameters:{USERNAME:email,PASSWORD:pass}})
+      .then(function(res){
+        if(res.ok&&res.d.AuthenticationResult){idToken=res.d.AuthenticationResult.IdToken;sessionStorage.setItem("jude_token",idToken);enter();}
+        else if(res.d.ChallengeName==="NEW_PASSWORD_REQUIRED"){session=res.d.Session;pendingEmail=email;show(document.getElementById("newPassBlock"));setMsg(msg,"Set a new password to continue.","ok");}
+        else{setMsg(msg,(res.d.message||"Login failed."),"err");}
+      }).catch(function(){setMsg(msg,"Network error.","err");}).finally(function(){btn.disabled=false;btn.textContent="Sign In";});
+    });
+    document.getElementById("newPassBtn").addEventListener("click",function(){
+      var np=document.getElementById("newPass").value;var msg=document.getElementById("loginMsg");
+      cognito("RespondToAuthChallenge",{ChallengeName:"NEW_PASSWORD_REQUIRED",ClientId:CLIENT_ID,Session:session,ChallengeResponses:{USERNAME:pendingEmail,NEW_PASSWORD:np}})
+      .then(function(res){if(res.ok&&res.d.AuthenticationResult){idToken=res.d.AuthenticationResult.IdToken;sessionStorage.setItem("jude_token",idToken);enter();}else{setMsg(msg,(res.d.message||"Could not set password."),"err");}});
+    });
+
+    function enter(){hide(document.getElementById("loginView"));show(document.getElementById("dashView"));load();}
+
+    function scoreClass(s){return s>=80?"hi":(s>=55?"mid":"lo");}
+
+    function load(){
+      var rows=document.getElementById("rows");var msg=document.getElementById("dashMsg");
+      var stage=document.getElementById("stageFilter").value;
+      rows.innerHTML='<tr><td colspan="7" class="muted">Loading…</td></tr>';
+      fetch(API_URL+"/leads"+(stage?"?stage="+stage:""),{headers:{Authorization:idToken}})
+      .then(function(r){if(r.status===401){throw new Error("Session expired. Sign in again.");}return r.json();})
+      .then(function(d){
+        var t=d.leads||[];
+        document.getElementById("countLabel").textContent=t.length+" lead(s)";
+        if(!t.length){rows.innerHTML='<tr><td colspan="7" class="muted">No leads.</td></tr>';return;}
+        rows.innerHTML=t.map(function(x){
+          var st=x.stage||"new";var sc=x.score||0;
+          return '<tr>'+
+            '<td><strong>'+esc(x.leadId)+'</strong></td>'+
+            '<td>'+esc(x.email)+'</td>'+
+            '<td>'+esc(x.caseType||"general")+'</td>'+
+            '<td><span class="score '+scoreClass(sc)+'">'+sc+'</span></td>'+
+            '<td><strong>'+esc(x.subject||"")+'</strong><div class="msg-text">'+esc((x.firstMessage||"").slice(0,200))+'</div></td>'+
+            '<td><select data-id="'+esc(x.leadId)+'" class="stageSel">'+
+              ["new","contacted","qualified","converted","lost"].map(function(s){return '<option value="'+s+'"'+(s===st?" selected":"")+'>'+s+'</option>';}).join("")+
+            '</select></td>'+
+            '<td class="muted">'+esc((x.createdAt||"").slice(0,10))+'</td>'+
+          '</tr>';
+        }).join("");
+        Array.prototype.forEach.call(document.querySelectorAll(".stageSel"),function(sel){
+          sel.addEventListener("change",function(){updateStage(sel.getAttribute("data-id"),sel.value);});
+        });
+      }).catch(function(err){setMsg(msg,err.message,"err");});
+    }
+
+    function updateStage(id,stage){
+      var msg=document.getElementById("dashMsg");
+      fetch(API_URL+"/leads/"+encodeURIComponent(id),{method:"PATCH",headers:{Authorization:idToken,"Content-Type":"application/json"},body:JSON.stringify({stage:stage})})
+      .then(function(r){return r.json();})
+      .then(function(d){if(d.ok){setMsg(msg,"Updated "+id+" → "+stage,"ok");}else{setMsg(msg,(d.error||"Update failed"),"err");}})
+      .catch(function(){setMsg(msg,"Network error.","err");});
+    }
+
+    document.getElementById("refreshBtn").addEventListener("click",load);
+    document.getElementById("stageFilter").addEventListener("change",load);
+    document.getElementById("logoutBtn").addEventListener("click",function(){sessionStorage.removeItem("jude_token");location.reload();});
+    if(idToken){enter();}
+  </script>
+</body>
+</html>

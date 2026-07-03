@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Registration | Johnson Legal Team</title>
+    <meta name="description" content="Register for secure access to your legal case information and documents.">
+    <link rel="canonical" href="https://d1rqv10nry9s54.cloudfront.net/user-registration.html">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="preview-style.css">
+    <style>
+        .registration-section {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 2rem 0;
+        }
+        .registration-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 2rem;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .form-section {
+            margin-bottom: 2rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .form-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .section-title {
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .required {
+            color: #dc3545;
+        }
+        .btn-primary {
+            background-color: var(--accent-tertiary);
+            border-color: var(--accent-tertiary);
+            width: 100%;
+            padding: 0.75rem;
+            font-size: 1.1rem;
+        }
+        .legal-notice {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-top: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-dark">
+                <a class="navbar-brand" href="index.html">
+                    <img src="images/logo-cropped.png" alt="Johnson Legal Team" style="width: 330px; height: auto;">
+                </a>
+                
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-link" href="client-login.html">
+                        <i class="fas fa-sign-in-alt"></i> Back to Login
+                    </a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Registration Section -->
+    <section class="registration-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="registration-card">
+                        <div class="text-center mb-4">
+                            <h2><i class="fas fa-user-plus text-success"></i> New Client Registration</h2>
+                            <p class="text-muted">Create your secure client portal account</p>
+                        </div>
+                        
+                        <div id="registrationError" class="alert alert-danger d-none"></div>
+                        <div id="registrationSuccess" class="alert alert-success d-none"></div>
+
+                        <form id="clientRegistrationForm">
+                            <!-- Personal Information -->
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-user"></i> Personal Information
+                                </h4>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="firstName" class="form-label">First Name <span class="required">*</span></label>
+                                        <input type="text" class="form-control" id="firstName" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="lastName" class="form-label">Last Name <span class="required">*</span></label>
+                                        <input type="text" class="form-control" id="lastName" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="email" class="form-label">Email Address <span class="required">*</span></label>
+                                        <input type="email" class="form-control" id="email" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="phone" class="form-label">Phone Number <span class="required">*</span></label>
+                                        <input type="tel" class="form-control" id="phone" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="dateOfBirth" class="form-label">Date of Birth</label>
+                                    <input type="date" class="form-control" id="dateOfBirth">
+                                </div>
+                            </div>
+
+                            <!-- Address Information -->
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-map-marker-alt"></i> Address Information
+                                </h4>
+                                
+                                <div class="mb-3">
+                                    <label for="address" class="form-label">Street Address <span class="required">*</span></label>
+                                    <input type="text" class="form-control" id="address" required>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="city" class="form-label">City <span class="required">*</span></label>
+                                        <input type="text" class="form-control" id="city" required>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="state" class="form-label">State <span class="required">*</span></label>
+                                        <select class="form-control" id="state" required>
+                                            <option value="">Select State</option>
+                                            <option value="MI">Michigan</option>
+                                            <option value="AL">Alabama</option>
+                                            <option value="AK">Alaska</option>
+                                            <option value="AZ">Arizona</option>
+                                            <option value="AR">Arkansas</option>
+                                            <option value="CA">California</option>
+                                            <option value="CO">Colorado</option>
+                                            <option value="CT">Connecticut</option>
+                                            <option value="DE">Delaware</option>
+                                            <option value="FL">Florida</option>
+                                            <option value="GA">Georgia</option>
+                                            <option value="HI">Hawaii</option>
+                                            <option value="ID">Idaho</option>
+                                            <option value="IL">Illinois</option>
+                                            <option value="IN">Indiana</option>
+                                            <option value="IA">Iowa</option>
+                                            <option value="KS">Kansas</option>
+                                            <option value="KY">Kentucky</option>
+                                            <option value="LA">Louisiana</option>
+                                            <option value="ME">Maine</option>
+                                            <option value="MD">Maryland</option>
+                                            <option value="MA">Massachusetts</option>
+                                            <option value="MN">Minnesota</option>
+                                            <option value="MS">Mississippi</option>
+                                            <option value="MO">Missouri</option>
+                                            <option value="MT">Montana</option>
+                                            <option value="NE">Nebraska</option>
+                                            <option value="NV">Nevada</option>
+                                            <option value="NH">New Hampshire</option>
+                                            <option value="NJ">New Jersey</option>
+                                            <option value="NM">New Mexico</option>
+                                            <option value="NY">New York</option>
+                                            <option value="NC">North Carolina</option>
+                                            <option value="ND">North Dakota</option>
+                                            <option value="OH">Ohio</option>
+                                            <option value="OK">Oklahoma</option>
+                                            <option value="OR">Oregon</option>
+                                            <option value="PA">Pennsylvania</option>
+                                            <option value="RI">Rhode Island</option>
+                                            <option value="SC">South Carolina</option>
+                                            <option value="SD">South Dakota</option>
+                                            <option value="TN">Tennessee</option>
+                                            <option value="TX">Texas</option>
+                                            <option value="UT">Utah</option>
+                                            <option value="VT">Vermont</option>
+                                            <option value="VA">Virginia</option>
+                                            <option value="WA">Washington</option>
+                                            <option value="WV">West Virginia</option>
+                                            <option value="WI">Wisconsin</option>
+                                            <option value="WY">Wyoming</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="zipCode" class="form-label">ZIP Code <span class="required">*</span></label>
+                                        <input type="text" class="form-control" id="zipCode" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Legal Matter Information -->
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-gavel"></i> Legal Matter Information
+                                </h4>
+                                
+                                <div class="mb-3">
+                                    <label for="legalMatter" class="form-label">Type of Legal Matter <span class="required">*</span></label>
+                                    <select class="form-control" id="legalMatter" required>
+                                        <option value="">Select Legal Matter</option>
+                                        <option value="criminal-defense">Criminal Defense</option>
+                                        <option value="personal-injury">Personal Injury</option>
+                                        <option value="estate-planning">Estate Planning & Probate</option>
+                                        <option value="traffic-tickets">Traffic Tickets</option>
+                                        <option value="expungements">Expungements</option>
+                                        <option value="misdemeanors">Misdemeanors</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="caseDescription" class="form-label">Brief Description of Your Case</label>
+                                    <textarea class="form-control" id="caseDescription" rows="3" placeholder="Please provide a brief description of your legal matter..."></textarea>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="referralSource" class="form-label">How did you hear about us?</label>
+                                    <select class="form-control" id="referralSource">
+                                        <option value="">Select Source</option>
+                                        <option value="google">Google Search</option>
+                                        <option value="referral">Friend/Family Referral</option>
+                                        <option value="social-media">Social Media</option>
+                                        <option value="advertisement">Advertisement</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Account Security -->
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-lock"></i> Account Security
+                                </h4>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="password" class="form-label">Password <span class="required">*</span></label>
+                                        <input type="password" class="form-control" id="password" required minlength="8">
+                                        <small class="text-muted">Minimum 8 characters</small>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="confirmPassword" class="form-label">Confirm Password <span class="required">*</span></label>
+                                        <input type="password" class="form-control" id="confirmPassword" required>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Terms and Conditions -->
+                            <div class="form-section">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="agreeTerms" required>
+                                    <label class="form-check-label" for="agreeTerms">
+                                        I agree to the <a href="terms-of-service.html" target="_blank">Terms of Service</a> and <a href="privacy-policy.html" target="_blank">Privacy Policy</a> <span class="required">*</span>
+                                    </label>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="agreeConsultation">
+                                    <label class="form-check-label" for="agreeConsultation">
+                                        I understand that this registration does not create an attorney-client relationship until a formal engagement letter is signed.
+                                    </label>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus"></i> Create My Account
+                            </button>
+                        </form>
+                        
+                        <div class="legal-notice">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Important:</strong> Your information is confidential and secure. Account approval may take 1-2 business days. You will receive an email confirmation once your account is activated.
+                        </div>
+                        
+                        <div class="text-center mt-3">
+                            <p class="mb-0">Already have an account? <a href="client-login.html">Sign in here</a></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="user-registration.js"></script>
+</body>
+</html>

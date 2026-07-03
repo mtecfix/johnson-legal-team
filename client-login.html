@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Login | Johnson Legal Team</title>
+    <meta name="description" content="Access your secure client portal or register for a new account.">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="canonical" href="https://d1rqv10nry9s54.cloudfront.net/client-login.html">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="preview-style.css">
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1563.0.min.js"></script>
+    <script src="https://unpkg.com/amazon-cognito-identity-js@6.3.12/dist/amazon-cognito-identity.min.js"></script>
+    <script src="portal-router.js"></script>
+    <script src="cognito-auth.js"></script>
+    <style>
+        /* Mobile Detection and 404 */
+        @media (max-width: 768px) {
+            body {
+                display: none !important;
+            }
+            body::before {
+                content: "404 - Page Not Found";
+                display: block !important;
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 2rem;
+                color: #333;
+                text-align: center;
+                width: 100%;
+            }
+        }
+        
+        /* Full Screen Centered Layout */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .site-header {
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1000;
+        }
+        
+        .login-section {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 2rem;
+        }
+        
+        .login-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 2rem;
+            max-width: 50vw;
+            width: 100%;
+            margin: 0 auto;
+        }
+        
+        .google-btn {
+            width: 100%;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 14px;
+            margin-bottom: 1rem;
+        }
+        
+        .google-btn:hover {
+            background: #f8f9fa;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border-color: var(--accent-tertiary);
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 1.5rem 0;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #dee2e6;
+        }
+        
+        .divider span {
+            padding: 0 1rem;
+            color: #6c757d;
+        }
+        
+        .btn-primary {
+            background-color: var(--accent-primary);
+            border-color: var(--accent-primary);
+            width: 100%;
+            padding: 0.75rem;
+        }
+        
+        .btn-success {
+            background-color: var(--accent-tertiary);
+            border-color: var(--accent-tertiary);
+            width: 100%;
+            padding: 0.75rem;
+        }
+        
+        .security-notice {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #6c757d;
+        }
+        
+        /* Header Adjustments */
+        .site-header {
+            flex-shrink: 0;
+            position: relative;
+            z-index: 1000;
+        }
+        
+        .navbar-brand img {
+            width: 330px;
+            height: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-dark">
+                <a class="navbar-brand" href="index.html">
+                    <img src="images/logo-cropped.png" alt="Johnson Legal Team" style="width: 330px; height: auto;">
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item"><a class="nav-link active" href="client-login.html">Login</a></li>
+                        <li class="nav-item"><a class="nav-link" href="practice-areas.html">Practice&nbsp;Areas</a></li>
+                        <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    </ul>
+
+                    <div class="d-none d-lg-block">
+                        <div class="search-bar">
+                            <input type="search" placeholder="Search..." class="search-input">
+                            <button type="submit" class="search-btn">🔍</button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Login Section -->
+    <section class="login-section">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-12">
+                    <div class="login-card">
+                        <div class="text-center mb-4">
+                            <h2>Client Portal Access</h2>
+                            <p class="text-muted">Secure login to your case information</p>
+                        </div>
+                        
+                        <!-- Google Login -->
+                        <button class="google-btn" id="googleLoginBtn" onclick="loginWithGoogle()">
+                            <svg width="18" height="18" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                            </svg>
+                            Continue with Google
+                        </button>
+                        
+                        <div class="divider">
+                            <span>OR</span>
+                        </div>
+                        
+                        <div id="loginError" class="alert alert-danger d-none"></div>
+                        
+                        <!-- Email Login Form -->
+                        <form id="loginForm">
+                            <div class="mb-3">
+                                <label for="loginEmail" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="loginEmail" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="loginPassword" class="form-label">Password</label>
+                                <input type="password" class="form-control" id="loginPassword" required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary mb-3">
+                                <i class="fas fa-sign-in-alt"></i> Login to Portal
+                            </button>
+                        </form>
+                        
+                        <!-- Registration Section -->
+                        <div class="text-center mb-3">
+                            <p class="mb-2">Don't have an account?</p>
+                            <a href="user-registration.html" class="btn btn-success">
+                                <i class="fas fa-user-plus"></i> Create New Account
+                            </a>
+                        </div>
+                        
+                        <div class="text-center">
+                            <a href="reset-password.html" class="text-muted small">Forgot your password?</a>
+                        </div>
+                        
+                        <!-- Simplified Security Notice -->
+                        <div class="security-notice mt-4">
+                            <i class="fas fa-shield-alt text-success"></i>
+                            <strong>Secure & Encrypted</strong><br>
+                            Your data is protected with industry-standard security.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

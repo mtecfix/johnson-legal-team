@@ -1,0 +1,11 @@
+{
+  "firm_name": "Johnson Legal Team",
+  "address": "1221 Bowers St, Birmingham, MI 48012",
+  "phone": "(248) 593-0000",
+  "email": "info@johnsonlegalteam.com",
+  "hours": [
+    { "day": "Monday–Friday", "time": "9:00 AM – 5:00 PM" },
+    { "day": "Saturday", "time": "By appointment" },
+    { "day": "Sunday", "time": "Closed" }
+  ]
+}

@@ -1,0 +1,26 @@
+# ── Secrets / credentials (NEVER commit) ─────────────────────────────
+rds-credentials.json
+client_secret_*.json
+*.pem
+*.key
+.env
+.env.*
+!.env.example
+api/config.php
+temp data.txt
+
+# ── Archive of legacy CMS (kept locally, not in repo history) ────────
+_archive/
+
+# ── Dependencies / build ─────────────────────────────────────────────
+node_modules/
+dist/
+build/
+*.zip
+
+# ── OS / editor cruft ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/
+.idea/
