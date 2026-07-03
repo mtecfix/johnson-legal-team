@@ -1,40 +1,29 @@
 // Renders Decap-managed blog content on the public static site.
 // List view reads content/blog/index.json (a manifest, since static hosting
-// cannot list a directory). Single-post view fetches the markdown file and
-// strips its YAML front matter before rendering with marked.
-
+// cannot list a directory). Single-post view fetches the markdown file.
 const BLOG_DIR = 'content/blog';
 
 document.addEventListener('DOMContentLoaded', () => {
-  const params = new URLSearchParams(window.location.search);
-  const slug = params.get('post');
-  if (slug) {
-    renderSinglePost(slug);
-  } else {
-    renderList();
-  }
+  const slug = new URLSearchParams(window.location.search).get('post');
+  slug ? renderSinglePost(slug) : renderList();
 });
 
 async function renderList() {
   const listEl = document.getElementById('postList');
   try {
-    const res = await fetch(`${BLOG_DIR}/index.json`);
-    if (!res.ok) throw new Error(`Manifest error ${res.status}`);
-    const { posts } = await res.json();
-    if (!posts || !posts.length) {
-      listEl.innerHTML = '<p class="text-muted">No posts yet.</p>';
-      return;
-    }
+    const { posts } = await CMSContent.fetchManifest(BLOG_DIR);
+    if (!posts || !posts.length) { listEl.innerHTML = '<p class="text-muted">No posts yet.</p>'; return; }
+    const esc = CMSContent.escapeHtml;
     listEl.innerHTML = posts.map(p => `
       <div class="col-md-6 col-lg-4">
         <div class="card h-100 shadow-sm">
-          ${p.featured_image ? `<img src="${escapeAttr(p.featured_image)}" class="card-img-top" style="height:180px;object-fit:cover;" alt="">` : ''}
+          ${p.featured_image ? `<img src="${esc(p.featured_image)}" class="card-img-top" style="height:180px;object-fit:cover;" alt="">` : ''}
           <div class="card-body d-flex flex-column">
-            <span class="badge bg-primary align-self-start mb-2">${escapeHtml(p.category || 'News')}</span>
-            <h5 class="card-title">${escapeHtml(p.title)}</h5>
-            <p class="card-text text-muted small">${escapeHtml(p.excerpt || '')}</p>
+            <span class="badge bg-primary align-self-start mb-2">${esc(p.category || 'News')}</span>
+            <h5 class="card-title">${esc(p.title)}</h5>
+            <p class="card-text text-muted small">${esc(p.excerpt || '')}</p>
             <div class="mt-auto d-flex justify-content-between align-items-center">
-              <small class="text-muted">${escapeHtml(p.publish_date || '')}</small>
+              <small class="text-muted">${esc(p.publish_date || '')}</small>
               <a href="blog.html?post=${encodeURIComponent(p.slug)}" class="btn btn-sm btn-primary">Read</a>
             </div>
           </div>
@@ -51,49 +40,16 @@ async function renderSinglePost(slug) {
   const view = document.getElementById('postView');
   view.style.display = 'block';
   try {
-    // Guard the slug so it can only reference a markdown file in the blog dir.
-    const safeSlug = slug.replace(/[^a-z0-9\-]/gi, '');
-    const res = await fetch(`${BLOG_DIR}/${safeSlug}.md`);
-    if (!res.ok) throw new Error(`Post error ${res.status}`);
-    const raw = await res.text();
-    const { data, body } = parseFrontMatter(raw);
-
+    const { data, body } = await CMSContent.fetchEntry(BLOG_DIR, slug);
     document.getElementById('postTitle').textContent = data.title || 'Untitled';
     document.getElementById('postCategory').textContent = data.category || 'News';
-    document.getElementById('postDate').textContent = formatDate(data.publish_date);
+    document.getElementById('postDate').textContent = CMSContent.formatDate(data.publish_date);
     const img = document.getElementById('postImage');
     if (data.featured_image) { img.src = data.featured_image; img.alt = data.title || ''; }
     else { img.style.display = 'none'; }
-    // marked handles escaping of the markdown body content.
     document.getElementById('postBody').innerHTML = marked.parse(body);
   } catch (err) {
     console.error(err);
     view.innerHTML = '<p class="text-danger">Post not found.</p><a href="blog.html">Back to blog</a>';
   }
 }
-
-// Minimal YAML front-matter parser (handles the flat scalar keys we emit).
-function parseFrontMatter(raw) {
-  const match = raw.match(/^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/);
-  if (!match) return { data: {}, body: raw };
-  const data = {};
-  match[1].split('\n').forEach(line => {
-    const idx = line.indexOf(':');
-    if (idx === -1) return;
-    const key = line.slice(0, idx).trim();
-    let val = line.slice(idx + 1).trim().replace(/^["']|["']$/g, '');
-    if (key && !key.startsWith('-')) data[key] = val;
-  });
-  return { data, body: match[2] };
-}
-
-function formatDate(s) {
-  if (!s) return '';
-  const d = new Date(s);
-  return isNaN(d) ? s : d.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
-}
-
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-}
-function escapeAttr(s) { return escapeHtml(s); }

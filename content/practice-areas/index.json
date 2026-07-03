@@ -1,0 +1,18 @@
+{
+  "areas": [
+    {
+      "slug": "traffic-tickets",
+      "title": "Traffic Tickets",
+      "order": 1,
+      "icon": "fas fa-car",
+      "short_description": "Fighting citations, points, and license consequences across Michigan courts."
+    },
+    {
+      "slug": "personal-injury",
+      "title": "Personal Injury",
+      "order": 2,
+      "icon": "fas fa-user-injured",
+      "short_description": "Helping injured clients recover after accidents, slips, and negligence."
+    }
+  ]
+}
