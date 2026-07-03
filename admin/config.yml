@@ -5,15 +5,22 @@
 # =============================================================================
 
 # -----------------------------------------------------------------------------
-# Backend
-# Decap commits content to a git repo. Configure ONE of the options below.
-# git-gateway (works with Netlify Identity) OR the `github` backend with an
-# OAuth provider. Placeholder values below MUST be updated before going live.
+# Backend — GitHub (zero-cost path)
+# Uses the `github` backend: Decap commits content directly to the GitHub repo.
+# GitHub Pages hosting is free for public repos. The OAuth token exchange needs
+# a small free auth endpoint — either a Cloudflare Worker OAuth proxy, or use
+# Netlify's free tier which provides git-gateway + Identity with no proxy.
+#
+# TODO before go-live: replace `your-org/your-repo` with the real GitHub repo,
+# and set `base_url`/`auth_endpoint` if using a self-hosted OAuth proxy.
 # -----------------------------------------------------------------------------
 backend:
-  name: git-gateway          # change to `github` + repo if using GitHub OAuth
+  name: github
+  repo: your-org/your-repo   # <-- REQUIRED: set to the real GitHub owner/repo
   branch: main               # branch Decap writes to
-  # repo: your-org/your-repo # required only for the `github`/`gitlab` backends
+  # If using a custom (non-Netlify) OAuth proxy such as a Cloudflare Worker:
+  # base_url: https://your-oauth-proxy.example.workers.dev
+  # auth_endpoint: auth
 
 # Use the local proxy for development: run `npx decap-server` then set this true.
 local_backend: true

@@ -13,15 +13,34 @@ confidential attorney–client data. It is deliberately kept OUT of the CMS and
 served by this separate, authenticated, serverless API so that a compromise of
 the public content system cannot expose client data.
 
-## Intended architecture (to be confirmed before build)
+## Architecture (zero-cost serverless)
 
-- Runtime: AWS Lambda (Node.js) behind API Gateway
-- Data store: DynamoDB (single-table or per-entity) — NOT the public S3 bucket
-- Auth: Amazon Cognito JWT, verified server-side against the Cognito JWKS
-        (full signature verification — do not trust unverified claims)
-- Authorization: role checks (client / admin / super_admin) enforced in the
-        Lambda, plus per-record ownership checks (client_id == caller)
-- Secrets: AWS Secrets Manager only (never in repo / never in public bucket)
+- Runtime: AWS Lambda (Node.js 20, arm64/Graviton) — `src/index.js`
+- API: API Gateway HTTP API with a built-in Cognito JWT authorizer
+        (verifies token signature against Cognito JWKS BEFORE the Lambda runs)
+- Data store: DynamoDB, single-table, on-demand billing (scales to $0 idle)
+- Auth: Cognito JWT (verified at the gateway); the Lambda enforces role +
+        per-record ownership authorization
+- IaC: AWS SAM (`template.yaml`)
+- Secrets: AWS Secrets Manager only (never in repo / public bucket)
+
+All three services (Lambda, HTTP API, DynamoDB) sit in AWS free/near-free
+tiers for a solo-firm workload.
+
+## Deploy
+
+```bash
+cd portal-api
+sam build
+sam deploy --guided     # first time; creates the stack + DynamoDB table
+```
+
+## Test (no AWS needed)
+
+```bash
+cd portal-api/src
+node --test             # unit tests for the pure helpers
+```
 
 ## Planned entities (bones)
 
@@ -37,9 +56,8 @@ the public content system cannot expose client data.
 
 ## Next steps (not yet done)
 
-1. Confirm DynamoDB vs RDS for the data store.
-2. Define the IaC (SAM/CDK/Serverless Framework).
-3. Implement Cognito JWKS verification middleware.
-4. Implement handlers per entity with authz + ownership checks.
-
-See `openapi.yaml` for the draft endpoint contract.
+1. Set the real GitHub repo in `admin/config.yml` and pick a CMS auth option
+   (see `admin/SETUP.md`).
+2. `sam deploy --guided` to stand up the stack.
+3. Add admin/super-admin endpoints (currently client-scoped only).
+4. Wire the portal frontend to the deployed API URL.

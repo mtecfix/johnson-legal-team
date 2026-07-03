@@ -1,0 +1,97 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Johnson Legal Team — Client Portal Data API (isolated, serverless, zero-cost tier).
+  Lambda + API Gateway (HTTP API) + DynamoDB (on-demand). Confidential client
+  data lives here, NOT in the public content bucket/CMS.
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 256
+    Architectures: [arm64]        # Graviton: cheaper per-ms
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref PortalTable
+        COGNITO_USER_POOL_ID: us-east-1_3W53TuLIX
+        COGNITO_CLIENT_ID: "23ag7h91l0u0a533t4n635534t"
+        COGNITO_REGION: us-east-1
+
+Parameters:
+  CorsOrigin:
+    Type: String
+    Default: https://d1rqv10nry9s54.cloudfront.net
+    Description: Allowed browser origin for the portal frontend.
+
+Resources:
+
+  # --- DynamoDB: single-table design, on-demand (scales to $0 when idle) -----
+  PortalTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST      # on-demand: no idle cost
+      AttributeDefinitions:
+        - { AttributeName: PK, AttributeType: S }
+        - { AttributeName: SK, AttributeType: S }
+      KeySchema:
+        - { AttributeName: PK, KeyType: HASH }
+        - { AttributeName: SK, KeyType: RANGE }
+      SSESpecification:
+        SSEEnabled: true                # encryption at rest (confidential data)
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+
+  # --- HTTP API with a Cognito JWT authorizer -------------------------------
+  PortalHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins: [!Ref CorsOrigin]
+        AllowHeaders: [Authorization, Content-Type]
+        AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
+      Auth:
+        DefaultAuthorizer: CognitoJwt
+        Authorizers:
+          CognitoJwt:
+            IdentitySource: "$request.header.Authorization"
+            JwtConfiguration:
+              issuer: !Sub "https://cognito-idp.${AWS::Region}.amazonaws.com/us-east-1_3W53TuLIX"
+              audience:
+                - "23ag7h91l0u0a533t4n635534t"
+
+  # --- Single Lambda routing all portal actions -----------------------------
+  PortalFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: index.handler
+      CodeUri: src/
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref PortalTable
+      Events:
+        Profile:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /profile, Method: ANY }
+        Cases:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /cases, Method: ANY }
+        Documents:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /documents, Method: ANY }
+        Messages:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /messages, Method: ANY }
+        Invoices:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /invoices, Method: ANY }
+        Appointments:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /appointments, Method: ANY }
+
+Outputs:
+  ApiUrl:
+    Description: Base URL of the portal API
+    Value: !Sub "https://${PortalHttpApi}.execute-api.${AWS::Region}.amazonaws.com"
+  TableName:
+    Value: !Ref PortalTable
