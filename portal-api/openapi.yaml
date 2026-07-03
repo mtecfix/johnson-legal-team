@@ -66,3 +66,34 @@ paths:
       summary: Request an appointment
       responses:
         "201": { description: Created }
+  /admin/clients:
+    get:
+      summary: "[admin] List all clients"
+      responses:
+        "200": { description: OK }
+        "403": { description: Forbidden (non-admin) }
+  /admin/invoices:
+    get:
+      summary: "[admin] List all invoices"
+      responses:
+        "200": { description: OK }
+        "403": { description: Forbidden }
+  /admin/registrations:
+    get:
+      summary: "[admin] List pending registrations"
+      responses:
+        "200": { description: OK }
+    post:
+      summary: "[admin] Approve or reject a registration"
+      responses:
+        "200": { description: OK }
+  /admin/users:
+    get:
+      summary: "[admin] List all users"
+      responses:
+        "200": { description: OK }
+    put:
+      summary: "[super_admin] Change a user's role"
+      responses:
+        "200": { description: OK }
+        "403": { description: Forbidden (requires super_admin) }

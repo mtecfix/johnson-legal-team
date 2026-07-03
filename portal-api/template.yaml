@@ -34,9 +34,19 @@ Resources:
       AttributeDefinitions:
         - { AttributeName: PK, AttributeType: S }
         - { AttributeName: SK, AttributeType: S }
+        - { AttributeName: GSI1PK, AttributeType: S }
+        - { AttributeName: GSI1SK, AttributeType: S }
       KeySchema:
         - { AttributeName: PK, KeyType: HASH }
         - { AttributeName: SK, KeyType: RANGE }
+      GlobalSecondaryIndexes:
+        # Admin cross-user queries: GSI1PK groups by entity type
+        # (e.g. "CASE", "USER", "REG#pending"), GSI1SK sorts within the group.
+        - IndexName: GSI1
+          KeySchema:
+            - { AttributeName: GSI1PK, KeyType: HASH }
+            - { AttributeName: GSI1SK, KeyType: RANGE }
+          Projection: { ProjectionType: ALL }
       SSESpecification:
         SSEEnabled: true                # encryption at rest (confidential data)
       PointInTimeRecoverySpecification:
@@ -88,6 +98,18 @@ Resources:
         Appointments:
           Type: HttpApi
           Properties: { ApiId: !Ref PortalHttpApi, Path: /appointments, Method: ANY }
+        AdminClients:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /admin/clients, Method: ANY }
+        AdminInvoices:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /admin/invoices, Method: ANY }
+        AdminRegistrations:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /admin/registrations, Method: ANY }
+        AdminUsers:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /admin/users, Method: ANY }
 
 Outputs:
   ApiUrl:

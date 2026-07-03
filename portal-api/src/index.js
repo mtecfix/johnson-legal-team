@@ -41,9 +41,16 @@ exports.handler = async (event) => {
 
     const method = event.requestContext?.http?.method || 'GET';
     const path = event.requestContext?.http?.path || event.rawPath || '';
-    const route = path.replace(/^\/+/, '').split('/')[0];
+    const segments = path.replace(/^\/+/, '').split('/');
+    const route = segments[0];
 
-    const ctx = { userId, role, claims, method, body: parseBody(event) };
+    const ctx = { userId, role, claims, method, body: parseBody(event), segments };
+
+    if (route === 'admin') {
+      // All /admin/* routes require an elevated role.
+      if (!ADMIN_GROUPS.includes(role)) return resp(403, { error: 'Forbidden' });
+      return await handleAdmin(ctx);
+    }
 
     switch (route) {
       case 'profile':      return await handleProfile(ctx);
@@ -116,6 +123,81 @@ async function handleMessages(ctx) {
       },
     }));
     return resp(201, { success: true, message_id: id });
+  }
+  return resp(405, { error: 'Method not allowed' });
+}
+
+// --- Admin handlers (require admin/super_admin; enforced by the router) -----
+
+async function handleAdmin(ctx) {
+  const resource = ctx.segments[1] || '';
+  switch (resource) {
+    case 'clients':       return await adminList(ctx, 'USER');
+    case 'invoices':      return await adminList(ctx, 'INV');
+    case 'registrations': return await adminRegistrations(ctx);
+    case 'users':         return await adminUsers(ctx);
+    default:              return resp(404, { error: 'Not found' });
+  }
+}
+
+// Cross-user list via GSI1 (GSI1PK = entity type). Admin-only.
+async function adminList(ctx, entityType) {
+  if (ctx.method !== 'GET') return resp(405, { error: 'Method not allowed' });
+  const { QueryCommand } = cmds();
+  const out = await db().send(new QueryCommand({
+    TableName: TABLE,
+    IndexName: 'GSI1',
+    KeyConditionExpression: 'GSI1PK = :pk',
+    ExpressionAttributeValues: { ':pk': entityType },
+  }));
+  return resp(200, { items: out.Items || [] });
+}
+
+async function adminRegistrations(ctx) {
+  if (ctx.method === 'GET') {
+    const { QueryCommand } = cmds();
+    const out = await db().send(new QueryCommand({
+      TableName: TABLE,
+      IndexName: 'GSI1',
+      KeyConditionExpression: 'GSI1PK = :pk',
+      ExpressionAttributeValues: { ':pk': 'REG#pending' },
+    }));
+    return resp(200, { registrations: out.Items || [] });
+  }
+  if (ctx.method === 'POST') {
+    // Approve/reject: { user_id, decision: 'approved' | 'rejected' }
+    const b = ctx.body || {};
+    const decision = b.decision === 'approved' ? 'approved' : b.decision === 'rejected' ? 'rejected' : null;
+    if (!b.user_id || !decision) return resp(400, { error: 'user_id and valid decision required' });
+    const { UpdateCommand } = cmds();
+    await db().send(new UpdateCommand({
+      TableName: TABLE,
+      Key: { PK: `USER#${str(b.user_id)}`, SK: 'PROFILE' },
+      UpdateExpression: 'SET registration_status = :s, GSI1PK = :g',
+      ExpressionAttributeValues: { ':s': decision, ':g': `REG#${decision}` },
+    }));
+    return resp(200, { success: true, status: decision });
+  }
+  return resp(405, { error: 'Method not allowed' });
+}
+
+async function adminUsers(ctx) {
+  if (ctx.method === 'GET') return adminList(ctx, 'USER');
+  if (ctx.method === 'PUT') {
+    // Change role — SUPER ADMIN ONLY. { user_id, role }
+    if (ctx.role !== 'super_admin') return resp(403, { error: 'Super admin required' });
+    const b = ctx.body || {};
+    const valid = ['client', 'admin', 'super_admin'];
+    if (!b.user_id || !valid.includes(b.role)) return resp(400, { error: 'user_id and valid role required' });
+    const { UpdateCommand } = cmds();
+    await db().send(new UpdateCommand({
+      TableName: TABLE,
+      Key: { PK: `USER#${str(b.user_id)}`, SK: 'PROFILE' },
+      UpdateExpression: 'SET #r = :role',
+      ExpressionAttributeNames: { '#r': 'role' },
+      ExpressionAttributeValues: { ':role': b.role },
+    }));
+    return resp(200, { success: true });
   }
   return resp(405, { error: 'Method not allowed' });
 }
