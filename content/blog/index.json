@@ -1,0 +1,20 @@
+{
+  "posts": [
+    {
+      "slug": "2026-06-28-five-things-expungement",
+      "title": "Five Things to Know About Expungement",
+      "publish_date": "2026-06-28",
+      "category": "Expungements",
+      "excerpt": "Clearing your record can open doors. Here is what the process looks like.",
+      "featured_image": "/images/expungement woes.png"
+    },
+    {
+      "slug": "2026-06-15-know-your-rights-traffic-stop",
+      "title": "Know Your Rights at a Traffic Stop in Michigan",
+      "publish_date": "2026-06-15",
+      "category": "Traffic Tickets",
+      "excerpt": "A quick, practical rundown of what to do (and what not to do) if you are pulled over.",
+      "featured_image": "/images/traffic tickets.png"
+    }
+  ]
+}
