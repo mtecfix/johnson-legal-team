@@ -14,9 +14,9 @@
 //   Region           -> COGNITO_REGION
 // =============================================================================
 window.PORTAL_CONFIG = {
-  COGNITO_USER_POOL_ID: 'REPLACE_AFTER_DEPLOY',   // e.g. us-east-1_XXXXXXXXX
-  COGNITO_CLIENT_ID:    'REPLACE_AFTER_DEPLOY',   // app client id (no secret)
+  COGNITO_USER_POOL_ID: 'us-east-1_dqqgSRKwn',
+  COGNITO_CLIENT_ID:    '1ceidj2abdvs0jijedhckte5um',
   COGNITO_REGION:       'us-east-1',
 };
 // Convenience alias used by portal-api-client.js.
-window.PORTAL_API_BASE = 'REPLACE_AFTER_DEPLOY'; // e.g. https://abc123.execute-api.us-east-1.amazonaws.com
+window.PORTAL_API_BASE = 'https://2hp2bdxsz6.execute-api.us-east-1.amazonaws.com';
