@@ -106,46 +106,67 @@ class CognitoAuth {
 
         const authDetails = new AmazonCognitoIdentity.AuthenticationDetails({ Username: email, Password: password });
         const cognitoUser = new AmazonCognitoIdentity.CognitoUser({ Username: email, Pool: this.userPool });
+        // TOTP association requires the CognitoUserSession internals; the SDK
+        // uses this flag path when completing the software-token MFA setup.
+        this._cognitoUser = cognitoUser;
 
-        cognitoUser.authenticateUser(authDetails, {
-            onSuccess: result => {
-                const tokens = {
-                    access_token:  result.getAccessToken().getJwtToken(),
-                    id_token:      result.getIdToken().getJwtToken(),
-                    refresh_token: result.getRefreshToken().getToken()
-                };
-                const { email: e2, role } = storeSession(tokens);
-                redirectByRole(e2, role);
-            },
+        const finish = result => {
+            const tokens = {
+                access_token:  result.getAccessToken().getJwtToken(),
+                id_token:      result.getIdToken().getJwtToken(),
+                refresh_token: result.getRefreshToken().getToken()
+            };
+            const { email: e2, role } = storeSession(tokens);
+            redirectByRole(e2, role);
+        };
+        const fail = msg => { errorDiv.textContent = msg; errorDiv.classList.remove('d-none'); };
+
+        const callbacks = {
+            onSuccess: finish,
             onFailure: err => {
                 const msgs = {
                     UserNotConfirmedException: 'Please confirm your email before logging in.',
                     NotAuthorizedException:    'Invalid email or password.',
-                    UserNotFoundException:     'No account found with that email.'
+                    UserNotFoundException:     'No account found with that email.',
+                    CodeMismatchException:     'Incorrect authentication code. Please try again.',
+                    ExpiredCodeException:      'That code expired. Please enter a fresh code.'
                 };
-                errorDiv.textContent = msgs[err.code] || 'Login failed. Please try again.';
-                errorDiv.classList.remove('d-none');
+                fail(msgs[err.code] || ('Login failed: ' + (err.message || err.code || 'unknown error')));
             },
             newPasswordRequired: () => {
-                const newPw = prompt('Please set a new password:');
-                if (!newPw) return;
-                cognitoUser.completeNewPasswordChallenge(newPw, {}, {
-                    onSuccess: result => {
-                        const tokens = {
-                            access_token:  result.getAccessToken().getJwtToken(),
-                            id_token:      result.getIdToken().getJwtToken(),
-                            refresh_token: result.getRefreshToken().getToken()
-                        };
-                        const { email: e2, role } = storeSession(tokens);
-                        redirectByRole(e2, role);
-                    },
-                    onFailure: err => {
-                        errorDiv.textContent = 'Password update failed: ' + err.message;
-                        errorDiv.classList.remove('d-none');
-                    }
-                });
+                const newPw = prompt('Set a new password (min 12 chars, upper/lower/number/symbol):');
+                if (!newPw) return fail('A new password is required to continue.');
+                cognitoUser.completeNewPasswordChallenge(newPw, {}, callbacks);
+            },
+            // First-time MFA: user must enroll a TOTP authenticator app.
+            mfaSetup: () => {
+                cognitoUser.associateSoftwareToken(callbacks);
+            },
+            associateSecret: (secretCode) => {
+                // Show the secret so the user can add it to their authenticator app.
+                // (A production UI would render this as a QR code.)
+                const otpauth = `otpauth://totp/JohnsonLegalTeam:${encodeURIComponent(email)}?secret=${secretCode}&issuer=JohnsonLegalTeam`;
+                window.prompt(
+                    'Add this secret to your authenticator app (Google Authenticator, Authy, etc.), then click OK.\n\n' +
+                    'Secret key:', secretCode);
+                console.info('[JLT Auth] TOTP otpauth URI (for QR):', otpauth);
+                const code = prompt('Enter the 6-digit code from your authenticator app to finish setup:');
+                if (!code) return fail('Setup code required.');
+                cognitoUser.verifySoftwareToken(code, 'JLT Authenticator', callbacks);
+            },
+            // Subsequent logins: prompt for the current TOTP code.
+            totpRequired: (challengeName) => {
+                const code = prompt('Enter the 6-digit code from your authenticator app:');
+                if (!code) return fail('Authentication code required.');
+                cognitoUser.sendMFACode(code, callbacks, 'SOFTWARE_TOKEN_MFA');
+            },
+            selectMFAType: () => {
+                // Only TOTP is enabled on this pool.
+                cognitoUser.sendMFASelectionAnswer('SOFTWARE_TOKEN_MFA', callbacks);
             }
-        });
+        };
+
+        cognitoUser.authenticateUser(authDetails, callbacks);
     }
 
     async handleRegister(e) {

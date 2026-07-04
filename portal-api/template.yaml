@@ -64,7 +64,7 @@ Resources:
         AllowAdminCreateUserOnly: true
       UsernameAttributes: [email]
       AutoVerifiedAttributes: [email]
-      MfaConfiguration: "OPTIONAL"
+      MfaConfiguration: "ON"
       EnabledMfas: [SOFTWARE_TOKEN_MFA]
       Policies:
         PasswordPolicy:
