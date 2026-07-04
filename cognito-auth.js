@@ -143,25 +143,18 @@ class CognitoAuth {
                 cognitoUser.associateSoftwareToken(callbacks);
             },
             associateSecret: (secretCode) => {
-                // Show the secret so the user can add it to their authenticator app.
-                // (A production UI would render this as a QR code.)
                 const otpauth = `otpauth://totp/JohnsonLegalTeam:${encodeURIComponent(email)}?secret=${secretCode}&issuer=JohnsonLegalTeam`;
-                window.prompt(
-                    'Add this secret to your authenticator app (Google Authenticator, Authy, etc.), then click OK.\n\n' +
-                    'Secret key:', secretCode);
-                console.info('[JLT Auth] TOTP otpauth URI (for QR):', otpauth);
-                const code = prompt('Enter the 6-digit code from your authenticator app to finish setup:');
-                if (!code) return fail('Setup code required.');
-                cognitoUser.verifySoftwareToken(code, 'JLT Authenticator', callbacks);
+                MfaModal.openSetup(secretCode, otpauth)
+                    .then(code => cognitoUser.verifySoftwareToken(code, 'JLT Authenticator', callbacks))
+                    .catch(() => fail('Two-factor setup cancelled.'));
             },
             // Subsequent logins: prompt for the current TOTP code.
-            totpRequired: (challengeName) => {
-                const code = prompt('Enter the 6-digit code from your authenticator app:');
-                if (!code) return fail('Authentication code required.');
-                cognitoUser.sendMFACode(code, callbacks, 'SOFTWARE_TOKEN_MFA');
+            totpRequired: () => {
+                MfaModal.openVerify()
+                    .then(code => cognitoUser.sendMFACode(code, callbacks, 'SOFTWARE_TOKEN_MFA'))
+                    .catch(() => fail('Authentication code required.'));
             },
             selectMFAType: () => {
-                // Only TOTP is enabled on this pool.
                 cognitoUser.sendMFASelectionAnswer('SOFTWARE_TOKEN_MFA', callbacks);
             }
         };
@@ -245,7 +238,84 @@ class CognitoAuth {
     }
 }
 
-// Google OAuth redirect
+// MFA modal controller: bridges the Cognito MFA callbacks to the Bootstrap
+// modal in client-login.html. Each open* returns a Promise that resolves with
+// the entered 6-digit code, or rejects if the user cancels.
+const MfaModal = (function () {
+    let modal = null, resolveFn = null, rejectFn = null;
+
+    function el(id) { return document.getElementById(id); }
+
+    function ensure() {
+        const node = el('mfaModal');
+        if (!node || typeof bootstrap === 'undefined') return null;
+        if (!modal) {
+            modal = new bootstrap.Modal(node);
+            el('mfaSubmitBtn').addEventListener('click', submit);
+            el('mfaCancelBtn').addEventListener('click', cancel);
+            el('mfaCode').addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+        }
+        return modal;
+    }
+
+    function showError(msg) { const e = el('mfaError'); e.textContent = msg; e.classList.remove('d-none'); }
+    function clearError() { el('mfaError').classList.add('d-none'); }
+
+    function submit() {
+        const code = (el('mfaCode').value || '').trim();
+        if (!/^\d{6}$/.test(code)) { showError('Enter the 6-digit code.'); return; }
+        const r = resolveFn; resolveFn = rejectFn = null;
+        modal.hide();
+        if (r) r(code);
+    }
+
+    function cancel() {
+        const r = rejectFn; resolveFn = rejectFn = null;
+        modal.hide();
+        if (r) r(new Error('cancelled'));
+    }
+
+    function reset() {
+        clearError();
+        el('mfaCode').value = '';
+    }
+
+    function openSetup(secret, otpauthUri) {
+        return new Promise((resolve, reject) => {
+            const m = ensure();
+            // Fallback to prompt() if the modal isn't on this page.
+            if (!m) { const c = window.prompt('Add key to authenticator, then enter 6-digit code:\n' + secret); return c ? resolve(c) : reject(new Error('cancelled')); }
+            resolveFn = resolve; rejectFn = reject;
+            reset();
+            el('mfaTitle').textContent = 'Set Up Two-Factor Authentication';
+            el('mfaPrompt').textContent = 'Enter the 6-digit code from your app to finish setup:';
+            el('mfaSetupSection').style.display = 'block';
+            el('mfaSecret').textContent = secret;
+            const qr = el('mfaQr'); qr.innerHTML = '';
+            if (typeof QRCode !== 'undefined') new QRCode(qr, { text: otpauthUri, width: 180, height: 180 });
+            else qr.innerHTML = '<span class="small text-muted">Use the manual key below.</span>';
+            m.show();
+            setTimeout(() => el('mfaCode').focus(), 300);
+        });
+    }
+
+    function openVerify() {
+        return new Promise((resolve, reject) => {
+            const m = ensure();
+            if (!m) { const c = window.prompt('Enter the 6-digit code from your authenticator app:'); return c ? resolve(c) : reject(new Error('cancelled')); }
+            resolveFn = resolve; rejectFn = reject;
+            reset();
+            el('mfaTitle').textContent = 'Two-Factor Authentication';
+            el('mfaPrompt').textContent = 'Enter the 6-digit code from your app:';
+            el('mfaSetupSection').style.display = 'none';
+            m.show();
+            setTimeout(() => el('mfaCode').focus(), 300);
+        });
+    }
+
+    return { openSetup, openVerify };
+})();
+
 function loginWithGoogle() {
     const redirectUri = COGNITO_CONFIG.RedirectUri;
     const url = `${COGNITO_CONFIG.Domain}/oauth2/authorize?` +
