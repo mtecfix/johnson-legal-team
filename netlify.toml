@@ -1,0 +1,28 @@
+# Netlify deployment config for the Johnson Legal Team static site.
+# Netlify serves the repo root over HTTPS on a *.netlify.app domain (free),
+# with a real TLS cert — solving the HTTPS problem the S3 website endpoint has.
+
+[build]
+  publish = "."
+  # No build step: the site is static HTML/JS/CSS + markdown content.
+  command = ""
+
+# Security headers for all responses.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# Keep confidential/backend/build dirs out of the published site.
+# (These are also gitignored where relevant; this is defense in depth.)
+[[redirects]]
+  from = "/portal-api/*"
+  to = "/404.html"
+  status = 404
+
+[[redirects]]
+  from = "/_archive/*"
+  to = "/404.html"
+  status = 404

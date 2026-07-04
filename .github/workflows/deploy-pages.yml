@@ -1,0 +1,46 @@
+name: Deploy static site to GitHub Pages
+
+# Publishes the repo (static HTML/JS/CSS + markdown content) to GitHub Pages,
+# which serves over HTTPS on a *.github.io domain (free).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare artifact (exclude backend/archive/secrets)
+        run: |
+          mkdir -p _site
+          rsync -a ./ _site/ \
+            --exclude '.git' \
+            --exclude '_site' \
+            --exclude 'portal-api' \
+            --exclude '_archive' \
+            --exclude '.github' \
+            --exclude '*.md' \
+            --exclude 'rds-credentials.json' \
+            --exclude 'client_secret_*.json' \
+            --exclude 'api'
+          touch _site/.nojekyll
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deployment
+        uses: actions/deploy-pages@v4
