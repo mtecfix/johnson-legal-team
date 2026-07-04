@@ -124,7 +124,7 @@ class UserRegistration {
                 
                 // Redirect to appropriate portal
                 setTimeout(() => {
-                    window.location.href = 'client-portal-cms.html';
+                    window.location.href = 'client-dashboard.html';
                 }, 2000);
 
             } else {

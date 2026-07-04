@@ -17,6 +17,14 @@
 - What I got wrong: Edited `client-portal-cms.html` (the original) instead of creating a new dev file first
 - Correct understanding: Should have copied to `client-portal-cms-dev.html` first, then modified only the copy. Original was reverted immediately.
 
-## [2026-03-15] Correction
-- What I got wrong: Overriding `.container` alone wasn't enough — Bootstrap defines responsive max-widths via `.container-sm`, `.container-md`, `.container-lg` etc. in media queries, which were still winning
-- Correct understanding: Must target all Bootstrap container variants (`.container`, `.container-sm` through `.container-xxl`, `.container-fluid`) with `!important` on both `max-width` and `width` to fully override
+## [2026-07-03] Correction
+- What I got wrong: When cleaning/organizing the folder, I nearly archived the old
+  portal HTML pages (super-admin-portal.html, admin-portal.html) without noticing
+  that `portal-router.js` still routed logged-in users to them (and to the already
+  archived client-portal-cms.html). Archiving alone would have left login redirecting
+  to missing pages.
+- Correct understanding: Must trace references before archiving. Fixed portal-router.js
+  to route to the new admin-dashboard.html / client-dashboard.html, and fixed a
+  dangling client-portal-cms.html reference in user-registration.js, before/while
+  archiving the stale pages.
+

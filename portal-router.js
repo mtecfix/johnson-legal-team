@@ -1,9 +1,11 @@
 // Portal Router - Directs users to appropriate portal based on role
 class PortalRouter {
     routeUser(email, role) {
-        if (role === 'super_admin') return 'super-admin-portal.html';
-        if (role === 'admin')       return 'admin-portal.html';
-        return 'client-portal-cms.html';
+        // Admins and super-admins go to the admin dashboard; everyone else to
+        // the client dashboard. (Role-specific UI is gated within each page,
+        // and the API enforces authorization server-side.)
+        if (role === 'super_admin' || role === 'admin') return 'admin-dashboard.html';
+        return 'client-dashboard.html';
     }
 
     redirectToPortal(email, role) {

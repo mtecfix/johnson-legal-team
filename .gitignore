@@ -24,3 +24,6 @@ Thumbs.db
 *.swp
 .vscode/
 .idea/
+
+# Local-only plaintext secrets (values live in AWS Secrets Manager)
+_secrets-local/
