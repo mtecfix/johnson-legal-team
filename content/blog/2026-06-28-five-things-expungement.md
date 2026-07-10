@@ -2,7 +2,7 @@
 title: "Five Things to Know About Expungement in Michigan"
 publish_date: 2026-06-28T09:00:00.000Z
 author: "Johnson Legal Team"
-featured_image: "/images/expungement woes.png"
+featured_image: "/images/expungement-fresh-start.png"
 excerpt: "Clearing your record can open doors. Here is what the process looks like."
 category: "Expungements"
 tags:
