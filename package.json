@@ -1,15 +1,12 @@
 {
-  "name": "johnson-legal-auth",
+  "name": "johnson-legal-team",
   "version": "1.0.0",
-  "description": "NextAuth.js integration for Johnson Legal Team",
-  "dependencies": {
-    "next-auth": "^4.24.5",
-    "@next-auth/prisma-adapter": "^1.0.7",
-    "prisma": "^5.7.1"
-  },
+  "private": true,
+  "description": "Johnson Legal Team — static site with Decap CMS",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start"
+    "cms": "npx decap-server & start http://localhost:8081/admin/",
+    "cms:wsl": "npx decap-server",
+    "serve": "npx serve -p 3000",
+    "dev": "npx concurrently \"npx decap-server\" \"npx serve -p 3000\""
   }
 }
