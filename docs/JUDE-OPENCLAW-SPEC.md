@@ -1,9 +1,9 @@
-# Jude — OpenClaw Agent Specification (v2)
+# Jude — OpenClaw Agent Specification (v3)
 
 _Project: Johnson Legal Team_
 _Supersedes: JUDE-ARCHITECTURE-BLUEPRINT.md (v1, DESIGN status)_
 _Last updated: 2026-07-10_
-_Status: SPEC — grounded in real OpenClaw docs; ready to implement_
+_Status: SPEC — grounded in real OpenClaw docs + verified AWS/model access; ready to implement_
 
 ---
 
@@ -86,26 +86,51 @@ routing layer is simplified down to a single-tenant path (see §3).
   agents: {
     defaults: {
       model: {
-        primary: "amazon-bedrock/amazon.nova-lite-v1:0",
-        fallbacks: ["anthropic/claude-haiku-4-5"],
+        primary: "google/gemini-2.5-flash-lite",
       },
     },
+  },
+  env: {
+    GEMINI_API_KEY: "${GEMINI_API_KEY}",   // Secrets Manager, never inline
   },
 }
 ```
 
-- **Primary: Amazon Bedrock, Nova Lite.** Cheapest capable model, keeps
-  Jude's reasoning cost close to $0 at this firm's volume, and keeps
-  everything in-region (`us-east-1`) with the rest of the AWS footprint.
-  Requires enabling Bedrock model access in the console (blocked in v1 —
-  this must be done before Jude can reason; see §11 Blockers).
-- **Fallback: a cheap external model** only if Bedrock has an outage or the
-  account's Bedrock quota is exhausted. Keep it optional — if the owner
-  wants zero non-AWS spend, drop the fallback and let turns fail closed
-  instead (safer for a law firm than silently switching model vendors).
-- Do **not** point Jude at a paid frontier model by default — the leads/
-  triage work here does not need it, and it would blow past "100% free/
-  cheap" intent fast.
+- **Primary: Google Gemini 2.5 Flash-Lite, paid tier.** Chosen over Bedrock
+  and over xAI Grok after real-world verification (2026-07-10):
+  - **Bedrock was blocked**: model-access approval for Nova Lite is not
+    yet granted in this AWS account (`InvokeModel` returned
+    `ValidationException: Operation not allowed`), and approval requires
+    manual console action per model/provider.
+  - **Grok's free tier ended** (May 2025) — new accounts pay from day one,
+    and current published pricing for grok-4.3 ($1.25/$2.50 per 1M) is
+    higher than the "Grok 4.1 Fast" figures originally cited, which may
+    reflect a superseded tier. Not worth the uncertainty.
+  - **Gemini has a real, permanent free tier** (confirmed directly from
+    ai.google.dev/gemini-api/docs/pricing, retrieved 2026-07-10): Flash,
+    Flash-Lite, and Pro are all "Free of charge" on standard tier, subject
+    to per-minute/per-day rate limits (roughly 15 RPM / 1,000 RPD for
+    Flash-Lite per third-party trackers). At Jude's expected volume (a
+    handful of triage calls/day), this free tier alone would likely never
+    be exceeded.
+  - **Chose paid tier anyway, deliberately**, because Google's own pricing
+    page states free-tier prompts are `"Used to improve our products: Yes"`
+    while paid-tier prompts are `"Used to improve our products: No"`. Lead
+    and case-adjacent text is client-sensitive; the cost of the paid tier
+    is trivial ($0.10 input / $0.40 output per 1M tokens for Flash-Lite —
+    pennies per month at this volume) and buys a real confidentiality
+    guarantee that the free tier does not.
+- **No Bedrock dependency, no App Runner/AgentCore compute-hosting
+  requirement to run OpenClaw's model calls specifically.** This does
+  **not** change the hosting decision in §3 (AgentCore is still how
+  OpenClaw itself runs) — it only changes which LLM provider OpenClaw
+  calls out to. AgentCore's IAM role no longer needs `bedrock:InvokeModel`
+  permissions; it needs outbound HTTPS to `generativelanguage.googleapis.com`
+  and the `GEMINI_API_KEY` secret instead.
+- **No fallback model configured.** For a law firm's triage workload,
+  failing closed (no reasoning) if Gemini has an outage is safer than
+  silently routing lead/case text to a second, unvetted provider. Revisit
+  if uptime becomes an issue in practice.
 
 ---
 
@@ -362,23 +387,32 @@ the public voice of the practice.
 
 ---
 
-## 9. Deployment shape (Bedrock AgentCore)
+## 9. Deployment shape (Bedrock AgentCore, Gemini as model provider)
 
 ```
 CDK app (adapted from aws-samples/sample-host-openclaw-on-amazon-bedrock-agentcore)
-  ├─ VPC stack: private subnets, VPC endpoints (bedrock-agentcore-runtime,
-  │             s3, dynamodb, secretsmanager, sns, ses), flow logs
+  ├─ VPC stack: private subnets, VPC endpoints (s3, dynamodb,
+  │             secretsmanager only — no bedrock-agentcore-runtime
+  │             endpoint needed since we don't call Bedrock models),
+  │             PLUS a NAT Gateway for outbound HTTPS to
+  │             generativelanguage.googleapis.com (new vs. the sample),
+  │             flow logs
   ├─ Security stack: KMS CMK, Secrets Manager entries (JUDE_HOOKS_TOKEN,
-  │                  any model/API creds), optional CloudTrail
-  ├─ Guardrails stack: Bedrock Guardrails (content filters + prompt-attack
-  │                     detection; PII redaction ANONYMIZE mode since hook
-  │                     payloads carry real lead contact info)
+  │                  GEMINI_API_KEY), optional CloudTrail
   ├─ AgentCore stack: CfnRuntime, CfnRuntimeEndpoint, CfnWorkloadIdentity,
   │                    ECR repo, S3 bucket (workspace sync), SG, IAM
   │      Bridge container (bridge/Dockerfile, node:22-slim ARM64):
   │        - entrypoint.sh -> contract server (port 8080, /ping health)
   │        - agentcore-contract.js -> hybrid routing: lightweight shim
   │          first, full OpenClaw gateway (port 18789) once ready
+  │        - agentcore-proxy.js -> NEEDS REWORK: the sample's version
+  │          converts to Bedrock's ConverseStream API; since Jude calls
+  │          Gemini directly, this proxy either gets simplified/removed
+  │          (let OpenClaw's native Gemini provider talk to Google
+  │          directly) or rewritten to proxy Gemini's API instead —
+  │          decide in Phase 1 based on how much of the sample's
+  │          identity/credential-scoping logic in this file is still
+  │          needed for a single-tenant setup (likely: not much).
   │        - workspace-sync.js -> restores/saves ~/.openclaw/ to/from S3
   │        - openclaw.json baked in (single agent "jude"; skills per §5)
   ├─ Router stack: Router Lambda + API Gateway HTTP API (single route:
@@ -387,6 +421,10 @@ CDK app (adapted from aws-samples/sample-host-openclaw-on-amazon-bedrock-agentco
   └─ Observability stack: dashboard, alarms (errors, latency, token/cost
                            budget), reusing the existing SNS topic pattern
                            already used by metrotec-ticket-notifications
+
+Dropped entirely vs. the AWS sample: Guardrails stack (Bedrock Guardrails
+only applies to Bedrock model calls — irrelevant once Gemini is the
+provider; see §11.1 for the AgentCore-vs-Bedrock-models distinction).
 ```
 
 IAM role for the AgentCore container — least privilege, scoped exactly to
@@ -395,15 +433,22 @@ what Jude needs:
   `jude-main/` prefix only (no other prefixes; irrelevant since single-
   tenant, but keeps the STS-scoping pattern from the sample intact).
 - `dynamodb:GetItem`, `Query` on `jude-leads` table only (no `Scan`).
-- `bedrock:InvokeModel`/`InvokeModelWithResponseStream` for the Nova Lite
-  model ARN only.
 - `sns:Publish` to the owner-alert topic only.
 - `ses:SendEmail` from the verified firm domain identity only.
 - No broad `*` resource anywhere; no cross-account access.
+- **No `bedrock:InvokeModel` permission needed** — per §2, Jude's LLM
+  calls go to the Gemini API over the internet (via the container's
+  outbound HTTPS + `GEMINI_API_KEY` secret), not to Bedrock. Note this
+  means the AgentCore container needs a NAT/internet egress path in its
+  VPC subnet for `generativelanguage.googleapis.com` — the sample's
+  default private-subnet-only design assumes Bedrock (in-VPC via VPC
+  endpoint) and will need this one adjustment.
 
 The Router Lambda's role is separately scoped to only
-`bedrock-agentcore:InvokeAgentRuntime` on Jude's specific runtime ARN, plus
-reading the `JUDE_HOOKS_TOKEN` secret to validate inbound calls.
+`bedrock-agentcore:InvokeAgentRuntime` on Jude's specific runtime ARN
+(this permission is about invoking the *AgentCore compute service*, which
+is unrelated to which LLM the agent inside it calls), plus reading the
+`JUDE_HOOKS_TOKEN` secret to validate inbound calls.
 
 ---
 
@@ -414,48 +459,68 @@ reading the `JUDE_HOOKS_TOKEN` secret to validate inbound calls.
 | OpenClaw software | $0 (MIT license) |
 | AgentCore Runtime | Pay-per-invocation runtime-seconds only while a session is warm (~30 min idle timeout); $0 while idle — no fixed monthly floor unlike App Runner/EC2 |
 | Router Lambda + API Gateway | Pennies — a handful of invocations per lead/event |
-| Bedrock Nova Lite (or Guardrails-wrapped Claude, per sample defaults) | Pay-per-token, fractions of a cent per triage turn at this volume |
-| Bedrock Guardrails | ~$0.75 per 1,000 text units if enabled — optional, can disable to save cost since Jude has no public untrusted chat users, only lead/email text |
+| Gemini 2.5 Flash-Lite (paid tier, per §2) | $0.10 input / $0.40 output per 1M tokens — pennies per month at this volume; paid tier chosen specifically so prompts are NOT used to train Google's models |
+| Bedrock Guardrails | Not used — dropped along with Bedrock as the model provider (§2). If content-filtering on hook payloads is wanted later, revisit via a lighter-weight approach (e.g., a rules-based pre-filter before the LLM call) rather than reintroducing a Bedrock dependency just for this. |
 | S3 (workspace sync) | Pennies/month at this data size |
-| VPC endpoints (7 in the AWS sample) | ~$0.01/hr each if all enabled — trim to only the ones actually used (bedrock-agentcore-runtime, s3, secretsmanager, dynamodb) to cut this down |
+| VPC endpoints | Trim the sample's default 7 down to only what's actually used: `s3`, `secretsmanager`, `dynamodb`. Drop `bedrock-agentcore-runtime`'s Bedrock-model-specific endpoints since Gemini calls go out over the internet, not through a Bedrock VPC endpoint — but the container's subnet now needs NAT Gateway egress instead (small added cost, ~$0.045/hr + data, only while a session is warm). |
 | DynamoDB (`jude-leads`) | On-demand, already ~$0 at current volume |
 | SNS SMS | ~$0.0075/SMS to a US number, only for urgent alerts (rate-limited) |
 | SES email | $0.10 per 1,000 emails after free tier |
 
 This is meaningfully cheaper than the App Runner plan in the earlier draft
 (~$5-7/mo fixed floor) — AgentCore has **no idle cost floor**, matching
-the original "as free as possible" ask. The trade is operational: this is
-labeled experimental by AWS, so budget time for troubleshooting the
-container/runtime integration rather than a guaranteed smooth setup.
+the original "as free as possible" ask. Dropping Bedrock/Guardrails in
+favor of Gemini also removes the model-access-approval blocker entirely
+and keeps the model cost trivial. The trade is operational: AgentCore
+itself is still labeled experimental by AWS, so budget time for
+troubleshooting the container/runtime integration rather than a
+guaranteed smooth setup, and the NAT Gateway swap (for Gemini's internet
+egress) is a small deviation from the sample's original all-VPC-endpoint
+design that needs testing.
 
 ---
 
 ## 11. Blockers (carried over + updated from v1)
 
-1. **Bedrock model access** — must be enabled in the console for the Nova
-   Lite (and/or Claude, per the sample's default) model before Jude can
-   reason at all. (Unchanged from v1.)
+1. ~~Bedrock model access~~ — **Resolved by dropping Bedrock as the model
+   provider (§2).** Jude uses Gemini 2.5 Flash-Lite (paid tier) via API
+   key instead, which sidesteps the model-access-approval blocker
+   entirely. Note: this does NOT remove AWS Bedrock from the stack
+   completely — AgentCore Runtime itself is a Bedrock *product* (the
+   compute/microVM layer), separate from Bedrock's model-hosting
+   feature. No model-access approval is needed to use AgentCore Runtime
+   as a compute host; approval is only required to *invoke a Bedrock
+   foundation model*, which Jude no longer does.
 2. **SES production access** — required for the `email-inbox` and
    `newsletter` skills and for the owner-notify digest to reach arbitrary
    recipients. (Unchanged from v1.)
 3. **AgentCore CDK stack build-out** — needs to be forked from
    `aws-samples/sample-host-openclaw-on-amazon-bedrock-agentcore` and
    trimmed to the single-tenant shape described in §3/§9 (drop Telegram/
-   Slack routers, per-user identity table, allowlist). This replaces v1's
-   open question #10 ("where does Jude run") with a concrete answer.
-4. **Experimental-status risk** — the upstream sample is explicitly not
-   production-hardened. Plan to pin the exact commit we fork from, run our
-   own `cdk-nag`/security checks before go-live, and keep a rollback path
-   (the App Runner design from the earlier draft) documented in case
-   AgentCore proves unworkable in practice.
-5. **Service-role credential for `case-lookup`** — the existing portal API
+   Slack routers, per-user identity table, allowlist, Bedrock Guardrails).
+   This replaces v1's open question #10 ("where does Jude run") with a
+   concrete answer.
+4. **NAT Gateway for Gemini egress** — the sample's default network design
+   assumes in-VPC Bedrock calls via VPC endpoint (no internet needed).
+   Since Jude now calls the external Gemini API, the AgentCore container's
+   subnet needs outbound internet access (NAT Gateway or equivalent) added
+   to the VPC stack. Not yet built.
+5. **`GEMINI_API_KEY`** — needs to be generated (Google AI Studio →
+   Get API key) and stored in Secrets Manager, referenced by the
+   container's `openclaw.json` via `${GEMINI_API_KEY}`. Not yet created.
+6. **Experimental-status risk** — the upstream AgentCore sample is
+   explicitly not production-hardened. Plan to pin the exact commit we
+   fork from, run our own `cdk-nag`/security checks before go-live, and
+   keep a rollback path (the App Runner design from the earlier draft)
+   documented in case AgentCore proves unworkable in practice.
+7. **Service-role credential for `case-lookup`** — the existing portal API
    only issues Cognito user JWTs; Jude needs its own machine-to-machine
    credential (e.g., a Cognito client-credentials app client, or a signed
    internal token) scoped to admin-read routes only. Not yet built.
-6. **`JUDE_HOOKS_TOKEN`** — must be generated and stored in Secrets Manager,
+8. **`JUDE_HOOKS_TOKEN`** — must be generated and stored in Secrets Manager,
    then wired into both the `jude-leads`/`jude-notify-owner` Lambdas (as the
    caller) and the Router Lambda (as the verifier).
-7. **AgentCore Runtime region/AZ availability** — per the sample's own
+9. **AgentCore Runtime region/AZ availability** — per the sample's own
    gotchas, AgentCore Runtime is not available in all AZs; must confirm
    supported AZs in `us-east-1` (where the rest of this project already
    lives) before deploying.
@@ -488,16 +553,16 @@ Phase 7 — `ad-center` skill (Meta + Google Ads, reporting only).
    Runtime (§3), accepting its "experimental" status, because it has no
    idle-cost floor and reuses this project's existing Lambda/DynamoDB/
    API Gateway patterns.
-2. Confirm Bedrock Nova Lite as the model (cheapest capable option) vs.
-   paying more for a stronger model (the AWS sample defaults to Claude
-   Sonnet) — Jude's triage work may not need a frontier model, but Nova
-   Lite has not been validated against the sample's proxy code, which
-   was built/tested against Claude via Bedrock ConverseStream. Worth a
-   quick compatibility check in Phase 1 before committing.
-3. Whether to keep Bedrock Guardrails enabled (~$0.75/1,000 text units)
-   given Jude's only "untrusted" input is lead/email text, not public
-   chat — leaning toward keeping the prompt-attack/PII layers on since
-   lead form submissions are technically public-facing input.
+2. ~~Which model~~ — **Resolved:** Gemini 2.5 Flash-Lite, paid tier (§2).
+   Bedrock was blocked (no model access granted); Grok's free tier ended
+   and current pricing needs re-verification; Gemini's real free tier
+   confirmed the volume is a non-issue, and paid tier buys a "not used
+   for training" guarantee worth paying for given client-adjacent data.
+3. Whether the AZ/NAT-Gateway network changes needed to support external
+   Gemini calls (§11.4) are acceptable, or whether it's worth revisiting
+   Bedrock once model access is eventually granted (no urgency — Gemini
+   works fine, this is just a future option if there's ever a reason to
+   consolidate everything back onto AWS-native model hosting).
 4. Owner's mobile number + primary email for SNS/SES (still open from v1).
 5. Confirm the phase order in §12 — leads-triage first (matches v1's stated
    priority), or reorder if priorities changed.
