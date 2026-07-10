@@ -1,0 +1,157 @@
+===============================================================================
+ JOHNSON LEGAL TEAM — PROJECT HANDOFF / WHERE WE LEFT OFF
+ Last updated: 2026-07-03 (evening)
+===============================================================================
+
+QUICK SUMMARY
+-------------
+The site + client portal has been rebuilt. Backend is FULLY DEPLOYED and LIVE
+on AWS. The only thing left to go live securely is putting the static site on
+an HTTPS host (Netlify) and pointing the API's CORS at it. You are ONE step
+away: pushing the repo to GitHub, then connecting Netlify.
+
+
+>>> YOUR IMMEDIATE NEXT STEP (pick up here) <<<
+-------------------------------------------------------------------------------
+Decisions already made: Host = Netlify. GitHub user = mtecfix. New repo.
+Still to confirm: repo name (suggested "johnson-legal-site") + private/public
+(recommended: private).
+
+Run these 3 commands in your terminal:
+
+    cd "/mnt/c/Users/MR TEHC/johnson legal team"
+
+    # 1. Install GitHub CLI (browser-based auth, no token to paste)
+    sudo apt update && sudo apt install gh -y
+
+    # 2. Log in: choose GitHub.com -> HTTPS -> login with browser
+    gh auth login
+
+    # 3. Create the repo under mtecfix AND push all commits in one shot
+    gh repo create johnson-legal-site --private --source=. --remote=origin --push
+
+Then come back and say "pushed" (or paste the repo URL). I'll verify, then walk
+you through Netlify.
+
+(Alternative if you don't want to install gh: use a GitHub Personal Access
+Token — Settings > Developer settings > Fine-grained tokens, Contents:
+read/write — create an empty repo on github.com, then:
+    git remote add origin https://github.com/mtecfix/<repo>.git
+    git branch -M main
+    git push -u origin main
+ ...using the token as the password.)
+
+
+AFTER GITHUB — NETLIFY (we'll do this together next)
+-------------------------------------------------------------------------------
+1. netlify.com -> Sign up / Log in with GitHub.
+2. Add new site -> Import an existing project -> GitHub -> pick the repo.
+3. netlify.toml is auto-detected (publish = root, no build). Click Deploy.
+4. You'll get https://<name>.netlify.app  -> send me that URL.
+5. I then run ONE command to update the API CORS to that URL. Done — you can
+   log in securely.
+
+
+HOW TO LOG IN (once HTTPS site is live)
+-------------------------------------------------------------------------------
+  URL:      https://<your-site>.netlify.app/client-login.html
+  Email:    mrtechfixes.ai@gmail.com
+  Temp PW:  JLTtemp!2026Chg   (you'll be forced to set a new one)
+  New PW rules: 12+ chars, upper + lower + number + symbol
+  Then: MFA setup — scan the QR with an authenticator app (Google
+        Authenticator / Authy / 1Password), enter the 6-digit code.
+  Role: super_admin (you'll have both client + admin dashboards)
+  NOTE: change the temp password soon (it's written above).
+
+
+===============================================================================
+ WHAT IS ALREADY DONE (LIVE ON AWS)  — account 663877906756, region us-east-1
+===============================================================================
+Stack name: johnson-legal-portal  (deployed via CloudFormation)
+
+- Cognito User Pool:   us-east-1_dqqgSRKwn   (name: johnson-legal-portal)
+- Cognito App Client:  1ceidj2abdvs0jijedhckte5um  (SRP auth, no secret)
+- Groups:              admin, super_admin
+- MFA:                 REQUIRED, TOTP (authenticator app) — no SMS
+- API base URL:        https://2hp2bdxsz6.execute-api.us-east-1.amazonaws.com
+- DynamoDB table:      johnson-legal-portal-PortalTable-BSDJNMA75SSQ
+                       (encrypted, point-in-time recovery on)
+- Lambda:              handles /profile /cases /documents /messages /invoices
+                       /appointments + /admin/* (clients, invoices,
+                       registrations, users). Server-side role + ownership auth.
+- Verified end-to-end: 401 without token, 200 with token, admin routes,
+                       profile read/write. All good.
+
+Your super_admin user (mrtechfixes.ai@gmail.com) is created and in the
+super_admin group.
+
+Frontend config already wired in portal-config.js with the live IDs above.
+
+Deploy artifacts bucket: johnson-legal-sam-deploy-663877906756
+
+
+===============================================================================
+ WHAT THE PROJECT NOW CONTAINS
+===============================================================================
+CONTENT SITE (Decap CMS — free, git-based, serverless):
+  - admin/            Decap CMS (config.yml has 5 collections; SETUP.md)
+  - content/          blog, practice-areas, team, pages, settings (filler data)
+  - Public renderers:  blog.html/js, team.html/js, practice-area.html/js,
+                       content.js (shared)
+  - CMS backend set to GitHub; set the real repo in admin/config.yml after push
+    (backend.repo: mtecfix/<repo>)
+
+CLIENT PORTAL (serverless, isolated for security):
+  - portal-api/       SAM template.yaml (Cognito+API+Lambda+DynamoDB),
+                      src/index.js handler + tests (12 passing), README, openapi
+  - portal-api-client.js  frontend API client (window.PortalAPI)
+  - client-dashboard.html/js   (client view)
+  - admin-dashboard.html/js    (admin + super-admin view)
+  - client-login.html + cognito-auth.js  (login + MFA QR modal)
+  - portal-config.js  (live IDs; load before other portal scripts)
+  - portal-router.js  (routes login -> correct dashboard)
+
+DEPLOY:
+  - DEPLOY.md         both HTTPS options (Netlify + GitHub Pages) + CORS cmd
+  - netlify.toml      Netlify config (root publish, security headers)
+  - .github/workflows/deploy-pages.yml   GitHub Pages option (if ever wanted)
+
+ORGANIZED:
+  - docs/             AUTH_FLOW, JUDE blueprint, openclaw readme, corrections
+  - _archive/         old/legacy code (cms-legacy, unused-legacy, dev-test)
+  - _secrets-local/   plaintext secrets moved out of site root (GITIGNORED;
+                      values already in AWS Secrets Manager). Do NOT deploy.
+
+Git: repo initialized, ~12 commits, secrets excluded via .gitignore.
+     NO remote yet (that's the next step above).
+
+
+===============================================================================
+ OPEN ITEMS / DECISIONS STILL PENDING
+===============================================================================
+1. [NOW] Push to GitHub + connect Netlify (see top).
+2. After Netlify URL exists: I update API CORS (one command) — required or the
+   browser can't call the API.
+3. CloudFront on AWS is BLOCKED — account needs AWS Support verification to
+   create CloudFront. That's why we're using Netlify for HTTPS instead. If you
+   later get CloudFront enabled, we can move hosting to AWS (optional).
+4. Set admin/config.yml backend.repo to mtecfix/<repo> so the CMS can save.
+5. Google/social login: NOT set up on the new pool (email/password only for
+   now). Can add later (needs Hosted UI domain + Google OAuth app).
+6. Replace filler CMS content with real content.
+7. api/ (old PHP endpoints) still present and referenced by a few pages
+   (pay-invoice, reset-password, onboarding, registration). Left intact for
+   now; revisit if migrating those to the serverless API.
+
+===============================================================================
+ KEY IDENTIFIERS (copy/paste reference)
+===============================================================================
+Cognito Pool ID:     us-east-1_dqqgSRKwn
+Cognito Client ID:   1ceidj2abdvs0jijedhckte5um
+API URL:             https://2hp2bdxsz6.execute-api.us-east-1.amazonaws.com
+Region:              us-east-1
+CFN Stack:           johnson-legal-portal
+S3 site bucket:      johnsonlegalteam-www  (currently HTTP-only; testing)
+GitHub user:         mtecfix
+Suggested repo:      johnson-legal-site (private)
+===============================================================================

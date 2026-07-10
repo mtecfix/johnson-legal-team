@@ -16,8 +16,8 @@
 # -----------------------------------------------------------------------------
 backend:
   name: github
-  repo: your-org/your-repo   # <-- REQUIRED: set to the real GitHub owner/repo
-  branch: main               # branch Decap writes to
+  repo: mtecfix/johnson-legal-team
+  branch: master
   # If using a custom (non-Netlify) OAuth proxy such as a Cloudflare Worker:
   # base_url: https://your-oauth-proxy.example.workers.dev
   # auth_endpoint: auth
