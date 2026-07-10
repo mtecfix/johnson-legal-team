@@ -111,7 +111,7 @@ class LegalChatWidget {
                 <br><br>
                 • "I need help with a car accident"<br>
                 • "How do I contact the office?"<br>
-                • "What services do you offer?"<br>
+                • "What services do you offer?"`, 'bot', false);
         } else {
             // Load previous messages
             this.chatHistory.forEach(msg => {
@@ -174,7 +174,6 @@ class LegalChatWidget {
         // Simple keyword matching
         if (lowerMessage.includes('car accident') || lowerMessage.includes('personal injury') || lowerMessage.includes('slip and fall')) {
             response = `For personal injury cases including car accidents, I can direct you to our <a href="personal-injury.html" style="color: #007bff;">Personal Injury page</a>. We handle auto accidents, slip and fall, and medical malpractice cases.`;
-        }
         }
         else if (lowerMessage.includes('contact') || lowerMessage.includes('phone') || lowerMessage.includes('call')) {
             response = `You can reach us at <strong>(888) 888-8888</strong> or visit our <a href="contact.html" style="color: #007bff;">Contact page</a> for more information and to send us a message.`;
