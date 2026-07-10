@@ -74,7 +74,7 @@
                     <p>Fill out the form below and we'll contact you within 24 hours to discuss your case.</p>
                     
                     <div class="contact-form">
-                        <form>
+                        <form id="contactForm">
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="firstName" class="form-label">First Name *</label>
@@ -101,8 +101,6 @@
                                 <label for="caseType" class="form-label">Case Type</label>
                                 <select class="form-control" id="caseType">
                                     <option>Select Case Type</option>
-                                    <option>Personal Injury</option>
-                                    <option>Personal Injury</option>
                                     <option>Personal Injury</option>
                                     <option>Estate Planning & Probate</option>
                                     <option>Expungements</option>
@@ -139,8 +137,10 @@
                                     I consent to Johnson Legal Team contacting me about my case *
                                 </label>
                             </div>
+
+                            <div id="formStatus" class="mb-3" style="display:none;"></div>
                             
-                            <button type="submit" class="btn btn-primary btn-lg">Send Message</button>
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">Send Message</button>
                         </form>
                     </div>
                 </div>
@@ -230,5 +230,10 @@
         </div>
     </footer>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="contact-form.js"></script>
+    <script src="chat-widget.js"></script>
+    <script src="footer-script.js"></script>
+    <script src="search.js"></script>
 </body>
 </html>

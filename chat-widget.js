@@ -51,7 +51,7 @@ class LegalChatWidget {
     createWidget() {
         const widget = document.createElement('div');
         widget.innerHTML = `
-            <div id="legal-chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 1000;">
+            <div id="legal-chat-widget" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
                 <div id="chat-button" style="
                     width: 60px; height: 60px; border-radius: 50%; 
                     background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
