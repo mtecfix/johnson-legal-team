@@ -1,54 +1,335 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Blog | Johnson Legal Team</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
-  <link rel="stylesheet" href="combined-style.css" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog | Johnson Legal Team</title>
+    <meta name="description" content="Legal insights, firm news, and helpful articles from Johnson Legal Team — Michigan attorneys specializing in criminal defense, personal injury, and estate planning.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="combined-style.css">
+    <style>
+        /* Blog Hero */
+        .blog-hero {
+            background: linear-gradient(to bottom, rgba(26, 54, 93, 0.9) 0%, rgba(44, 82, 130, 0.85) 100%), url('header-image.webp');
+            background-size: cover;
+            background-position: center;
+            color: #fff;
+            padding: 80px 0 60px;
+            text-align: center;
+        }
+        .blog-hero h1 {
+            font-size: clamp(2rem, 5vw, 3rem);
+            font-weight: 700;
+            color: var(--accent-secondary);
+            margin-bottom: 12px;
+        }
+        .blog-hero p {
+            font-size: 1.15rem;
+            opacity: 0.9;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Blog Cards */
+        .blog-card {
+            border: none;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            height: 100%;
+        }
+        .blog-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+        .blog-card .card-img-top {
+            height: 200px;
+            object-fit: cover;
+        }
+        .blog-card .card-body {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+        }
+        .blog-card .card-title {
+            font-weight: 600;
+            color: var(--accent-primary);
+            font-size: 1.15rem;
+            margin-bottom: 0.75rem;
+        }
+        .blog-card .card-title a {
+            color: var(--accent-primary);
+            text-decoration: none;
+        }
+        .blog-card .card-title a:hover {
+            color: var(--accent-secondary);
+        }
+        .blog-card .card-text {
+            color: var(--secondary-text);
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+        .blog-card .badge {
+            background-color: var(--accent-primary) !important;
+            font-weight: 500;
+            font-size: 0.75rem;
+            padding: 5px 10px;
+            border-radius: 4px;
+        }
+        .blog-card .read-more {
+            color: var(--accent-secondary);
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .blog-card .read-more:hover {
+            color: var(--accent-primary);
+        }
+        .blog-card .meta {
+            font-size: 0.85rem;
+            color: var(--secondary-text);
+        }
+        .blog-card .meta i {
+            color: var(--accent-secondary);
+            margin-right: 4px;
+        }
+
+        /* Single Post View */
+        .post-header {
+            margin-bottom: 2rem;
+        }
+        .post-header h1 {
+            font-size: clamp(1.8rem, 4vw, 2.5rem);
+            font-weight: 700;
+            color: var(--accent-primary);
+            line-height: 1.3;
+        }
+        .post-meta {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--border);
+        }
+        .post-meta span {
+            font-size: 0.9rem;
+            color: var(--secondary-text);
+        }
+        .post-meta i {
+            color: var(--accent-secondary);
+            margin-right: 6px;
+        }
+        .post-featured-img {
+            width: 100%;
+            max-height: 420px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        .post-body {
+            font-size: 1.05rem;
+            line-height: 1.8;
+            color: var(--primary-text);
+        }
+        .post-body h2, .post-body h3 {
+            color: var(--accent-primary);
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        .post-body p {
+            margin-bottom: 1.25rem;
+        }
+        .post-body ul, .post-body ol {
+            margin-bottom: 1.25rem;
+            padding-left: 1.5rem;
+        }
+        .post-body blockquote {
+            border-left: 4px solid var(--accent-secondary);
+            padding: 1rem 1.5rem;
+            background: var(--secondary-bg);
+            border-radius: 0 8px 8px 0;
+            margin: 1.5rem 0;
+            font-style: italic;
+        }
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent-primary);
+            font-weight: 500;
+            text-decoration: none;
+            margin-bottom: 2rem;
+            padding: 8px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            transition: all 0.2s ease;
+        }
+        .back-link:hover {
+            background: var(--accent-primary);
+            color: #fff;
+            border-color: var(--accent-primary);
+        }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center;
+            padding: 80px 20px;
+        }
+        .empty-state i {
+            font-size: 3rem;
+            color: var(--accent-secondary);
+            margin-bottom: 1rem;
+        }
+        .empty-state h3 {
+            color: var(--accent-primary);
+        }
+
+        /* CTA Section */
+        .blog-cta {
+            background: var(--secondary-bg);
+            border-radius: 12px;
+            padding: 3rem;
+            text-align: center;
+            margin-top: 3rem;
+        }
+        .blog-cta h3 {
+            color: var(--accent-primary);
+            margin-bottom: 1rem;
+        }
+        .blog-cta .btn-primary {
+            background: var(--accent-secondary);
+            border-color: var(--accent-secondary);
+            color: var(--accent-primary);
+            font-weight: 600;
+            padding: 12px 32px;
+            border-radius: 6px;
+        }
+        .blog-cta .btn-primary:hover {
+            background: #b8941f;
+            border-color: #b8941f;
+        }
+    </style>
 </head>
 <body>
-  <header class="site-header">
-    <div class="container">
-      <nav class="navbar navbar-expand-lg navbar-dark">
-        <a class="navbar-brand" href="index.html"><h1 class="site-title">Johnson Legal Team</h1></a>
-        <div class="navbar-nav ms-auto">
-          <a class="nav-link" href="index.html">Home</a>
-          <a class="nav-link" href="practice-areas.html">Practice Areas</a>
-          <a class="nav-link active" href="blog.html">Blog</a>
-          <a class="nav-link" href="contact.html">Contact</a>
+    <!-- Header -->
+    <header class="site-header">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-dark">
+                <a class="navbar-brand" href="index.html">
+                    <img src="images/logo-cropped.png" alt="Johnson Legal Team" style="width: 330px; height: auto;">
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                        <li class="nav-item"><a class="nav-link" href="practice-areas.html">Practice&nbsp;Areas</a></li>
+                        <li class="nav-item"><a class="nav-link active" href="blog.html">Blog</a></li>
+                        <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                    </ul>
+                    <div class="d-none d-lg-block">
+                        <div class="search-bar">
+                            <input type="search" placeholder="Search..." class="search-input">
+                            <button type="submit" class="search-btn">🔍</button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
         </div>
-      </nav>
-    </div>
-  </header>
+    </header>
 
-  <main class="container py-5">
-    <h1 class="mb-4">Legal Insights &amp; Firm News</h1>
+    <!-- Blog Hero (list view only) -->
+    <section class="blog-hero" id="blogHero">
+        <div class="container">
+            <h1>Legal Insights & Firm News</h1>
+            <p>Practical legal knowledge to help you protect your rights, your family, and your future.</p>
+        </div>
+    </section>
 
-    <!-- Single-post view (shown when ?post=slug is present) -->
-    <article id="postView" style="display:none;">
-      <a href="blog.html" class="btn btn-outline-secondary btn-sm mb-3"><i class="fas fa-arrow-left"></i> All posts</a>
-      <img id="postImage" class="img-fluid rounded mb-4 w-100" style="max-height:360px;object-fit:cover;" alt="" />
-      <span class="badge bg-primary" id="postCategory"></span>
-      <h2 id="postTitle" class="mt-2"></h2>
-      <p class="text-muted" id="postDate"></p>
-      <div id="postBody" class="mt-4"></div>
-    </article>
+    <main class="container py-5">
+        <!-- Single-post view -->
+        <article id="postView" style="display:none;">
+            <a href="blog.html" class="back-link"><i class="fas fa-arrow-left"></i> All Posts</a>
+            <img id="postImage" class="post-featured-img" alt="" />
+            <div class="post-header">
+                <h1 id="postTitle"></h1>
+                <div class="post-meta">
+                    <span><i class="fas fa-calendar-alt"></i> <span id="postDate"></span></span>
+                    <span><i class="fas fa-folder"></i> <span id="postCategory"></span></span>
+                    <span><i class="fas fa-user"></i> Johnson Legal Team</span>
+                </div>
+            </div>
+            <div id="postBody" class="post-body"></div>
 
-    <!-- List view -->
-    <div id="postList" class="row g-4"></div>
-  </main>
+            <!-- CTA after post -->
+            <div class="blog-cta">
+                <h3>Need Legal Help?</h3>
+                <p>Our team is ready to fight for your rights. Schedule a free consultation today.</p>
+                <a href="contact.html" class="btn btn-primary">Free Consultation <i class="fas fa-arrow-right ms-2"></i></a>
+            </div>
+        </article>
 
-  <footer style="background: var(--accent-primary); color: white; padding: 40px 0; margin-top: 60px;">
-    <div class="container text-center">
-      <p class="mb-0">&copy; 2026 Johnson Legal Team. All rights reserved.</p>
-    </div>
-  </footer>
+        <!-- List view -->
+        <div id="postList" class="row g-4"></div>
+    </main>
 
-  <!-- Lightweight markdown renderer (open-source, MIT) -->
-  <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
-  <script src="content.js"></script>
-  <script src="blog.js"></script>
+    <!-- Footer -->
+    <footer class="site-header text-white py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <div class="d-flex align-items-center"></div>
+                    <div class="mt-2">
+                        <p class="mb-1 small">1221 Bowers St, Birmingham, MI 48012</p>
+                        <p class="mb-1 small">T: <a href="tel:3133552216" class="text-white text-decoration-none">(313) 355-2216</a></p>
+                        <p class="mb-0"><strong><i style="color: var(--accent-secondary);">Don't wait until it's too late!</i></strong></p>
+                    </div>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <div class="mb-2">
+                        <span class="small">Your Trusted Michigan Legal Advocates!</span>
+                    </div>
+                    <div class="d-flex justify-content-md-end align-items-center flex-wrap small mb-2">
+                        <a href="index.html" class="text-white text-decoration-none me-3">Home</a>
+                        <a href="practice-areas.html" class="text-white text-decoration-none me-3">Practice Areas</a>
+                        <a href="about.html" class="text-white text-decoration-none me-3">About</a>
+                        <a href="contact.html" class="text-white text-decoration-none me-3">Contact</a>
+                    </div>
+                    <div class="d-flex justify-content-md-end align-items-center flex-wrap">
+                        <a href="https://www.linkedin.com/company/johnson-legal-team-birmingham" class="me-2" style="color: var(--accent-secondary) !important;"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="https://maps.google.com/?q=1221+Bowers+St,+Birmingham,+MI+48012" class="me-2" style="color: var(--accent-secondary) !important;"><i class="fab fa-google"></i></a>
+                        <a href="https://www.facebook.com/JohnsonLegalTeamMI" class="me-2" style="color: var(--accent-secondary) !important;"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://www.instagram.com/johnsonlegalteam" style="color: var(--accent-secondary) !important;"><i class="fab fa-instagram"></i></a>
+                    </div>
+                </div>
+            </div>
+            <hr class="my-3" style="border-color: var(--accent-secondary); opacity: 0.3;">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between small">
+                        <div class="d-flex flex-wrap">
+                            <span class="me-2">©2026 Johnson Legal Team</span>
+                            <span class="me-2">| All Rights Reserved</span>
+                            <a href="privacy-policy.html" class="text-white text-decoration-none me-2">| Privacy Policy</a>
+                            <a href="terms-of-service.html" class="text-white text-decoration-none">| Terms of Service</a>
+                        </div>
+                    </div>
+                    <p class="small text-muted mt-2 mb-0">Disclaimer: No legal advice is offered on this website. No attorney-client relationship is created until there is an engagement letter signed by the client and an authorized representative of the firm.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Lightweight markdown renderer (MIT) -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="content.js"></script>
+    <script src="blog.js"></script>
 </body>
 </html>
