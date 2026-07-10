@@ -146,12 +146,8 @@ class CognitoAuth {
                         MfaModal.openSetup(secretCode, otpauth)
                             .then(code => {
                                 cognitoUser.verifySoftwareToken(code, 'JLT Authenticator', {
-                                    onSuccess: function() {
-                                        // MFA device registered. Now set it as preferred and re-auth.
-                                        cognitoUser.setUserMfaPreference(null, { PreferredMfa: true, Enabled: true }, function(err) {
-                                            // Re-authenticate to get full session with MFA now active
-                                            cognitoUser.authenticateUser(authDetails, callbacks);
-                                        });
+                                    onSuccess: function(session) {
+                                        finish(session);
                                     },
                                     onFailure: function(err) { fail('MFA verification failed: ' + (err.message || err.code)); }
                                 });
