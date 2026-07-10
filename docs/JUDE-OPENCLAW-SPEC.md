@@ -405,14 +405,19 @@ CDK app (adapted from aws-samples/sample-host-openclaw-on-amazon-bedrock-agentco
   │        - entrypoint.sh -> contract server (port 8080, /ping health)
   │        - agentcore-contract.js -> hybrid routing: lightweight shim
   │          first, full OpenClaw gateway (port 18789) once ready
-  │        - agentcore-proxy.js -> NEEDS REWORK: the sample's version
-  │          converts to Bedrock's ConverseStream API; since Jude calls
-  │          Gemini directly, this proxy either gets simplified/removed
-  │          (let OpenClaw's native Gemini provider talk to Google
-  │          directly) or rewritten to proxy Gemini's API instead —
-  │          decide in Phase 1 based on how much of the sample's
-  │          identity/credential-scoping logic in this file is still
-  │          needed for a single-tenant setup (likely: not much).
+  │        - agentcore-proxy.js -> DROPPED (RESOLVED 2026-07-10). Verified
+  │          against Google's own docs: Gemini exposes a native OpenAI-
+  │          compatible endpoint at
+  │          https://generativelanguage.googleapis.com/v1beta/openai/
+  │          that accepts a Bearer API key and implements
+  │          POST /chat/completions in the same shape OpenClaw's
+  │          `openai-completions` provider already expects. The sample's
+  │          1,661-line proxy exists ONLY to translate that same
+  │          OpenAI-shaped request into Bedrock's Converse API — with
+  │          Gemini as the provider, that translation layer is
+  │          unnecessary. OpenClaw's `models.providers.<name>` config
+  │          points directly at Google's endpoint (see snippet below);
+  │          no local proxy process is started, port 18790 is unused.
   │        - workspace-sync.js -> restores/saves ~/.openclaw/ to/from S3
   │        - openclaw.json baked in (single agent "jude"; skills per §5)
   ├─ Router stack: Router Lambda + API Gateway HTTP API (single route:
@@ -426,6 +431,39 @@ Dropped entirely vs. the AWS sample: Guardrails stack (Bedrock Guardrails
 only applies to Bedrock model calls — irrelevant once Gemini is the
 provider; see §11.1 for the AgentCore-vs-Bedrock-models distinction).
 ```
+
+**OpenClaw config for the Gemini provider** (replaces the sample's
+`agentcore` provider block, which pointed at the local Bedrock proxy):
+
+```json5
+{
+  models: {
+    providers: {
+      gemini: {
+        baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai/",
+        apiKey: "${GEMINI_API_KEY}",
+        api: "openai-completions",
+        models: [
+          { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash-Lite" },
+        ],
+      },
+    },
+  },
+  agents: {
+    defaults: {
+      model: { primary: "gemini/gemini-2.5-flash-lite" },
+    },
+  },
+}
+```
+
+Verified directly against Google's OpenAI-compatibility docs
+(ai.google.dev/gemini-api/docs/openai, retrieved 2026-07-10): three-line
+swap (base URL, API key, model name) from a stock OpenAI client, and the
+REST shape (`POST /chat/completions`, `Authorization: Bearer <key>`)
+matches what OpenClaw's `openai-completions` provider type sends. This
+was not live-tested end-to-end yet (no `GEMINI_API_KEY` created — see
+§11.5) but the documented contract is unambiguous.
 
 IAM role for the AgentCore container — least privilege, scoped exactly to
 what Jude needs:
