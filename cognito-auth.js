@@ -142,7 +142,7 @@ class CognitoAuth {
             mfaSetup: () => {
                 cognitoUser.associateSoftwareToken(callbacks);
             },
-            associateSecret: (secretCode) => {
+            associateSecretCode: (secretCode) => {
                 const otpauth = `otpauth://totp/JohnsonLegalTeam:${encodeURIComponent(email)}?secret=${secretCode}&issuer=JohnsonLegalTeam`;
                 MfaModal.openSetup(secretCode, otpauth)
                     .then(code => cognitoUser.verifySoftwareToken(code, 'JLT Authenticator', callbacks))
