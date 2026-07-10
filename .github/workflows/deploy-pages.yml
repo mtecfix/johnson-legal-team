@@ -5,7 +5,7 @@ name: Deploy static site to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -33,11 +33,19 @@ jobs:
             --exclude '_site' \
             --exclude 'portal-api' \
             --exclude '_archive' \
+            --exclude '_secrets-local' \
             --exclude '.github' \
-            --exclude '*.md' \
+            --exclude 'jude-backend' \
+            --exclude 'lambda' \
+            --exclude 'docs' \
+            --exclude 'PICKUP-HERE.txt' \
+            --exclude 'DEPLOY.md' \
+            --exclude '*.sql' \
             --exclude 'rds-credentials.json' \
             --exclude 'client_secret_*.json' \
-            --exclude 'api'
+            --exclude '.env*' \
+            --exclude 'api' \
+            --exclude 'package.json'
           touch _site/.nojekyll
       - uses: actions/upload-pages-artifact@v3
         with:
