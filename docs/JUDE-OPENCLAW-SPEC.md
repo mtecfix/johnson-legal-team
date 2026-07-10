@@ -83,11 +83,21 @@ routing layer is simplified down to a single-tenant path (see §3).
 
 ```json5
 {
+  models: {
+    providers: {
+      gemini: {
+        baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai/",
+        apiKey: "${GEMINI_API_KEY}",
+        api: "openai-completions",
+        models: [
+          { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite" },
+        ],
+      },
+    },
+  },
   agents: {
     defaults: {
-      model: {
-        primary: "google/gemini-2.5-flash-lite",
-      },
+      model: { primary: "gemini/gemini-3.1-flash-lite" },
     },
   },
   env: {
@@ -96,30 +106,88 @@ routing layer is simplified down to a single-tenant path (see §3).
 }
 ```
 
-- **Primary: Google Gemini 2.5 Flash-Lite, paid tier.** Chosen over Bedrock
-  and over xAI Grok after real-world verification (2026-07-10):
+- **Primary: Google Gemini 3.1 Flash-Lite** (updated from the originally
+  planned `gemini-2.5-flash-lite` — see "Model name correction" below),
+  **live-tested and confirmed working** on 2026-07-10 with an
+  `AIzaSy...`-format key against both the native `generateContent`
+  endpoint and the OpenAI-compatible endpoint. Chosen over Bedrock, xAI
+  Grok, and DeepSeek after real-world verification:
   - **Bedrock was blocked**: model-access approval for Nova Lite is not
     yet granted in this AWS account (`InvokeModel` returned
     `ValidationException: Operation not allowed`), and approval requires
     manual console action per model/provider.
   - **Grok's free tier ended** (May 2025) — new accounts pay from day one,
     and current published pricing for grok-4.3 ($1.25/$2.50 per 1M) is
-    higher than the "Grok 4.1 Fast" figures originally cited, which may
-    reflect a superseded tier. Not worth the uncertainty.
-  - **Gemini has a real, permanent free tier** (confirmed directly from
-    ai.google.dev/gemini-api/docs/pricing, retrieved 2026-07-10): Flash,
-    Flash-Lite, and Pro are all "Free of charge" on standard tier, subject
-    to per-minute/per-day rate limits (roughly 15 RPM / 1,000 RPD for
-    Flash-Lite per third-party trackers). At Jude's expected volume (a
-    handful of triage calls/day), this free tier alone would likely never
-    be exceeded.
-  - **Chose paid tier anyway, deliberately**, because Google's own pricing
-    page states free-tier prompts are `"Used to improve our products: Yes"`
-    while paid-tier prompts are `"Used to improve our products: No"`. Lead
-    and case-adjacent text is client-sensitive; the cost of the paid tier
-    is trivial ($0.10 input / $0.40 output per 1M tokens for Flash-Lite —
-    pennies per month at this volume) and buys a real confidentiality
-    guarantee that the free tier does not.
+    higher than the "Grok 4.1 Fast" figures originally cited. Not tested
+    live; deprioritized on cost/uncertainty grounds.
+  - **DeepSeek V3 was tested live** and authenticated successfully
+    (`sk-...` key format) but returned `Insufficient Balance` — the
+    account has no prepaid credit. Left as a documented, ready-to-use
+    fallback (see below) if Gemini has problems later; not pursued
+    further since Gemini started working.
+  - **Gemini's `AQ.`-format key was tested extensively and confirmed
+    broken** (see "AQ. key saga" below) — a genuine, currently-open Google
+    bug, not a client-side issue. Getting a legacy `AIzaSy...`-format key
+    resolved it immediately.
+  - **Gemini has a real, permanent free tier** for Flash-Lite (per
+    ai.google.dev/gemini-api/docs/pricing), but **paid tier was chosen
+    deliberately**: Google's own pricing page states free-tier prompts
+    are `"Used to improve our products: Yes"` while paid-tier prompts are
+    `"Used to improve our products: No"`. Lead/case-adjacent text is
+    client-sensitive; paid tier costs pennies/month at this volume and
+    buys a real confidentiality guarantee the free tier does not.
+
+### Model name correction (2026-07-10)
+
+The original plan (`gemini-2.5-flash-lite`) returned `404 ... no longer
+available to new users` when live-tested — Google appears to have retired
+that specific model ID for accounts/keys created recently, even though it
+still appeared as "Free of charge" and "Standard" on the public pricing
+page at time of writing. Live-tested working alternatives, cheapest-first:
+- `gemini-3.1-flash-lite` ✅ — **chosen**, matches the original cost/tier
+  intent (successor to 2.5 Flash-Lite in Google's naming).
+- `gemini-3-flash-preview` ✅ — also confirmed working, one tier up in
+  cost/capability; kept as a documented option if 3.1 Flash-Lite proves
+  insufficient for triage quality in practice.
+- `gemini-2.0-flash` — hit a `429 RESOURCE_EXHAUSTED` (free-tier quota
+  exhausted, limit 0) on this key/project; not pursued since the two
+  options above already work.
+
+### AQ. key saga (for anyone hitting this later)
+
+Google is mid-migration from legacy `AIzaSy...` "Traffic Keys" (39 chars)
+to new `AQ....` "Authorization Keys" (53 chars) as of mid-2026. The new
+key type is supposed to be more secure (bound to a service account,
+faster leak-response). **In practice, as of 2026-07-10, AQ.-format keys
+were completely non-functional for direct API/SDK access** — confirmed by:
+- Testing every combination of native `generateContent` endpoint vs.
+  OpenAI-compat endpoint, REST vs. official `google-genai`/`openai` SDKs
+  (latest versions), query-param key vs. `Authorization: Bearer` vs.
+  `x-goog-api-key` header — **all failed identically** with
+  `401 UNAUTHENTICATED / ACCESS_TOKEN_TYPE_UNSUPPORTED`.
+- Cross-referencing Google's own AI developer forum
+  (discuss.ai.google.dev): multiple independent reports of the exact same
+  error, spanning April–June 2026, including one thread where a Google
+  engineer acknowledged it ("We are working on address the issue with
+  AQ.prefix keys. To unblock your workflow, create a new key via AI
+  Studio — this will create a non-AQ-prefix key.") — but a later reply in
+  the same thread (June 25) said the issue was still unresolved.
+
+**Resolution**: simply requesting another key from Google AI Studio
+eventually produced a legacy `AIzaSy...`-format key, which worked
+immediately with zero code changes. If this recurs (e.g., after a key
+rotation), the fix is the same: keep requesting new keys until one comes
+back in the old format, or watch for Google's fix to the AQ. key rollout.
+
+### DeepSeek V3 — documented fallback (not deployed)
+
+If Gemini access breaks again, DeepSeek V3 is a tested, ready fallback:
+`api.deepseek.com/chat/completions`, `model: "deepseek-chat"`, standard
+`Authorization: Bearer sk-...` auth — confirmed the key authenticates
+correctly (got `Insufficient Balance`, not an auth error). Would need
+prepaid credit added to the DeepSeek account before use. Cheapest tested
+option at $0.14/$0.28 per 1M tokens.
+
 - **No Bedrock dependency, no App Runner/AgentCore compute-hosting
   requirement to run OpenClaw's model calls specifically.** This does
   **not** change the hosting decision in §3 (AgentCore is still how
@@ -127,10 +195,11 @@ routing layer is simplified down to a single-tenant path (see §3).
   calls out to. AgentCore's IAM role no longer needs `bedrock:InvokeModel`
   permissions; it needs outbound HTTPS to `generativelanguage.googleapis.com`
   and the `GEMINI_API_KEY` secret instead.
-- **No fallback model configured.** For a law firm's triage workload,
-  failing closed (no reasoning) if Gemini has an outage is safer than
-  silently routing lead/case text to a second, unvetted provider. Revisit
-  if uptime becomes an issue in practice.
+- **No fallback model configured in OpenClaw itself.** For a law firm's
+  triage workload, failing closed (no reasoning) if Gemini has an outage
+  is safer than silently routing lead/case text to a second, unvetted
+  provider through an automatic failover. DeepSeek is documented above as
+  a manual fallback to switch to if needed, not an automatic one.
 
 ---
 
@@ -433,7 +502,9 @@ provider; see §11.1 for the AgentCore-vs-Bedrock-models distinction).
 ```
 
 **OpenClaw config for the Gemini provider** (replaces the sample's
-`agentcore` provider block, which pointed at the local Bedrock proxy):
+`agentcore` provider block, which pointed at the local Bedrock proxy —
+duplicated from §2 for reference; §2 is the source of truth for the model
+config):
 
 ```json5
 {
@@ -444,26 +515,26 @@ provider; see §11.1 for the AgentCore-vs-Bedrock-models distinction).
         apiKey: "${GEMINI_API_KEY}",
         api: "openai-completions",
         models: [
-          { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash-Lite" },
+          { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite" },
         ],
       },
     },
   },
   agents: {
     defaults: {
-      model: { primary: "gemini/gemini-2.5-flash-lite" },
+      model: { primary: "gemini/gemini-3.1-flash-lite" },
     },
   },
 }
 ```
 
-Verified directly against Google's OpenAI-compatibility docs
-(ai.google.dev/gemini-api/docs/openai, retrieved 2026-07-10): three-line
-swap (base URL, API key, model name) from a stock OpenAI client, and the
-REST shape (`POST /chat/completions`, `Authorization: Bearer <key>`)
-matches what OpenClaw's `openai-completions` provider type sends. This
-was not live-tested end-to-end yet (no `GEMINI_API_KEY` created — see
-§11.5) but the documented contract is unambiguous.
+**Live-tested and confirmed working** on 2026-07-10 (see §2 for the full
+verification detail and the model-name correction from the originally
+planned `gemini-2.5-flash-lite`). Three-line swap (base URL, API key,
+model name) from a stock OpenAI client; the REST shape
+(`POST /chat/completions`, `Authorization: Bearer <key>`) matches what
+OpenClaw's `openai-completions` provider type sends, confirmed via direct
+curl and both the `openai` and `google-genai` Python SDKs.
 
 IAM role for the AgentCore container — least privilege, scoped exactly to
 what Jude needs:
@@ -543,9 +614,13 @@ design that needs testing.
    Since Jude now calls the external Gemini API, the AgentCore container's
    subnet needs outbound internet access (NAT Gateway or equivalent) added
    to the VPC stack. Not yet built.
-5. **`GEMINI_API_KEY`** — needs to be generated (Google AI Studio →
-   Get API key) and stored in Secrets Manager, referenced by the
-   container's `openclaw.json` via `${GEMINI_API_KEY}`. Not yet created.
+5. ~~`GEMINI_API_KEY`~~ — **Resolved.** Generated via Google AI Studio and
+   stored in Secrets Manager as `jude/gemini-api-key`. Live-verified
+   working against both the native and OpenAI-compatible endpoints (see
+   §2). Note for future rotation: if a newly-generated key comes back in
+   the `AQ.` format, it will currently be broken (see §2's "AQ. key saga")
+   — keep requesting new keys until one comes back in the legacy
+   `AIzaSy...` format, or check Google's status on the AQ. key bug fix.
 6. **Experimental-status risk** — the upstream AgentCore sample is
    explicitly not production-hardened. Plan to pin the exact commit we
    fork from, run our own `cdk-nag`/security checks before go-live, and
