@@ -23,9 +23,9 @@ const ROLE_LABELS = {
 
 // What each role's dashboard home shows
 const ROLE_DASHBOARD = {
-  super_admin: { stats: ['clients','leads','cases','registrations'], showJudeStatus: true, showRecentLeads: true, showSystemHealth: true },
-  admin:       { stats: ['clients','leads','cases','registrations'], showJudeStatus: true, showRecentLeads: true, showSystemHealth: false },
-  staff:       { stats: ['cases'], showJudeStatus: false, showRecentLeads: false, showSystemHealth: false },
+  super_admin: { stats: ['clients','cases','deadlines','registrations'], showJudeStatus: true },
+  admin:       { stats: ['clients','cases','deadlines','registrations'], showJudeStatus: true },
+  staff:       { stats: ['cases','deadlines'], showJudeStatus: false },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Auth gate — must be at least staff
   if (!ROLE_HIERARCHY.includes(currentRole)) {
     document.getElementById('accessDenied').style.display = 'block';
-    document.getElementById('accessDenied').innerHTML = `<i class="fas fa-lock"></i><p>Access denied. Role "${currentRole}" not authorized.<br>Token present: ${!!localStorage.getItem('cognito_id_token')}<br><a href="admin/index.html">Go to admin login</a></p>`;
+    document.getElementById('accessDenied').innerHTML = `<i class="fas fa-lock"></i><p>Access denied. Admin privileges required.<br><a href="admin/index.html">Go to admin login</a></p>`;
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     return;
   }
@@ -70,9 +70,11 @@ document.addEventListener('DOMContentLoaded', () => {
     window.location.href = 'admin/index.html';
   });
 
-  // Lead filters
-  document.getElementById('leadFilterStage').addEventListener('change', renderLeadsTable);
-  document.getElementById('leadFilterUrgency').addEventListener('change', renderLeadsTable);
+  // Lead filters (reserved section — guard against missing elements)
+  const lfStage = document.getElementById('leadFilterStage');
+  const lfUrg = document.getElementById('leadFilterUrgency');
+  if (lfStage) lfStage.addEventListener('change', renderLeadsTable);
+  if (lfUrg) lfUrg.addEventListener('change', renderLeadsTable);
 
   // Contact search
   document.getElementById('contactSearch').addEventListener('input', renderContactsTable);
@@ -108,7 +110,7 @@ function applyDashboardRole(role) {
   const config = ROLE_DASHBOARD[role] || ROLE_DASHBOARD.staff;
 
   // Hide stat cards not in role config
-  const statMap = { clients: 0, leads: 1, cases: 2, registrations: 3 };
+  const statMap = { clients: 0, cases: 1, deadlines: 2, registrations: 3 };
   const statCards = document.querySelectorAll('#panelDashboard .stat-card');
   Object.entries(statMap).forEach(([key, idx]) => {
     if (statCards[idx]) {
@@ -119,13 +121,6 @@ function applyDashboardRole(role) {
   // Jude status panel
   const judeCol = document.querySelector('#panelDashboard .col-lg-4');
   if (judeCol && !config.showJudeStatus) judeCol.style.display = 'none';
-
-  // Recent leads
-  const recentLeadsCard = document.querySelector('#panelDashboard .col-lg-8');
-  if (recentLeadsCard && !config.showRecentLeads) {
-    recentLeadsCard.classList.replace('col-lg-8', 'col-lg-12');
-    recentLeadsCard.innerHTML = `<div class="panel-card"><div class="panel-card-header"><h2>My Assigned Cases</h2></div><div class="panel-card-body padded"><div class="empty-state"><i class="fas fa-briefcase"></i><p>Your assigned cases will appear here.</p></div></div></div>`;
-  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -171,7 +166,6 @@ function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 async function loadAll() {
   await Promise.allSettled([
-    loadLeads(),
     loadClients(),
     loadCases(),
     loadRegistrations(),
@@ -180,21 +174,8 @@ async function loadAll() {
   updateStats();
 }
 
-async function loadLeads() {
-  try {
-    const token = localStorage.getItem('cognito_id_token');
-    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
-    const res = await fetch(`${JUDE_API}/leads`, { headers });
-    if (!res.ok) throw new Error(`${res.status}`);
-    const data = await res.json();
-    leadsData = (data.leads || []).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
-    document.getElementById('leadsCount').textContent = leadsData.filter(l => l.stage === 'new').length || '';
-    renderLeadsTable();
-    renderRecentLeads();
-  } catch (e) {
-    document.getElementById('leadsTable').innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load leads.');
-  }
-}
+// Leads reserved for now — no auto-load. New-business-only definition.
+// When the inbox-monitor pipeline is deployed, re-enable loadLeads() here.
 
 async function loadClients() {
   try {
@@ -224,6 +205,8 @@ async function loadCases() {
 function renderCasesTable() {
   if (!casesData.length) {
     document.getElementById('casesContent').innerHTML = emptyState('fas fa-briefcase', 'No cases yet.');
+    const rc = document.getElementById('recentCases');
+    if (rc) rc.innerHTML = emptyState('fas fa-briefcase', 'No cases yet.');
     return;
   }
 
@@ -233,20 +216,31 @@ function renderCasesTable() {
     'juvenile': 'Juvenile', 'real-estate': 'Real Estate', 'traffic': 'Traffic', 'general': 'General'
   };
 
-  let html = `<table class="data-table"><thead><tr><th>Client</th><th>Case Type</th><th>Status</th><th>Opened</th></tr></thead><tbody>`;
-  casesData.forEach(c => {
+  const rowHtml = (c) => {
     const statusClass = c.status === 'active' ? 'qualified' : c.status === 'closed' ? 'lost' : 'new';
     const typeLabel = caseTypeLabels[c.case_type] || c.case_type || 'General';
     const date = c.opened_at ? new Date(c.opened_at).toLocaleDateString() : '';
-    html += `<tr>
+    return `<tr>
       <td><strong>${esc(c.client_name || '—')}</strong><br><span style="color:var(--muted);font-size:11px;">${esc(c.client_email || '')}</span></td>
       <td style="font-size:12px;">${esc(typeLabel)}</td>
       <td><span class="badge-stage ${statusClass}">${esc(c.status || 'active')}</span></td>
       <td style="font-size:12px;color:var(--muted);">${date}</td>
     </tr>`;
-  });
-  html += '</tbody></table>';
-  document.getElementById('casesContent').innerHTML = html;
+  };
+
+  const header = `<table class="data-table"><thead><tr><th>Client</th><th>Case Type</th><th>Status</th><th>Opened</th></tr></thead><tbody>`;
+
+  // Full cases table
+  document.getElementById('casesContent').innerHTML = header + casesData.map(rowHtml).join('') + '</tbody></table>';
+  const cc = document.getElementById('casesCount');
+  if (cc) cc.textContent = `${casesData.length} total`;
+
+  // Recent cases (dashboard home) — last 6
+  const rc = document.getElementById('recentCases');
+  if (rc) {
+    const recent = casesData.slice().sort((a,b) => (b.opened_at||'').localeCompare(a.opened_at||'')).slice(0, 6);
+    rc.innerHTML = header + recent.map(rowHtml).join('') + '</tbody></table>';
+  }
 }
 
 async function loadRegistrations() {
@@ -271,14 +265,15 @@ async function loadInvoices() {
 
 function updateStats() {
   document.getElementById('statClients').textContent = clientsData.length;
-  document.getElementById('statLeads').textContent = leadsData.filter(l => l.stage === 'new' || l.stage === 'contacted').length;
-  document.getElementById('statCases').textContent = casesData.filter(c => c.status === 'active').length || '—';
+  document.getElementById('statCases').textContent = casesData.filter(c => c.status === 'active').length || '0';
+  const dl = document.getElementById('statDeadlines');
+  if (dl) dl.textContent = '0';
   const pendingRegs = document.querySelectorAll('#registrationsContent .btn-success').length;
   document.getElementById('statRegistrations').textContent = pendingRegs || '0';
 
   // System panel counts (super_admin)
   const sysLeads = document.getElementById('sysLeadsCount');
-  if (sysLeads) sysLeads.textContent = leadsData.length;
+  if (sysLeads) sysLeads.textContent = '0 (reserved)';
   const sysPortal = document.getElementById('sysPortalCount');
   if (sysPortal) sysPortal.textContent = clientsData.length;
 }
@@ -288,8 +283,12 @@ function updateStats() {
 // ═══════════════════════════════════════════════════════════════
 
 function renderLeadsTable() {
-  const stageFilter = document.getElementById('leadFilterStage').value;
-  const urgencyFilter = document.getElementById('leadFilterUrgency').value;
+  const table = document.getElementById('leadsTable');
+  if (!table || table.style.display === 'none') return; // Leads reserved — no render
+  const stageEl = document.getElementById('leadFilterStage');
+  const urgEl = document.getElementById('leadFilterUrgency');
+  const stageFilter = stageEl ? stageEl.value : '';
+  const urgencyFilter = urgEl ? urgEl.value : '';
 
   let filtered = leadsData;
   if (stageFilter) filtered = filtered.filter(l => l.stage === stageFilter);
@@ -347,27 +346,7 @@ function renderLeadsTable() {
   document.getElementById('leadsTable').innerHTML = html;
 }
 
-function renderRecentLeads() {
-  const recent = leadsData.slice(0, 5);
-  if (!recent.length) {
-    document.getElementById('recentLeads').innerHTML = emptyState('fas fa-bolt', 'No leads yet.');
-    return;
-  }
-  let html = '<table class="data-table"><thead><tr><th>Score</th><th>Lead</th><th>Type</th><th>Urgency</th><th>Date</th></tr></thead><tbody>';
-  recent.forEach(lead => {
-    const scoreClass = lead.score >= 70 ? 'high' : lead.score >= 40 ? 'medium' : 'low';
-    const date = lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : '';
-    html += `<tr>
-      <td><span class="badge-score ${scoreClass}">${lead.score || 0}</span></td>
-      <td><strong>${esc(lead.name || lead.email || '?')}</strong></td>
-      <td style="text-transform:capitalize;font-size:12px;">${(lead.caseType || '').replace(/-/g, ' ')}</td>
-      <td><span class="badge-score ${lead.urgency || 'low'}">${(lead.urgency || 'low').toUpperCase()}</span></td>
-      <td style="font-size:11px;color:var(--muted);">${date}</td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  document.getElementById('recentLeads').innerHTML = html;
-}
+function renderRecentLeads() { /* reserved — leads disabled */ }
 
 function toggleLeadDetail(leadId) {
   const row = document.getElementById(`lead-detail-${leadId}`);

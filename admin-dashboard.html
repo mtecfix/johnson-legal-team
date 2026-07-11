@@ -92,7 +92,7 @@
   </div>
   <nav class="sidebar-nav">
     <a href="#" data-section="dashboard" data-roles="super_admin,admin,staff" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
-    <a href="#" data-section="leads" data-roles="super_admin,admin"><i class="fas fa-bolt"></i> Leads <span class="badge bg-danger ms-auto" id="leadsCount" style="font-size:10px;"></span></a>
+    <a href="#" data-section="leads" data-roles="super_admin,admin"><i class="fas fa-bolt"></i> Leads <span class="badge bg-secondary ms-auto" style="font-size:9px;">soon</span></a>
     <a href="#" data-section="cases" data-roles="super_admin,admin,staff"><i class="fas fa-briefcase"></i> Cases</a>
     <a href="#" data-section="contacts" data-roles="super_admin,admin,staff"><i class="fas fa-users"></i> Contacts</a>
     <div class="nav-divider"></div>
@@ -137,15 +137,15 @@
     <div class="panel active" id="panelDashboard">
       <div class="row g-3 mb-4">
         <div class="col-md-3"><div class="stat-card"><div class="stat-icon navy"><i class="fas fa-users"></i></div><div class="stat-info"><h3 id="statClients">-</h3><p>Clients</p></div></div></div>
-        <div class="col-md-3"><div class="stat-card"><div class="stat-icon gold"><i class="fas fa-bolt"></i></div><div class="stat-info"><h3 id="statLeads">-</h3><p>Active Leads</p></div></div></div>
         <div class="col-md-3"><div class="stat-card"><div class="stat-icon green"><i class="fas fa-briefcase"></i></div><div class="stat-info"><h3 id="statCases">-</h3><p>Open Cases</p></div></div></div>
+        <div class="col-md-3"><div class="stat-card"><div class="stat-icon gold"><i class="fas fa-calendar-day"></i></div><div class="stat-info"><h3 id="statDeadlines">-</h3><p>Upcoming Deadlines</p></div></div></div>
         <div class="col-md-3"><div class="stat-card"><div class="stat-icon red"><i class="fas fa-user-plus"></i></div><div class="stat-info"><h3 id="statRegistrations">-</h3><p>Pending Registrations</p></div></div></div>
       </div>
       <div class="row g-3">
         <div class="col-lg-8">
           <div class="panel-card">
-            <div class="panel-card-header"><h2>Recent Leads</h2><a href="#" data-section="leads" style="font-size:12px;color:var(--gold);">View All →</a></div>
-            <div class="panel-card-body" id="recentLeads"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+            <div class="panel-card-header"><h2>Recent Cases</h2><a href="#" data-section="cases" style="font-size:12px;color:var(--gold);">View All →</a></div>
+            <div class="panel-card-body" id="recentCases"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
           </div>
         </div>
         <div class="col-lg-4">
@@ -165,18 +165,39 @@
       </div>
     </div>
 
-    <!-- LEADS -->
+    <!-- LEADS (RESERVED — new business inquiries from email only) -->
     <div class="panel" id="panelLeads">
       <div class="panel-card">
         <div class="panel-card-header">
-          <h2>Lead Pipeline</h2>
-          <div class="d-flex gap-2">
-            <select class="form-select form-select-sm" id="leadFilterStage" style="width:auto;font-size:12px;"><option value="">All Stages</option><option value="new">New</option><option value="contacted">Contacted</option><option value="qualified">Qualified</option><option value="converted">Converted</option><option value="lost">Lost</option></select>
-            <select class="form-select form-select-sm" id="leadFilterUrgency" style="width:auto;font-size:12px;"><option value="">All Urgency</option><option value="high">High</option><option value="medium">Medium</option><option value="low">Low</option></select>
+          <h2>Leads <span class="badge bg-secondary" style="font-size:10px;">Reserved</span></h2>
+        </div>
+        <div class="panel-card-body padded">
+          <div class="empty-state">
+            <i class="fas fa-bolt"></i>
+            <p><strong>Leads = NEW business inquiries from email.</strong></p>
+            <div style="margin-top:16px;font-size:12px;color:var(--muted);text-align:left;max-width:460px;margin-left:auto;margin-right:auto;line-height:1.7;">
+              This section is reserved for prospective clients who reach out for the
+              first time — potential new business, not existing clients or active matters.
+              <br><br>
+              <strong>A lead qualifies when:</strong>
+              <ul style="margin-top:8px;padding-left:20px;">
+                <li>The sender is not already a client or contact</li>
+                <li>The message is a first-time inquiry about legal representation</li>
+                <li>It arrives via email (inbox), contact form, or referral</li>
+              </ul>
+              <strong>Not leads:</strong> existing clients, court notices, vendors,
+              newsletters, or internal correspondence.
+              <br><br>
+              Jude will monitor the inbox and surface qualifying new-business emails here
+              once the inbox-monitor pipeline is deployed.
+            </div>
           </div>
         </div>
-        <div class="panel-card-body" id="leadsTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading leads...</p></div></div>
       </div>
+      <!-- Hidden filters kept for future wiring -->
+      <select id="leadFilterStage" style="display:none;"><option value=""></option></select>
+      <select id="leadFilterUrgency" style="display:none;"><option value=""></option></select>
+      <div id="leadsTable" style="display:none;"></div>
     </div>
 
     <!-- CASES -->
