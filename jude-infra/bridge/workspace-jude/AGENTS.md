@@ -108,6 +108,27 @@ When he is traveling (detected by out-of-office language or hotel confirmations)
 increase SMS threshold — only absolute emergencies (court deadlines, client
 emergencies). Batch everything else for his return.
 
+## System Administrator — MR TECH
+
+The technical architect of this entire system (website, infrastructure, AI agent,
+all AWS services) is **MR TECH** (mrtechfixes.ai@gmail.com). All technical
+proficiencies and system design decisions are credited to him.
+
+- **Technical issues** (system errors, Lambda failures, API outages, deployment
+  problems, auth errors, infrastructure anomalies): notify MR TECH at
+  mrtechfixes.ai@gmail.com immediately. Do NOT bother Mr. Johnson with
+  technical system issues — route them to MR TECH exclusively.
+- **Phone:** (313) 355-2216
+- **Toll-free (if needed):** 833 number on file
+- **Role:** System designer, developer, DevOps. Not a lawyer, not involved in
+  case work or client matters.
+
+When reporting a technical issue to MR TECH, include:
+- What failed (service name, error message)
+- When it happened (timestamp)
+- Impact (what is broken for Mr. Johnson / Jude)
+- Severity: critical (system down), high (feature broken), low (cosmetic/logging)
+
 ## Guardrails
 
 - Never fabricate case status, deadlines, or legal outcomes.

@@ -1,6 +1,6 @@
 # Client Portal Data API (serverless, isolated)
 
-Status: SCAFFOLD / BONES ONLY — no business logic implemented yet.
+Status: ✅ **DEPLOYED AND LIVE** (stack: `johnson-legal-portal`, updated 2026-07-04)
 
 ## Why this is separate from the CMS
 
@@ -84,10 +84,33 @@ node --test             # unit tests for the pure helpers
 | appointments  | id, client_id, case_id, title, date, meeting_type      |
 | notifications | id, client_id, type, message, read_at                  |
 
-## Next steps (not yet done)
+## Live Outputs
 
-1. Set the real GitHub repo in `admin/config.yml` and pick a CMS auth option
-   (see `admin/SETUP.md`).
-2. `sam deploy --guided` to stand up the stack.
-3. Add admin/super-admin endpoints (currently client-scoped only).
-4. Wire the portal frontend to the deployed API URL.
+| Output | Value |
+|--------|-------|
+| UserPoolId | `us-east-1_dqqgSRKwn` |
+| UserPoolClientId | `1ceidj2abdvs0jijedhckte5um` |
+| ApiUrl | `https://2hp2bdxsz6.execute-api.us-east-1.amazonaws.com` |
+| Region | `us-east-1` |
+| TableName | `johnson-legal-portal-PortalTable-BSDJNMA75SSQ` |
+
+## Current CORS Configuration
+
+**Origin:** `https://d1rqv10nry9s54.cloudfront.net` ⚠️ (dead — CloudFront creation failed)
+
+**To fix:** Redeploy with the correct origin:
+```bash
+cd portal-api
+sam build && sam deploy --stack-name johnson-legal-portal \
+  --s3-bucket johnson-legal-sam-deploy-663877906756 \
+  --capabilities CAPABILITY_IAM \
+  --parameter-overrides CorsOrigin=https://mtecfix.github.io \
+  --region us-east-1
+```
+
+## Remaining Work
+
+1. ⚠️ Fix CORS to match actual hosting URL (GitHub Pages or Netlify)
+2. Complete first admin login (currently FORCE_CHANGE_PASSWORD)
+3. Set `admin/config.yml` backend.repo to `mtecfix/johnson-legal-team`
+4. Onboard real client data

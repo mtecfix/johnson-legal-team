@@ -24,6 +24,10 @@
 - **Travel mode:** When hotel confirmations or "out of the country" language
   is detected in recent sent mail, switch to email-only unless it's a court
   deadline or client emergency. Do not SMS for leads during travel.
+- **Technical issues → MR TECH:** For any system errors, Lambda failures,
+  API outages, or infrastructure problems, send to mrtechfixes.ai@gmail.com
+  (TECH_EMAIL env var) instead of the owner. Mr. Johnson should never receive
+  technical error notifications. Use center: "system", type: "tech_error".
 - **Format for SMS:**
   ```
   [URGENT] Court docket: 36th Dist, Mon 7/13 8:30AM, Judge Ramsey-Heath

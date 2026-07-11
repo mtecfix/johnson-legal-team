@@ -10,15 +10,23 @@
 # ============================================================
 # Stage 1: Builder
 # ============================================================
-FROM --platform=linux/arm64 public.ecr.aws/docker/library/node:22-slim AS builder
+FROM public.ecr.aws/docker/library/node:22-slim AS builder
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl jq git openssh-client && \
     rm -rf /var/lib/apt/lists/*
 
+# Force git to use HTTPS instead of SSH (openclaw has transitive git+ssh deps)
+RUN git config --global url."https://github.com/".insteadOf "ssh://git@github.com/" && \
+    git config --global url."https://github.com/".insteadOf "git@github.com:" && \
+    git config --global url."https://github.com/".insteadOf "git://github.com/"
+
 # Pinned OpenClaw version — bump intentionally after testing.
 # Release notes: https://github.com/openclaw/openclaw/releases
-RUN npm install -g openclaw@2026.3.8
+# NOTE: bumped from 2026.3.8 to 2026.6.11 because 2026.3.8 had a
+# transitive git+ssh dep (@whiskeysockets/baileys -> libsignal-node)
+# that broke Docker builds without SSH keys. 2026.6.11 dropped it.
+RUN npm install -g openclaw@2026.6.11
 
 RUN mkdir -p /app
 WORKDIR /app
@@ -31,7 +39,7 @@ RUN npm init -y > /dev/null 2>&1 && \
 # ============================================================
 # Stage 2: Runtime
 # ============================================================
-FROM --platform=linux/arm64 public.ecr.aws/docker/library/node:22-slim
+FROM public.ecr.aws/docker/library/node:22-slim
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl && \

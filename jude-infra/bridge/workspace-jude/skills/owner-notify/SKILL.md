@@ -92,5 +92,48 @@ the country" language in recent sent mail, flight confirmations):
 ## Do NOT
 - Include full client case details in SMS (too exposed)
 - Send SMS for Lawyer.com referrals regardless of score
-- CC anyone other than Mr. Johnson
+- CC anyone other than Mr. Johnson on case/client notifications
 - Include privileged case information in email subject lines
+- Send technical/system error notifications to Mr. Johnson (route to MR TECH)
+
+## Technical Issue Notifications (→ MR TECH)
+
+For system errors, infrastructure issues, or Jude self-diagnostics, send to
+TECH_EMAIL (mrtechfixes.ai@gmail.com) instead of the owner.
+
+**Payload format:**
+```json
+{
+  "center": "system",
+  "type": "tech_error",
+  "message": "[ERROR] Lambda jude-leads returned 500 — DynamoDB write failed",
+  "importance": "high",
+  "meta": {
+    "service": "jude-leads",
+    "error": "ConditionalCheckFailedException",
+    "timestamp": "2026-07-10T20:00:00Z",
+    "impact": "New leads not being stored",
+    "severity": "critical"
+  }
+}
+```
+
+**Route to MR TECH when:**
+- Any Lambda returns a 5xx error
+- API Gateway is unreachable
+- Gmail API token refresh fails
+- SES send fails
+- DynamoDB read/write errors
+- AgentCore container health check fails
+- Any unhandled exception in Jude's processing
+
+**Subject line format for tech emails:**
+```
+[JUDE-{SEVERITY}] {service}: {one-line error description}
+```
+Examples:
+```
+[JUDE-CRITICAL] jude-leads: DynamoDB write failed — leads not storing
+[JUDE-HIGH] gmail-inbox: OAuth token refresh failed — inbox monitoring paused
+[JUDE-LOW] owner-notify: SMS delivery delayed — SNS throttle
+```

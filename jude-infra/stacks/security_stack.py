@@ -57,34 +57,20 @@ class SecurityStack(Stack):
         )
 
         # --- Gemini API key (model provider) ------------------------------
-        # NOTE: the real value is set out-of-band via `aws secretsmanager
-        # put-secret-value` after this stack deploys — CDK only creates the
-        # secret container here with a throwaway placeholder so the ARN is
-        # stable for downstream IAM policies. See docs/JUDE-OPENCLAW-SPEC.md
-        # §2 for the AQ.-key-format gotcha if this is ever rotated.
-        self.gemini_api_key_secret = secretsmanager.Secret(
+        # These secrets were already created out-of-band (manually via CLI)
+        # before this stack existed. Import them by ARN/name so downstream
+        # stacks can reference them without CDK trying to re-create them.
+        self.gemini_api_key_secret = secretsmanager.Secret.from_secret_name_v2(
             self,
             "GeminiApiKeySecret",
             secret_name="jude/gemini-api-key",
-            description="Gemini API key — Jude's LLM provider (see spec §2)",
-            encryption_key=self.cmk,
-            generate_secret_string=secretsmanager.SecretStringGenerator(
-                password_length=32,
-                exclude_punctuation=True,
-            ),  # placeholder — replace via console/CLI with the real key
         )
 
         # --- Hooks token (Router Lambda <-> AgentCore hook auth) ----------
-        self.hooks_token_secret = secretsmanager.Secret(
+        self.hooks_token_secret = secretsmanager.Secret.from_secret_name_v2(
             self,
             "HooksTokenSecret",
             secret_name="jude/hooks-token",
-            description="Bearer token validating Router Lambda -> AgentCore hook calls",
-            encryption_key=self.cmk,
-            generate_secret_string=secretsmanager.SecretStringGenerator(
-                password_length=64,
-                exclude_punctuation=True,
-            ),
         )
 
         # --- CloudTrail (optional, off by default) -------------------------
@@ -126,18 +112,7 @@ class SecurityStack(Stack):
             )
 
         # --- cdk-nag suppressions ---
-        cdk_nag.NagSuppressions.add_resource_suppressions(
-            [self.gemini_api_key_secret, self.hooks_token_secret],
-            [
-                cdk_nag.NagPackSuppression(
-                    id="AwsSolutions-SMG4",
-                    reason="Gemini API key is a third-party credential rotated manually via "
-                    "Google AI Studio + `aws secretsmanager put-secret-value`. The hooks token "
-                    "is an internal shared secret between our own Lambdas and AgentCore; "
-                    "automatic rotation would require coordinated redeployment of both sides.",
-                ),
-            ],
-        )
+        # (Secrets are imported, not owned by this stack — no SMG4 suppression needed)
         if trail_bucket:
             cdk_nag.NagSuppressions.add_resource_suppressions(
                 trail_bucket,
