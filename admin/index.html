@@ -1,17 +1,322 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="robots" content="noindex" />
-    <title>Content Manager | Johnson Legal Team</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Admin | Johnson Legal Team</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--navy:#1B365D;--navy-dark:#0F1F38;--gold:#D4AF37;--gold-light:#E8CD6F;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--navy-dark);position:relative;overflow:hidden;}
+    
+    /* Background pattern */
+    body::before{content:'';position:absolute;inset:0;background:
+      radial-gradient(ellipse at 20% 50%, rgba(212,175,55,.06) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 20%, rgba(27,54,93,.4) 0%, transparent 50%),
+      radial-gradient(ellipse at 50% 100%, rgba(212,175,55,.03) 0%, transparent 40%);
+    pointer-events:none;}
+    body::after{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 30h60M30 0v60' stroke='%23ffffff' stroke-width='.3' opacity='.03'/%3E%3C/svg%3E");pointer-events:none;}
+
+    .login-container{position:relative;z-index:1;width:100%;max-width:420px;padding:20px;}
+
+    /* Logo/Brand area */
+    .brand{text-align:center;margin-bottom:32px;}
+    .brand-icon{width:72px;height:72px;border-radius:16px;background:linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 100%);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;box-shadow:0 8px 32px rgba(212,175,55,.3);}
+    .brand-icon i{font-size:32px;color:var(--navy-dark);}
+    .brand h1{font-size:20px;font-weight:700;color:#fff;letter-spacing:.5px;margin-bottom:4px;}
+    .brand p{font-size:13px;color:rgba(255,255,255,.5);font-weight:400;}
+
+    /* Card */
+    .login-card{background:#fff;border-radius:12px;padding:36px 32px;box-shadow:0 20px 60px rgba(0,0,0,.4),0 1px 3px rgba(0,0,0,.1);}
+    .login-card h2{font-size:16px;font-weight:600;color:var(--navy);margin-bottom:4px;}
+    .login-card .subtitle{font-size:12px;color:#6B7280;margin-bottom:24px;}
+
+    /* Form */
+    .form-label{font-size:12px;font-weight:600;color:#374151;margin-bottom:4px;}
+    .form-control{border-radius:8px;border:1.5px solid #E5E7EB;padding:10px 14px;font-size:14px;transition:border-color .2s,box-shadow .2s;}
+    .form-control:focus{border-color:var(--gold);box-shadow:0 0 0 3px rgba(212,175,55,.15);outline:none;}
+    .input-group{position:relative;}
+    .input-icon{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#9CA3AF;font-size:14px;z-index:2;}
+    .input-group .form-control{padding-left:40px;}
+
+    .btn-admin{width:100%;padding:12px;border:none;border-radius:8px;background:linear-gradient(135deg, var(--navy) 0%, var(--navy-dark) 100%);color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:transform .1s,box-shadow .2s;letter-spacing:.3px;}
+    .btn-admin:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(27,54,93,.4);}
+    .btn-admin:active{transform:translateY(0);}
+    .btn-admin:disabled{opacity:.6;cursor:not-allowed;transform:none;}
+    .btn-admin i{margin-right:6px;}
+
+    .error-msg{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;border-radius:8px;padding:10px 14px;font-size:12px;margin-bottom:16px;display:none;align-items:center;gap:8px;}
+    .error-msg i{flex-shrink:0;}
+
+    .divider{height:1px;background:#E5E7EB;margin:24px 0;position:relative;}
+    .divider span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;padding:0 12px;font-size:11px;color:#9CA3AF;}
+
+    .footer-links{text-align:center;margin-top:20px;font-size:12px;color:rgba(255,255,255,.4);}
+    .footer-links a{color:var(--gold-light);text-decoration:none;}
+    .footer-links a:hover{text-decoration:underline;}
+
+    /* MFA Modal */
+    .mfa-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000;backdrop-filter:blur(4px);}
+    .mfa-overlay.show{display:flex;}
+    .mfa-card{background:#fff;border-radius:12px;padding:32px;max-width:380px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3);}
+    .mfa-card h3{font-size:16px;font-weight:600;color:var(--navy);margin-bottom:8px;}
+    .mfa-card p{font-size:13px;color:#6B7280;margin-bottom:16px;}
+    .mfa-card .code-input{text-align:center;font-size:24px;letter-spacing:8px;font-weight:700;}
+    .qr-secret{background:#F9FAFB;border:1px solid #E5E7EB;border-radius:6px;padding:8px 12px;font-family:monospace;font-size:11px;word-break:break-all;margin-bottom:12px;}
+
+    /* Loading spinner */
+    .spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;margin-right:8px;}
+    @keyframes spin{to{transform:rotate(360deg)}}
+  </style>
 </head>
 <body>
-    <!--
-        Decap CMS (open-source, MIT-licensed, git-based headless CMS).
-        Loaded from CDN; no server component required. The CMS reads/writes
-        markdown + media directly to the git backend configured in config.yml.
-    -->
-    <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+
+<div class="login-container">
+  <div class="brand">
+    <div class="brand-icon"><i class="fas fa-scale-balanced"></i></div>
+    <h1>JOHNSON LEGAL TEAM</h1>
+    <p>Practice Management System</p>
+  </div>
+
+  <div class="login-card">
+    <h2>Staff Login</h2>
+    <p class="subtitle">Authorized personnel only. Access is monitored.</p>
+
+    <div class="error-msg" id="loginError"><i class="fas fa-exclamation-circle"></i><span id="errorText"></span></div>
+
+    <form id="loginForm" autocomplete="on">
+      <div class="mb-3">
+        <label class="form-label" for="loginEmail">Email Address</label>
+        <div class="input-group">
+          <i class="fas fa-envelope input-icon"></i>
+          <input type="email" class="form-control" id="loginEmail" placeholder="you@johnsonlegalteam.com" required autocomplete="email">
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label" for="loginPassword">Password</label>
+        <div class="input-group">
+          <i class="fas fa-lock input-icon"></i>
+          <input type="password" class="form-control" id="loginPassword" placeholder="••••••••••" required autocomplete="current-password">
+        </div>
+      </div>
+      <button type="submit" class="btn-admin" id="loginBtn"><i class="fas fa-arrow-right-to-bracket"></i> Sign In</button>
+    </form>
+
+    <div class="divider"><span>SECURE</span></div>
+
+    <div style="text-align:center;font-size:11px;color:#9CA3AF;">
+      <i class="fas fa-shield-halved" style="color:var(--gold);margin-right:4px;"></i>
+      Protected by MFA &nbsp;•&nbsp; Sessions expire after 1 hour
+    </div>
+  </div>
+
+  <div class="footer-links">
+    <a href="../index.html">← Back to main site</a> &nbsp;•&nbsp; 
+    <span>© 2026 Johnson Legal Team</span>
+  </div>
+</div>
+
+<!-- MFA Modal -->
+<div class="mfa-overlay" id="mfaOverlay">
+  <div class="mfa-card">
+    <h3 id="mfaTitle">Two-Factor Authentication</h3>
+    <p id="mfaDesc">Enter the 6-digit code from your authenticator app.</p>
+    <div id="mfaSetupSection" style="display:none;">
+      <p style="font-size:12px;color:#374151;">Scan this QR code or enter the secret manually:</p>
+      <div class="text-center mb-2"><canvas id="qrCanvas"></canvas></div>
+      <div class="qr-secret" id="mfaSecret"></div>
+    </div>
+    <input type="text" class="form-control code-input" id="mfaCode" maxlength="6" placeholder="000000" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">
+    <button class="btn-admin mt-3" id="mfaSubmit"><i class="fas fa-check"></i> Verify</button>
+  </div>
+</div>
+
+<!-- Cognito SDK -->
+<script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6/dist/amazon-cognito-identity.min.js"></script>
+<script src="../portal-config.js"></script>
+<script>
+'use strict';
+
+const CONFIG = window.PORTAL_CONFIG || {};
+const POOL_DATA = {
+  UserPoolId: CONFIG.COGNITO_USER_POOL_ID || 'us-east-1_dqqgSRKwn',
+  ClientId: CONFIG.COGNITO_CLIENT_ID || '1ceidj2abdvs0jijedhckte5um'
+};
+
+const ADMIN_EMAILS = ['mrtechfixes.ai@gmail.com', 'mrtechfixes@gmail.com', 'johnsonlegalteam@gmail.com'];
+const userPool = new AmazonCognitoIdentity.CognitoUserPool(POOL_DATA);
+
+// ─── Check existing session ──────────────────────────────────────
+(function checkSession() {
+  const token = localStorage.getItem('cognito_id_token');
+  const role = localStorage.getItem('user_role');
+  if (token && (role === 'admin' || role === 'super_admin')) {
+    // Validate not expired
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+      if (payload.exp * 1000 > Date.now()) {
+        window.location.href = '../admin-dashboard.html';
+        return;
+      }
+    } catch(e) {}
+    // Expired — clear
+    localStorage.clear();
+  }
+})();
+
+// ─── Login form ──────────────────────────────────────────────────
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim().toLowerCase();
+  const password = document.getElementById('loginPassword').value;
+  const btn = document.getElementById('loginBtn');
+
+  hideError();
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Authenticating...';
+
+  const authDetails = new AmazonCognitoIdentity.AuthenticationDetails({ Username: email, Password: password });
+  const cognitoUser = new AmazonCognitoIdentity.CognitoUser({ Username: email, Pool: userPool });
+
+  cognitoUser.authenticateUser(authDetails, {
+    onSuccess: function(result) {
+      handleSuccess(result, email);
+    },
+    onFailure: function(err) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Sign In';
+      const msgs = {
+        NotAuthorizedException: 'Invalid email or password.',
+        UserNotFoundException: 'No account found with that email.',
+        UserNotConfirmedException: 'Account not confirmed.',
+      };
+      showError(msgs[err.code] || err.message || 'Login failed.');
+    },
+    newPasswordRequired: function() {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Sign In';
+      const newPw = prompt('Set a new password (min 8 chars, upper/lower/number/symbol):');
+      if (!newPw) return showError('A new password is required.');
+      cognitoUser.completeNewPasswordChallenge(newPw, {}, this);
+    },
+    totpRequired: function() {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Sign In';
+      showMfaPrompt(function(code) {
+        cognitoUser.sendMFACode(code, {
+          onSuccess: function(result) { handleSuccess(result, email); },
+          onFailure: function(err) { showError(err.message || 'Invalid code.'); }
+        }, 'SOFTWARE_TOKEN_MFA');
+      });
+    },
+    mfaSetup: function() {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-arrow-right-to-bracket"></i> Sign In';
+      cognitoUser.associateSoftwareToken({
+        associateSecretCode: function(secretCode) {
+          showMfaSetup(secretCode, email, function(code) {
+            cognitoUser.verifySoftwareToken(code, 'JLT Authenticator', {
+              onSuccess: function(session) { handleSuccess(session, email); },
+              onFailure: function(err) { showError(err.message || 'Verification failed.'); }
+            });
+          });
+        }
+      });
+    }
+  });
+});
+
+// ─── Auth success ────────────────────────────────────────────────
+function handleSuccess(result, email) {
+  const idToken = result.getIdToken().getJwtToken();
+  const accessToken = result.getAccessToken().getJwtToken();
+  const refreshToken = result.getRefreshToken().getToken();
+  
+  const payload = JSON.parse(atob(idToken.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
+  const groups = payload['cognito:groups'] || [];
+  
+  let role = 'client';
+  if (groups.includes('super_admin') || email === 'mrtechfixes.ai@gmail.com') role = 'super_admin';
+  else if (groups.includes('admin') || ADMIN_EMAILS.includes(email)) role = 'admin';
+
+  // Only allow admin+ to proceed
+  if (role === 'client') {
+    showError('Access denied. Admin privileges required.');
+    return;
+  }
+
+  localStorage.setItem('cognito_access_token', accessToken);
+  localStorage.setItem('cognito_id_token', idToken);
+  localStorage.setItem('cognito_refresh_token', refreshToken);
+  localStorage.setItem('clientLoggedIn', 'true');
+  localStorage.setItem('user_email', email);
+  localStorage.setItem('user_role', role);
+
+  window.location.href = '../admin-dashboard.html';
+}
+
+// ─── MFA UI ──────────────────────────────────────────────────────
+function showMfaPrompt(callback) {
+  const overlay = document.getElementById('mfaOverlay');
+  document.getElementById('mfaTitle').textContent = 'Two-Factor Authentication';
+  document.getElementById('mfaDesc').textContent = 'Enter the 6-digit code from your authenticator app.';
+  document.getElementById('mfaSetupSection').style.display = 'none';
+  document.getElementById('mfaCode').value = '';
+  overlay.classList.add('show');
+  document.getElementById('mfaCode').focus();
+
+  document.getElementById('mfaSubmit').onclick = function() {
+    const code = document.getElementById('mfaCode').value.trim();
+    if (code.length !== 6) return;
+    overlay.classList.remove('show');
+    callback(code);
+  };
+  // Enter key
+  document.getElementById('mfaCode').onkeydown = function(e) {
+    if (e.key === 'Enter') document.getElementById('mfaSubmit').click();
+  };
+}
+
+function showMfaSetup(secret, email, callback) {
+  const overlay = document.getElementById('mfaOverlay');
+  document.getElementById('mfaTitle').textContent = 'Set Up Authenticator';
+  document.getElementById('mfaDesc').textContent = 'Add this account to your authenticator app (Google Authenticator, Authy, etc.)';
+  document.getElementById('mfaSetupSection').style.display = 'block';
+  document.getElementById('mfaSecret').textContent = secret;
+  document.getElementById('mfaCode').value = '';
+  overlay.classList.add('show');
+
+  // Simple QR as text fallback (real QR needs a library)
+  const canvas = document.getElementById('qrCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = 180; canvas.height = 40;
+  ctx.fillStyle = '#F9FAFB'; ctx.fillRect(0,0,180,40);
+  ctx.fillStyle = '#6B7280'; ctx.font = '11px monospace';
+  ctx.fillText('Use secret below ↓', 20, 25);
+
+  document.getElementById('mfaSubmit').onclick = function() {
+    const code = document.getElementById('mfaCode').value.trim();
+    if (code.length !== 6) return;
+    overlay.classList.remove('show');
+    callback(code);
+  };
+  document.getElementById('mfaCode').onkeydown = function(e) {
+    if (e.key === 'Enter') document.getElementById('mfaSubmit').click();
+  };
+}
+
+// ─── Error helpers ───────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('loginError');
+  document.getElementById('errorText').textContent = msg;
+  el.style.display = 'flex';
+}
+function hideError() {
+  document.getElementById('loginError').style.display = 'none';
+}
+</script>
 </body>
 </html>
