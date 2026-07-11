@@ -133,6 +133,7 @@ async function handleAdmin(ctx) {
   const resource = ctx.segments[1] || '';
   switch (resource) {
     case 'clients':       return await adminList(ctx, 'USER');
+    case 'cases':         return await adminCases(ctx);
     case 'invoices':      return await adminList(ctx, 'INV');
     case 'registrations': return await adminRegistrations(ctx);
     case 'users':         return await adminUsers(ctx);
@@ -151,6 +152,37 @@ async function adminList(ctx, entityType) {
     ExpressionAttributeValues: { ':pk': entityType },
   }));
   return resp(200, { items: out.Items || [] });
+}
+
+// All cases across all users — scan for SK begins_with CASE#, join with profile
+async function adminCases(ctx) {
+  if (ctx.method !== 'GET') return resp(405, { error: 'Method not allowed' });
+  const { ScanCommand, QueryCommand } = cmds();
+  const out = await db().send(new ScanCommand({
+    TableName: TABLE,
+    FilterExpression: 'begins_with(SK, :sk)',
+    ExpressionAttributeValues: { ':sk': 'CASE#' },
+  }));
+  // Enrich with client name from profiles
+  const cases = out.Items || [];
+  const profileCache = {};
+  for (const c of cases) {
+    const pk = c.PK;
+    if (!profileCache[pk]) {
+      try {
+        const p = await db().send(new QueryCommand({
+          TableName: TABLE,
+          KeyConditionExpression: 'PK = :pk AND SK = :sk',
+          ExpressionAttributeValues: { ':pk': pk, ':sk': 'PROFILE' },
+        }));
+        profileCache[pk] = (p.Items && p.Items[0]) || {};
+      } catch (_) { profileCache[pk] = {}; }
+    }
+    const prof = profileCache[pk];
+    c.client_name = ((prof.first_name || '') + ' ' + (prof.last_name || '')).trim();
+    c.client_email = prof.email || '';
+  }
+  return resp(200, { items: cases });
 }
 
 async function adminRegistrations(ctx) {

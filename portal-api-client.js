@@ -57,6 +57,7 @@
     // Admin (require admin/super_admin — server enforces)
     admin: {
       listClients:       ()      => request('/admin/clients'),
+      listCases:         ()      => request('/admin/cases'),
       listInvoices:      ()      => request('/admin/invoices'),
       listRegistrations: ()      => request('/admin/registrations'),
       decideRegistration:(data)  => request('/admin/registrations', { method: 'POST', body: data }),

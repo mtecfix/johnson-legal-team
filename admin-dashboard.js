@@ -172,6 +172,7 @@ async function loadAll() {
   await Promise.allSettled([
     loadLeads(),
     loadClients(),
+    loadCases(),
     loadRegistrations(),
     loadInvoices(),
   ]);
@@ -205,6 +206,46 @@ async function loadClients() {
   }
 }
 
+let casesData = [];
+async function loadCases() {
+  try {
+    if (!window.PortalAPI) return;
+    const { items = [] } = await PortalAPI.admin.listCases();
+    casesData = items;
+    renderCasesTable();
+  } catch (e) {
+    document.getElementById('casesContent').innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load cases.');
+  }
+}
+
+function renderCasesTable() {
+  if (!casesData.length) {
+    document.getElementById('casesContent').innerHTML = emptyState('fas fa-briefcase', 'No cases yet.');
+    return;
+  }
+
+  const caseTypeLabels = {
+    'family-law': 'Family Law', 'criminal-defense': 'Criminal Defense',
+    'probate-estate': 'Probate & Estate', 'personal-injury': 'Personal Injury',
+    'juvenile': 'Juvenile', 'real-estate': 'Real Estate', 'traffic': 'Traffic', 'general': 'General'
+  };
+
+  let html = `<table class="data-table"><thead><tr><th>Client</th><th>Case Type</th><th>Status</th><th>Opened</th></tr></thead><tbody>`;
+  casesData.forEach(c => {
+    const statusClass = c.status === 'active' ? 'qualified' : c.status === 'closed' ? 'lost' : 'new';
+    const typeLabel = caseTypeLabels[c.case_type] || c.case_type || 'General';
+    const date = c.opened_at ? new Date(c.opened_at).toLocaleDateString() : '';
+    html += `<tr>
+      <td><strong>${esc(c.client_name || '—')}</strong><br><span style="color:var(--muted);font-size:11px;">${esc(c.client_email || '')}</span></td>
+      <td style="font-size:12px;">${esc(typeLabel)}</td>
+      <td><span class="badge-stage ${statusClass}">${esc(c.status || 'active')}</span></td>
+      <td style="font-size:12px;color:var(--muted);">${date}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('casesContent').innerHTML = html;
+}
+
 async function loadRegistrations() {
   try {
     if (!window.PortalAPI) return;
@@ -228,7 +269,7 @@ async function loadInvoices() {
 function updateStats() {
   document.getElementById('statClients').textContent = clientsData.length;
   document.getElementById('statLeads').textContent = leadsData.filter(l => l.stage === 'new' || l.stage === 'contacted').length;
-  document.getElementById('statCases').textContent = '—';
+  document.getElementById('statCases').textContent = casesData.filter(c => c.status === 'active').length || '—';
   const pendingRegs = document.querySelectorAll('#registrationsContent .btn-success').length;
   document.getElementById('statRegistrations').textContent = pendingRegs || '0';
 
