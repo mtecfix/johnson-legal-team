@@ -126,7 +126,7 @@
     <p id="mfaDesc">Enter the 6-digit code from your authenticator app.</p>
     <div id="mfaSetupSection" style="display:none;">
       <p style="font-size:12px;color:#374151;">Scan this QR code or enter the secret manually:</p>
-      <div class="text-center mb-2"><canvas id="qrCanvas"></canvas></div>
+      <div class="text-center mb-2"><div id="qrCanvas"></div></div>
       <div class="qr-secret" id="mfaSecret"></div>
     </div>
     <input type="text" class="form-control code-input" id="mfaCode" maxlength="6" placeholder="000000" inputmode="numeric" pattern="[0-9]*" autocomplete="one-time-code">
@@ -134,6 +134,8 @@
   </div>
 </div>
 
+<!-- QR Code library -->
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 <!-- Cognito SDK -->
 <script src="https://cdn.jsdelivr.net/npm/amazon-cognito-identity-js@6/dist/amazon-cognito-identity.min.js"></script>
 <script src="../portal-config.js"></script>
@@ -289,13 +291,18 @@ function showMfaSetup(secret, email, callback) {
   document.getElementById('mfaCode').value = '';
   overlay.classList.add('show');
 
-  // Simple QR as text fallback (real QR needs a library)
-  const canvas = document.getElementById('qrCanvas');
-  const ctx = canvas.getContext('2d');
-  canvas.width = 180; canvas.height = 40;
-  ctx.fillStyle = '#F9FAFB'; ctx.fillRect(0,0,180,40);
-  ctx.fillStyle = '#6B7280'; ctx.font = '11px monospace';
-  ctx.fillText('Use secret below ↓', 20, 25);
+  // Generate real QR code
+  const otpauth = `otpauth://totp/JohnsonLegalTeam:${encodeURIComponent(email)}?secret=${secret}&issuer=JohnsonLegalTeam`;
+  const qrContainer = document.getElementById('qrCanvas').parentElement;
+  qrContainer.innerHTML = '<div id="qrCode"></div>';
+  new QRCode(document.getElementById('qrCode'), {
+    text: otpauth,
+    width: 200,
+    height: 200,
+    colorDark: '#1B365D',
+    colorLight: '#ffffff',
+    correctLevel: QRCode.CorrectLevel.M
+  });
 
   document.getElementById('mfaSubmit').onclick = function() {
     const code = document.getElementById('mfaCode').value.trim();
