@@ -91,18 +91,21 @@
     <small>Practice Manager</small>
   </div>
   <nav class="sidebar-nav">
-    <a href="#" data-section="dashboard" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
-    <a href="#" data-section="leads"><i class="fas fa-bolt"></i> Leads <span class="badge bg-danger ms-auto" id="leadsCount" style="font-size:10px;"></span></a>
-    <a href="#" data-section="cases"><i class="fas fa-briefcase"></i> Cases</a>
-    <a href="#" data-section="contacts"><i class="fas fa-users"></i> Contacts</a>
+    <a href="#" data-section="dashboard" data-roles="super_admin,admin,staff" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
+    <a href="#" data-section="leads" data-roles="super_admin,admin"><i class="fas fa-bolt"></i> Leads <span class="badge bg-danger ms-auto" id="leadsCount" style="font-size:10px;"></span></a>
+    <a href="#" data-section="cases" data-roles="super_admin,admin,staff"><i class="fas fa-briefcase"></i> Cases</a>
+    <a href="#" data-section="contacts" data-roles="super_admin,admin,staff"><i class="fas fa-users"></i> Contacts</a>
     <div class="nav-divider"></div>
-    <a href="#" data-section="calendar"><i class="fas fa-calendar-alt"></i> Calendar</a>
-    <a href="#" data-section="documents"><i class="fas fa-folder-open"></i> Documents</a>
-    <a href="#" data-section="messages"><i class="fas fa-envelope"></i> Messages</a>
+    <a href="#" data-section="calendar" data-roles="super_admin,admin,staff"><i class="fas fa-calendar-alt"></i> Calendar</a>
+    <a href="#" data-section="documents" data-roles="super_admin,admin,staff"><i class="fas fa-folder-open"></i> Documents</a>
+    <a href="#" data-section="messages" data-roles="super_admin,admin,staff"><i class="fas fa-envelope"></i> Messages</a>
     <div class="nav-divider"></div>
-    <a href="#" data-section="invoices"><i class="fas fa-file-invoice-dollar"></i> Invoices</a>
-    <a href="#" data-section="registrations"><i class="fas fa-user-plus"></i> Registrations</a>
-    <a href="#" data-section="users" class="super-admin-only"><i class="fas fa-shield-alt"></i> User Roles</a>
+    <a href="#" data-section="invoices" data-roles="super_admin,admin"><i class="fas fa-file-invoice-dollar"></i> Invoices</a>
+    <a href="#" data-section="payments" data-roles="super_admin,admin"><i class="fas fa-credit-card"></i> Payments</a>
+    <a href="#" data-section="registrations" data-roles="super_admin,admin"><i class="fas fa-user-plus"></i> Registrations</a>
+    <div class="nav-divider" data-roles="super_admin"></div>
+    <a href="#" data-section="users" data-roles="super_admin"><i class="fas fa-shield-alt"></i> User Roles</a>
+    <a href="#" data-section="system" data-roles="super_admin"><i class="fas fa-server"></i> System</a>
   </nav>
   <div class="sidebar-footer">
     <span class="status-dot"></span> Jude AI Active
@@ -241,10 +244,90 @@
     </div>
 
     <!-- USERS -->
-    <div class="panel" id="panelUsers">
+    <div class="panel" id="panelUsers" data-roles="super_admin">
       <div class="panel-card">
         <div class="panel-card-header"><h2>User Roles</h2></div>
         <div class="panel-card-body" id="usersContent"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+      </div>
+    </div>
+
+    <!-- PAYMENTS (Stripe) -->
+    <div class="panel" id="panelPayments" data-roles="super_admin,admin">
+      <div class="panel-card">
+        <div class="panel-card-header"><h2>Payments & Billing</h2><span class="badge bg-warning text-dark" style="font-size:10px;">Stripe Integration</span></div>
+        <div class="panel-card-body padded">
+          <div class="empty-state">
+            <i class="fas fa-credit-card"></i>
+            <p>Stripe payment integration coming soon.<br>Accept credit cards, send payment links, track transactions.</p>
+            <div style="margin-top:16px;font-size:12px;color:var(--muted);text-align:left;max-width:400px;margin-left:auto;margin-right:auto;">
+              <strong>Planned features:</strong>
+              <ul style="margin-top:8px;padding-left:20px;line-height:2;">
+                <li>Payment link generation per client/case</li>
+                <li>Retainer collection via Stripe Checkout</li>
+                <li>Transaction history & receipts</li>
+                <li>Trust account separation (IOLTA compliance)</li>
+                <li>Auto-sync with Invoices section</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SYSTEM (super_admin only) -->
+    <div class="panel" id="panelSystem" data-roles="super_admin">
+      <div class="panel-card">
+        <div class="panel-card-header"><h2>System Administration</h2></div>
+        <div class="panel-card-body padded" id="systemContent">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+                <h6 style="font-size:13px;font-weight:600;margin-bottom:12px;"><i class="fas fa-robot" style="color:var(--gold);margin-right:6px;"></i> Jude AI</h6>
+                <div style="font-size:12px;line-height:2.2;color:var(--text);">
+                  <div>Lead Scoring: <span class="badge bg-success">Active</span></div>
+                  <div>Owner Notify: <span class="badge bg-success">Active</span></div>
+                  <div>AI Reasoning: <span class="badge bg-warning text-dark">Pending</span></div>
+                  <div>Inbox Monitor: <span class="badge bg-warning text-dark">Pending</span></div>
+                  <div style="margin-top:8px;color:var(--muted);font-size:11px;">Runtime: AWS Lambda · Model: Gemini 3.1 Flash-Lite</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+                <h6 style="font-size:13px;font-weight:600;margin-bottom:12px;"><i class="fas fa-cloud" style="color:var(--navy);margin-right:6px;"></i> Infrastructure</h6>
+                <div style="font-size:12px;line-height:2.2;color:var(--text);">
+                  <div>API Gateway: <span class="badge bg-success">Healthy</span></div>
+                  <div>Cognito: <span class="badge bg-success">Healthy</span></div>
+                  <div>DynamoDB: <span class="badge bg-success">Healthy</span></div>
+                  <div>SES Email: <span class="badge bg-warning text-dark">Sandbox</span></div>
+                  <div style="margin-top:8px;color:var(--muted);font-size:11px;">Region: us-east-1 · Account: 663877906756</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+                <h6 style="font-size:13px;font-weight:600;margin-bottom:12px;"><i class="fas fa-key" style="color:var(--danger);margin-right:6px;"></i> Access Control</h6>
+                <div style="font-size:12px;line-height:2.2;color:var(--text);">
+                  <div>Cognito Pool: <code style="font-size:10px;">us-east-1_dqqgSRKwn</code></div>
+                  <div>Auth: JWT + MFA (TOTP)</div>
+                  <div>Admin Emails: 2 configured</div>
+                  <div style="margin-top:8px;color:var(--muted);font-size:11px;">Tech Support: mrtechfixes.ai@gmail.com</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-6">
+              <div style="border:1px solid var(--border);border-radius:8px;padding:16px;">
+                <h6 style="font-size:13px;font-weight:600;margin-bottom:12px;"><i class="fas fa-database" style="color:var(--success);margin-right:6px;"></i> Data</h6>
+                <div style="font-size:12px;line-height:2.2;color:var(--text);">
+                  <div>Portal Table: <span id="sysPortalCount">—</span> records</div>
+                  <div>Leads Table: <span id="sysLeadsCount">—</span> leads</div>
+                  <div>Gmail Connected: <span class="badge bg-success">Yes</span></div>
+                  <div style="margin-top:8px;color:var(--muted);font-size:11px;">Backup: DynamoDB PITR enabled</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 

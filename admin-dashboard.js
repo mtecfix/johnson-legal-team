@@ -8,6 +8,27 @@ let leadsData = [];
 let clientsData = [];
 
 // ═══════════════════════════════════════════════════════════════
+// ROLE DEFINITIONS
+// ═══════════════════════════════════════════════════════════════
+// super_admin (MR TECH): Full system access — all modules + system config + user roles + Jude AI
+// admin (Attorney Johnson): Practice management — dashboard, leads, cases, contacts, calendar, docs, messages, invoices, payments, registrations
+// staff (paralegals/assistants): Limited — dashboard (read-only), cases (assigned), contacts, calendar, docs, messages
+
+const ROLE_HIERARCHY = ['staff', 'admin', 'super_admin'];
+const ROLE_LABELS = {
+  super_admin: 'System Administrator',
+  admin: 'Attorney',
+  staff: 'Staff',
+};
+
+// What each role's dashboard home shows
+const ROLE_DASHBOARD = {
+  super_admin: { stats: ['clients','leads','cases','registrations'], showJudeStatus: true, showRecentLeads: true, showSystemHealth: true },
+  admin:       { stats: ['clients','leads','cases','registrations'], showJudeStatus: true, showRecentLeads: true, showSystemHealth: false },
+  staff:       { stats: ['cases'], showJudeStatus: false, showRecentLeads: false, showSystemHealth: false },
+};
+
+// ═══════════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════════
 
@@ -16,19 +37,17 @@ document.addEventListener('DOMContentLoaded', () => {
   const email = localStorage.getItem('user_email') || '';
 
   document.getElementById('userEmail').textContent = email;
-  document.getElementById('roleBadge').textContent = currentRole;
+  document.getElementById('roleBadge').textContent = ROLE_LABELS[currentRole] || currentRole;
 
-  // Auth gate
-  if (currentRole !== 'admin' && currentRole !== 'super_admin') {
+  // Auth gate — must be at least staff
+  if (!ROLE_HIERARCHY.includes(currentRole)) {
     document.getElementById('accessDenied').style.display = 'block';
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     return;
   }
 
-  // Super admin items
-  if (currentRole === 'super_admin') {
-    document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = '');
-  }
+  // Apply role-based visibility to sidebar and panels
+  applyRoleVisibility(currentRole);
 
   // Navigation
   document.querySelectorAll('[data-section]').forEach(link => {
@@ -47,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('logoutBtn').addEventListener('click', e => {
     e.preventDefault();
     localStorage.clear();
-    window.location.href = 'client-login.html';
+    window.location.href = 'admin/index.html';
   });
 
   // Lead filters
@@ -57,9 +76,56 @@ document.addEventListener('DOMContentLoaded', () => {
   // Contact search
   document.getElementById('contactSearch').addEventListener('input', renderContactsTable);
 
+  // Customize dashboard for role
+  applyDashboardRole(currentRole);
+
   // Load data
   loadAll();
 });
+
+// ═══════════════════════════════════════════════════════════════
+// ROLE VISIBILITY
+// ═══════════════════════════════════════════════════════════════
+
+function applyRoleVisibility(role) {
+  // Sidebar links: show/hide based on data-roles
+  document.querySelectorAll('.sidebar-nav [data-roles]').forEach(el => {
+    const allowed = el.dataset.roles.split(',');
+    el.style.display = allowed.includes(role) ? '' : 'none';
+  });
+
+  // Panels: show/hide based on data-roles (keep display logic for active panel)
+  document.querySelectorAll('.panel[data-roles]').forEach(el => {
+    const allowed = el.dataset.roles.split(',');
+    if (!allowed.includes(role)) {
+      el.remove(); // Remove entirely so it can't be navigated to
+    }
+  });
+}
+
+function applyDashboardRole(role) {
+  const config = ROLE_DASHBOARD[role] || ROLE_DASHBOARD.staff;
+
+  // Hide stat cards not in role config
+  const statMap = { clients: 0, leads: 1, cases: 2, registrations: 3 };
+  const statCards = document.querySelectorAll('#panelDashboard .stat-card');
+  Object.entries(statMap).forEach(([key, idx]) => {
+    if (statCards[idx]) {
+      statCards[idx].closest('.col-md-3').style.display = config.stats.includes(key) ? '' : 'none';
+    }
+  });
+
+  // Jude status panel
+  const judeCol = document.querySelector('#panelDashboard .col-lg-4');
+  if (judeCol && !config.showJudeStatus) judeCol.style.display = 'none';
+
+  // Recent leads
+  const recentLeadsCard = document.querySelector('#panelDashboard .col-lg-8');
+  if (recentLeadsCard && !config.showRecentLeads) {
+    recentLeadsCard.classList.replace('col-lg-8', 'col-lg-12');
+    recentLeadsCard.innerHTML = `<div class="panel-card"><div class="panel-card-header"><h2>My Assigned Cases</h2></div><div class="panel-card-body padded"><div class="empty-state"><i class="fas fa-briefcase"></i><p>Your assigned cases will appear here.</p></div></div></div>`;
+  }
+}
 
 // ═══════════════════════════════════════════════════════════════
 // NAVIGATION
@@ -160,7 +226,14 @@ function updateStats() {
   document.getElementById('statClients').textContent = clientsData.length;
   document.getElementById('statLeads').textContent = leadsData.filter(l => l.stage === 'new' || l.stage === 'contacted').length;
   document.getElementById('statCases').textContent = '—';
-  document.getElementById('statRegistrations').textContent = document.querySelectorAll('[data-decide="approved"]').length || '0';
+  const pendingRegs = document.querySelectorAll('#registrationsContent .btn-success').length;
+  document.getElementById('statRegistrations').textContent = pendingRegs || '0';
+
+  // System panel counts (super_admin)
+  const sysLeads = document.getElementById('sysLeadsCount');
+  if (sysLeads) sysLeads.textContent = leadsData.length;
+  const sysPortal = document.getElementById('sysPortalCount');
+  if (sysPortal) sysPortal.textContent = clientsData.length;
 }
 
 // ═══════════════════════════════════════════════════════════════
