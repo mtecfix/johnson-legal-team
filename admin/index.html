@@ -156,15 +156,25 @@ const userPool = new AmazonCognitoIdentity.CognitoUserPool(POOL_DATA);
   const token = localStorage.getItem('cognito_id_token');
   const role = localStorage.getItem('user_role');
   if (token && (role === 'admin' || role === 'super_admin')) {
-    // Validate not expired
+    // Validate not expired AND has admin group
     try {
       const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
-      if (payload.exp * 1000 > Date.now()) {
-        window.location.href = '../admin-dashboard.html';
+      if (payload.exp * 1000 < Date.now()) {
+        // Expired — clear and force re-login
+        localStorage.clear();
         return;
       }
+      const groups = payload['cognito:groups'] || [];
+      const email = payload.email || '';
+      const hasAdminAccess = groups.includes('admin') || groups.includes('super_admin') || ADMIN_EMAILS.includes(email);
+      if (!hasAdminAccess) {
+        // Token missing admin group — clear and force re-login
+        localStorage.clear();
+        return;
+      }
+      window.location.href = '../admin-dashboard.html';
+      return;
     } catch(e) {}
-    // Expired — clear
     localStorage.clear();
   }
 })();

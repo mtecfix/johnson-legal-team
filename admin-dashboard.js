@@ -42,6 +42,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Auth gate — must be at least staff
   if (!ROLE_HIERARCHY.includes(currentRole)) {
     document.getElementById('accessDenied').style.display = 'block';
+    document.getElementById('accessDenied').innerHTML = `<i class="fas fa-lock"></i><p>Access denied. Role "${currentRole}" not authorized.<br>Token present: ${!!localStorage.getItem('cognito_id_token')}<br><a href="admin/index.html">Go to admin login</a></p>`;
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     return;
   }
@@ -197,24 +198,26 @@ async function loadLeads() {
 
 async function loadClients() {
   try {
-    if (!window.PortalAPI) return;
-    const { items = [] } = await PortalAPI.admin.listClients();
-    clientsData = items;
+    if (!window.PortalAPI) { console.error('PortalAPI not loaded'); return; }
+    const data = await PortalAPI.admin.listClients();
+    clientsData = data.items || [];
     renderContactsTable();
   } catch (e) {
-    document.getElementById('contactsTable').innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load clients.');
+    console.error('loadClients failed:', e.message);
+    document.getElementById('contactsTable').innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load clients: ' + e.message);
   }
 }
 
 let casesData = [];
 async function loadCases() {
   try {
-    if (!window.PortalAPI) return;
-    const { items = [] } = await PortalAPI.admin.listCases();
-    casesData = items;
+    if (!window.PortalAPI) { console.error('PortalAPI not loaded'); return; }
+    const data = await PortalAPI.admin.listCases();
+    casesData = data.items || [];
     renderCasesTable();
   } catch (e) {
-    document.getElementById('casesContent').innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load cases.');
+    console.error('loadCases failed:', e.message);
+    document.getElementById('casesContent').innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load cases: ' + e.message);
   }
 }
 
