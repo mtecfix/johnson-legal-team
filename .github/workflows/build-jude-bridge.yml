@@ -1,0 +1,52 @@
+name: Build & Push Jude Bridge Docker Image
+
+# Triggers:
+# - Manual dispatch (click "Run workflow" in GitHub Actions tab)
+# - Push to master when bridge/ files change
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'jude-infra/bridge/**'
+
+env:
+  AWS_REGION: us-east-1
+  ECR_REPO: 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge
+  IMAGE_TAG: v1
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write   # For OIDC federation (if using role assumption)
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        working-directory: jude-infra/bridge
+        run: |
+          docker build -t ${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }} .
+          docker tag ${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }} ${{ env.ECR_REPO }}:latest
+
+      - name: Push to ECR
+        run: |
+          docker push ${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }}
+          docker push ${{ env.ECR_REPO }}:latest
+
+      - name: Output image URI
+        run: |
+          echo "✅ Image pushed: ${{ env.ECR_REPO }}:${{ env.IMAGE_TAG }}"
+          echo "✅ Image pushed: ${{ env.ECR_REPO }}:latest"
