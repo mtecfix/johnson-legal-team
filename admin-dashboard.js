@@ -180,7 +180,10 @@ async function loadAll() {
 
 async function loadLeads() {
   try {
-    const res = await fetch(`${JUDE_API}/leads`);
+    const token = localStorage.getItem('cognito_id_token');
+    const headers = token ? { 'Authorization': `Bearer ${token}` } : {};
+    const res = await fetch(`${JUDE_API}/leads`, { headers });
+    if (!res.ok) throw new Error(`${res.status}`);
     const data = await res.json();
     leadsData = (data.leads || []).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
     document.getElementById('leadsCount').textContent = leadsData.filter(l => l.stage === 'new').length || '';
