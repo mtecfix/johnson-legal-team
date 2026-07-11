@@ -1,148 +1,376 @@
-// Admin dashboard — consumes window.PortalAPI.admin.
-// NOTE: authorization is enforced server-side (the API rejects non-admins with
-// 403 and restricts role changes to super_admin). The client-side role gate
-// below is only for UX; it is NOT a security control.
+// Johnson Legal Team — Practice Manager Dashboard
+// Integrates with Portal API (Cognito-authed) + Jude Leads API
 'use strict';
 
+const JUDE_API = 'https://mpiai89295.execute-api.us-east-1.amazonaws.com';
 let currentRole = 'client';
+let leadsData = [];
+let clientsData = [];
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded', () => {
-  if (!window.PortalAPI) { showError('API client not loaded.'); return; }
-
   currentRole = localStorage.getItem('user_role') || 'client';
-  document.getElementById('userGreeting').textContent = localStorage.getItem('user_email') || '';
-  document.getElementById('roleBadge').textContent = currentRole;
-  document.getElementById('logoutBtn').addEventListener('click', (e) => { e.preventDefault(); logout(); });
+  const email = localStorage.getItem('user_email') || '';
 
-  // UX gate only — server is the real gate.
+  document.getElementById('userEmail').textContent = email;
+  document.getElementById('roleBadge').textContent = currentRole;
+
+  // Auth gate
   if (currentRole !== 'admin' && currentRole !== 'super_admin') {
     document.getElementById('accessDenied').style.display = 'block';
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
     return;
   }
 
-  document.getElementById('adminContent').style.display = 'block';
+  // Super admin items
   if (currentRole === 'super_admin') {
     document.querySelectorAll('.super-admin-only').forEach(el => el.style.display = '');
   }
+
+  // Navigation
+  document.querySelectorAll('[data-section]').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      navigateTo(link.dataset.section);
+    });
+  });
+
+  // Sidebar toggle (mobile)
+  document.getElementById('sidebarToggle').addEventListener('click', () => {
+    document.getElementById('sidebar').classList.toggle('open');
+  });
+
+  // Logout
+  document.getElementById('logoutBtn').addEventListener('click', e => {
+    e.preventDefault();
+    localStorage.clear();
+    window.location.href = 'client-login.html';
+  });
+
+  // Lead filters
+  document.getElementById('leadFilterStage').addEventListener('change', renderLeadsTable);
+  document.getElementById('leadFilterUrgency').addEventListener('change', renderLeadsTable);
+
+  // Contact search
+  document.getElementById('contactSearch').addEventListener('input', renderContactsTable);
+
+  // Load data
   loadAll();
 });
 
+// ═══════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════
+
+const sectionTitles = {
+  dashboard: 'Dashboard',
+  leads: 'Lead Pipeline',
+  cases: 'Cases',
+  contacts: 'Contacts',
+  calendar: 'Calendar & Deadlines',
+  documents: 'Documents',
+  messages: 'Messages',
+  invoices: 'Invoices & Billing',
+  registrations: 'Registrations',
+  users: 'User Roles',
+};
+
+function navigateTo(section) {
+  // Update sidebar active
+  document.querySelectorAll('.sidebar-nav a').forEach(a => a.classList.remove('active'));
+  const activeLink = document.querySelector(`[data-section="${section}"]`);
+  if (activeLink) activeLink.classList.add('active');
+
+  // Show panel
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById('panel' + capitalize(section));
+  if (panel) panel.classList.add('active');
+
+  // Update title
+  document.getElementById('pageTitle').textContent = sectionTitles[section] || section;
+
+  // Close mobile sidebar
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// ═══════════════════════════════════════════════════════════════
+// DATA LOADING
+// ═══════════════════════════════════════════════════════════════
+
 async function loadAll() {
-  toggleLoading(true);
-  const tasks = [loadClients(), loadRegistrations(), loadInvoices()];
-  if (currentRole === 'super_admin') tasks.push(loadUsers());
-  await Promise.allSettled(tasks);
-  toggleLoading(false);
+  await Promise.allSettled([
+    loadLeads(),
+    loadClients(),
+    loadRegistrations(),
+    loadInvoices(),
+  ]);
+  updateStats();
+}
+
+async function loadLeads() {
+  try {
+    const res = await fetch(`${JUDE_API}/leads`);
+    const data = await res.json();
+    leadsData = (data.leads || []).sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+    document.getElementById('leadsCount').textContent = leadsData.filter(l => l.stage === 'new').length || '';
+    renderLeadsTable();
+    renderRecentLeads();
+  } catch (e) {
+    document.getElementById('leadsTable').innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load leads.');
+  }
 }
 
 async function loadClients() {
   try {
+    if (!window.PortalAPI) return;
     const { items = [] } = await PortalAPI.admin.listClients();
-    setHtml('clientsList', items.length ? table(
-      ['Name', 'Email', 'Role', 'Status'],
-      items.map(c => [
-        `${esc(c.first_name)} ${esc(c.last_name)}`,
-        esc(c.email),
-        `<span class="badge bg-secondary">${esc(c.role || 'client')}</span>`,
-        esc(c.registration_status || 'active'),
-      ])) : empty('No clients found.'));
-  } catch (e) { setHtml('clientsList', errLine(e)); }
+    clientsData = items;
+    renderContactsTable();
+  } catch (e) {
+    document.getElementById('contactsTable').innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load clients.');
+  }
 }
 
 async function loadRegistrations() {
   try {
+    if (!window.PortalAPI) return;
     const { registrations = [] } = await PortalAPI.admin.listRegistrations();
-    const badge = document.getElementById('regBadge');
-    if (registrations.length) { badge.textContent = registrations.length; badge.classList.remove('d-none'); }
-    setHtml('registrationsList', registrations.length ? registrations.map(r => `
-      <div class="d-flex justify-content-between align-items-center border-bottom py-2">
-        <div><strong>${esc(r.first_name)} ${esc(r.last_name)}</strong>
-          <span class="text-muted small">${esc(r.email)}</span></div>
-        <div>
-          <button class="btn btn-success btn-sm me-1" data-decide="approved" data-user="${esc(r.user_id || r.PK)}"><i class="fas fa-check"></i> Approve</button>
-          <button class="btn btn-danger btn-sm" data-decide="rejected" data-user="${esc(r.user_id || r.PK)}"><i class="fas fa-times"></i> Reject</button>
-        </div>
-      </div>`).join('') : empty('No pending registrations.'));
-    // Delegate button clicks.
-    document.getElementById('registrationsList').querySelectorAll('[data-decide]').forEach(btn => {
-      btn.addEventListener('click', () => decide(btn.dataset.user, btn.dataset.decide));
-    });
-  } catch (e) { setHtml('registrationsList', errLine(e)); }
-}
-
-async function decide(userId, decision) {
-  if (decision === 'rejected' && !confirm('Reject this registration?')) return;
-  try {
-    await PortalAPI.admin.decideRegistration({ user_id: userId, decision });
-    await Promise.allSettled([loadRegistrations(), loadClients()]);
-  } catch (e) { alert(e.message || 'Action failed.'); }
+    renderRegistrations(registrations);
+  } catch (e) {
+    document.getElementById('registrationsContent').innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load.');
+  }
 }
 
 async function loadInvoices() {
   try {
-    const { items = [] } = await PortalAPI.admin.listInvoices();
-    setHtml('invoicesList', items.length ? table(
-      ['Client', 'Description', 'Amount', 'Status', 'Due'],
-      items.map(i => [
-        esc(i.client_name || i.PK || '—'),
-        esc(i.description || '—'),
-        `$${(parseFloat(i.amount) || 0).toFixed(2)}`,
-        `<span class="badge bg-${i.status === 'paid' ? 'success' : 'danger'}">${esc(i.status || 'unpaid')}</span>`,
-        esc(i.due_date || '—'),
-      ])) : empty('No invoices.'));
-  } catch (e) { setHtml('invoicesList', errLine(e)); }
-}
-
-async function loadUsers() {
-  try {
-    const { items = [] } = await PortalAPI.admin.listUsers();
-    const rows = items.map(u => {
-      const uid = esc(u.user_id || u.PK || '');
-      const sel = ['client', 'admin', 'super_admin'].map(r =>
-        `<option value="${r}" ${u.role === r ? 'selected' : ''}>${r}</option>`).join('');
-      return [
-        `${esc(u.first_name)} ${esc(u.last_name)}`,
-        esc(u.email),
-        `<select class="form-select form-select-sm" data-user="${uid}">${sel}</select>`,
-      ];
-    });
-    setHtml('usersList', items.length ? table(['Name', 'Email', 'Role'], rows) : empty('No users.'));
-    document.getElementById('usersList').querySelectorAll('select[data-user]').forEach(sel => {
-      sel.addEventListener('change', () => changeRole(sel.dataset.user, sel.value, sel));
-    });
-  } catch (e) { setHtml('usersList', errLine(e)); }
-}
-
-async function changeRole(userId, role, selEl) {
-  const prev = selEl ? Array.from(selEl.options).find(o => o.defaultSelected)?.value : null;
-  if (!confirm(`Change this user's role to "${role}"?`)) { if (selEl && prev) selEl.value = prev; return; }
-  try {
-    await PortalAPI.admin.changeRole({ user_id: userId, role });
+    if (!window.PortalAPI) return;
+    const { invoices = [] } = await PortalAPI.admin.listInvoices();
+    renderInvoices(invoices);
   } catch (e) {
-    alert(e.message || 'Failed to change role.');
-    if (selEl && prev) selEl.value = prev;
+    document.getElementById('invoicesTable').innerHTML = emptyState('fas fa-file-invoice-dollar', 'No invoices yet.');
   }
 }
 
-function logout() {
-  ['cognito_id_token', 'cognito_access_token', 'cognito_refresh_token', 'user_email', 'user_role', 'clientLoggedIn']
-    .forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
-  location.href = 'client-login.html';
+function updateStats() {
+  document.getElementById('statClients').textContent = clientsData.length;
+  document.getElementById('statLeads').textContent = leadsData.filter(l => l.stage === 'new' || l.stage === 'contacted').length;
+  document.getElementById('statCases').textContent = '—';
+  document.getElementById('statRegistrations').textContent = document.querySelectorAll('[data-decide="approved"]').length || '0';
 }
 
-// --- helpers ---------------------------------------------------------------
-function table(headers, rows) {
-  return `<div class="table-responsive"><table class="table table-sm table-hover mb-0">
-    <thead><tr>${headers.map(h => `<th>${esc(h)}</th>`).join('')}</tr></thead>
-    <tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody>
-  </table></div>`;
+// ═══════════════════════════════════════════════════════════════
+// LEADS RENDERING
+// ═══════════════════════════════════════════════════════════════
+
+function renderLeadsTable() {
+  const stageFilter = document.getElementById('leadFilterStage').value;
+  const urgencyFilter = document.getElementById('leadFilterUrgency').value;
+
+  let filtered = leadsData;
+  if (stageFilter) filtered = filtered.filter(l => l.stage === stageFilter);
+  if (urgencyFilter) filtered = filtered.filter(l => l.urgency === urgencyFilter);
+
+  if (!filtered.length) {
+    document.getElementById('leadsTable').innerHTML = emptyState('fas fa-bolt', 'No leads match filters.');
+    return;
+  }
+
+  let html = `<table class="data-table">
+    <thead><tr>
+      <th>Score</th><th>Name / Email</th><th>Practice Area</th><th>Location</th><th>Source</th><th>Urgency</th><th>Stage</th><th>Date</th><th></th>
+    </tr></thead><tbody>`;
+
+  filtered.forEach(lead => {
+    const scoreClass = lead.score >= 70 ? 'high' : lead.score >= 40 ? 'medium' : 'low';
+    const caseType = (lead.caseType || 'general').replace(/-/g, ' ');
+    const date = lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : '';
+    html += `<tr id="lead-row-${lead.leadId}">
+      <td><span class="badge-score ${scoreClass}">${lead.score || 0}</span></td>
+      <td><strong>${esc(lead.name || '')}</strong><br><span style="color:var(--muted);font-size:11px;">${esc(lead.email || '')}</span></td>
+      <td style="text-transform:capitalize;">${esc(caseType)}</td>
+      <td>${esc(lead.location || '—')}</td>
+      <td><span style="font-size:11px;${lead.source === 'lawyer.com' ? 'color:var(--muted);' : ''}">${esc(lead.source || '')}</span></td>
+      <td><span class="badge-score ${lead.urgency || 'low'}">${(lead.urgency || 'low').toUpperCase()}</span></td>
+      <td><span class="badge-stage ${lead.stage || 'new'}">${lead.stage || 'new'}</span></td>
+      <td style="font-size:11px;color:var(--muted);">${date}</td>
+      <td><button class="btn btn-sm btn-outline-secondary" onclick="toggleLeadDetail('${lead.leadId}')"><i class="fas fa-chevron-down"></i></button></td>
+    </tr>
+    <tr id="lead-detail-${lead.leadId}" style="display:none;">
+      <td colspan="9">
+        <div class="lead-detail">
+          <div class="row">
+            <div class="col-md-8">
+              <strong>Subject:</strong> ${esc(lead.subject || '(none)')}<br>
+              <strong>Phone:</strong> ${esc(lead.phone || '—')}
+              <div class="lead-message">${esc(lead.firstMessage || '(no message)').replace(/\n/g, '<br>')}</div>
+            </div>
+            <div class="col-md-4">
+              <strong style="font-size:12px;">Update Stage:</strong>
+              <div class="d-flex flex-wrap gap-1 mt-2">
+                ${['new','contacted','qualified','converted','lost'].map(s =>
+                  `<button class="btn btn-sm ${lead.stage === s ? 'btn-primary' : 'btn-outline-secondary'}" onclick="updateLeadStage('${lead.leadId}','${s}')" ${lead.stage === s ? 'disabled' : ''}>${s}</button>`
+                ).join('')}
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  document.getElementById('leadsTable').innerHTML = html;
 }
-function toggleLoading(on) {
-  document.getElementById('loadingState').style.display = on ? 'block' : 'none';
-  document.getElementById('panels').style.display = on ? 'none' : 'block';
+
+function renderRecentLeads() {
+  const recent = leadsData.slice(0, 5);
+  if (!recent.length) {
+    document.getElementById('recentLeads').innerHTML = emptyState('fas fa-bolt', 'No leads yet.');
+    return;
+  }
+  let html = '<table class="data-table"><thead><tr><th>Score</th><th>Lead</th><th>Type</th><th>Urgency</th><th>Date</th></tr></thead><tbody>';
+  recent.forEach(lead => {
+    const scoreClass = lead.score >= 70 ? 'high' : lead.score >= 40 ? 'medium' : 'low';
+    const date = lead.createdAt ? new Date(lead.createdAt).toLocaleDateString() : '';
+    html += `<tr>
+      <td><span class="badge-score ${scoreClass}">${lead.score || 0}</span></td>
+      <td><strong>${esc(lead.name || lead.email || '?')}</strong></td>
+      <td style="text-transform:capitalize;font-size:12px;">${(lead.caseType || '').replace(/-/g, ' ')}</td>
+      <td><span class="badge-score ${lead.urgency || 'low'}">${(lead.urgency || 'low').toUpperCase()}</span></td>
+      <td style="font-size:11px;color:var(--muted);">${date}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('recentLeads').innerHTML = html;
 }
-function setHtml(id, html) { const el = document.getElementById(id); if (el) el.innerHTML = html; }
-function showError(msg) { const b = document.getElementById('errorBanner'); if (b) { b.textContent = msg; b.style.display = 'block'; } }
-function empty(msg) { return `<p class="text-muted mb-0">${esc(msg)}</p>`; }
-function errLine() { return '<p class="text-danger mb-0">Could not load.</p>'; }
-function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function toggleLeadDetail(leadId) {
+  const row = document.getElementById(`lead-detail-${leadId}`);
+  row.style.display = row.style.display === 'none' ? '' : 'none';
+}
+
+async function updateLeadStage(leadId, stage) {
+  try {
+    const token = localStorage.getItem('cognito_access_token');
+    await fetch(`${JUDE_API}/leads/${leadId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify({ stage }),
+    });
+    // Update local data
+    const lead = leadsData.find(l => l.leadId === leadId);
+    if (lead) lead.stage = stage;
+    renderLeadsTable();
+    updateStats();
+  } catch (e) {
+    alert('Failed to update stage: ' + e.message);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CONTACTS RENDERING
+// ═══════════════════════════════════════════════════════════════
+
+function renderContactsTable() {
+  const search = (document.getElementById('contactSearch').value || '').toLowerCase();
+  let filtered = clientsData;
+  if (search) {
+    filtered = filtered.filter(c =>
+      (c.first_name || '').toLowerCase().includes(search) ||
+      (c.last_name || '').toLowerCase().includes(search) ||
+      (c.email || '').toLowerCase().includes(search)
+    );
+  }
+
+  if (!filtered.length) {
+    document.getElementById('contactsTable').innerHTML = emptyState('fas fa-users', clientsData.length ? 'No matches.' : 'No clients registered yet.');
+    return;
+  }
+
+  let html = `<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody>`;
+  filtered.forEach(c => {
+    html += `<tr>
+      <td><strong>${esc(c.first_name || '')} ${esc(c.last_name || '')}</strong></td>
+      <td>${esc(c.email || '')}</td>
+      <td><span class="badge bg-secondary" style="font-size:10px;">${esc(c.role || 'client')}</span></td>
+      <td style="font-size:12px;">${esc(c.registration_status || 'active')}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('contactsTable').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REGISTRATIONS
+// ═══════════════════════════════════════════════════════════════
+
+function renderRegistrations(registrations) {
+  if (!registrations.length) {
+    document.getElementById('registrationsContent').innerHTML = emptyState('fas fa-user-plus', 'No pending registrations.');
+    return;
+  }
+  let html = `<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Date</th><th>Actions</th></tr></thead><tbody>`;
+  registrations.forEach(r => {
+    html += `<tr>
+      <td><strong>${esc(r.first_name || '')} ${esc(r.last_name || '')}</strong></td>
+      <td>${esc(r.email || '')}</td>
+      <td style="font-size:12px;">${r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}</td>
+      <td>
+        <button class="btn btn-success btn-sm" onclick="decideRegistration('${esc(r.user_id || r.PK)}','approved')"><i class="fas fa-check"></i></button>
+        <button class="btn btn-danger btn-sm" onclick="decideRegistration('${esc(r.user_id || r.PK)}','rejected')"><i class="fas fa-times"></i></button>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('registrationsContent').innerHTML = html;
+}
+
+async function decideRegistration(userId, decision) {
+  if (decision === 'rejected' && !confirm('Reject this registration?')) return;
+  try {
+    await PortalAPI.admin.decideRegistration({ user_id: userId, decision });
+    await loadRegistrations();
+    await loadClients();
+    updateStats();
+  } catch (e) { alert(e.message || 'Action failed.'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INVOICES
+// ═══════════════════════════════════════════════════════════════
+
+function renderInvoices(invoices) {
+  if (!invoices || !invoices.length) {
+    document.getElementById('invoicesTable').innerHTML = emptyState('fas fa-file-invoice-dollar', 'No invoices yet.');
+    return;
+  }
+  let html = `<table class="data-table"><thead><tr><th>Client</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>`;
+  invoices.forEach(inv => {
+    html += `<tr>
+      <td>${esc(inv.client_name || inv.email || '')}</td>
+      <td><strong>$${(inv.amount || 0).toFixed(2)}</strong></td>
+      <td><span class="badge-stage ${inv.status === 'paid' ? 'converted' : 'new'}">${esc(inv.status || 'pending')}</span></td>
+      <td style="font-size:12px;">${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : ''}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  document.getElementById('invoicesTable').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════════════════════════════
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function emptyState(icon, msg) { return `<div class="empty-state"><i class="${icon}"></i><p>${msg}</p></div>`; }
+
+// Make functions global for onclick handlers
+window.toggleLeadDetail = toggleLeadDetail;
+window.updateLeadStage = updateLeadStage;
+window.decideRegistration = decideRegistration;
+window.navigateTo = navigateTo;
