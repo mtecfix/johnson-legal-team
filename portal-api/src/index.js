@@ -27,6 +27,29 @@ function db() {
 }
 function cmds() { return require('@aws-sdk/lib-dynamodb'); }
 
+// Lazy SES v2 client (email dispatch).
+let _ses = null;
+function ses() {
+  if (!_ses) {
+    const { SESv2Client } = require('@aws-sdk/client-sesv2');
+    _ses = new SESv2Client({});
+  }
+  return _ses;
+}
+
+// Lazy SNS client (SMS dispatch).
+let _sns = null;
+function sns() {
+  if (!_sns) {
+    const { SNSClient } = require('@aws-sdk/client-sns');
+    _sns = new SNSClient({});
+  }
+  return _sns;
+}
+
+const FROM_EMAIL = process.env.FROM_EMAIL || 'johnsonlegalteam@gmail.com';
+const FIRM_NAME = 'Johnson Legal Team';
+
 const ADMIN_GROUPS = ['admin', 'super_admin'];
 
 exports.handler = async (event) => {
@@ -137,6 +160,8 @@ async function handleAdmin(ctx) {
     case 'invoices':      return await adminList(ctx, 'INV');
     case 'registrations': return await adminRegistrations(ctx);
     case 'users':         return await adminUsers(ctx);
+    case 'messages':      return await adminMessages(ctx);
+    case 'appointments':  return await adminAppointments(ctx);
     default:              return resp(404, { error: 'Not found' });
   }
 }
@@ -233,6 +258,189 @@ async function adminUsers(ctx) {
   }
   return resp(405, { error: 'Method not allowed' });
 }
+
+// --- Admin messaging: send email or SMS to a client, log the thread --------
+
+// GET  /admin/messages            -> all outbound/inbound messages (log)
+// POST /admin/messages            -> send a message { to_user_id, channel:'email'|'sms', subject, body }
+async function adminMessages(ctx) {
+  const { QueryCommand, PutCommand, GetCommand, ScanCommand } = cmds();
+
+  if (ctx.method === 'GET') {
+    // Optional ?user_id filter via query — else return the whole log (newest first).
+    const out = await db().send(new ScanCommand({
+      TableName: TABLE,
+      FilterExpression: 'begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':sk': 'ADMINMSG#' },
+    }));
+    const items = (out.Items || []).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    return resp(200, { items });
+  }
+
+  if (ctx.method === 'POST') {
+    const b = ctx.body || {};
+    const channel = b.channel === 'sms' ? 'sms' : 'email';
+    if (!b.to_user_id) return resp(400, { error: 'to_user_id required' });
+    if (!b.body) return resp(400, { error: 'body required' });
+
+    // Look up the recipient profile for contact details.
+    const prof = await db().send(new GetCommand({
+      TableName: TABLE, Key: { PK: `USER#${str(b.to_user_id)}`, SK: 'PROFILE' },
+    }));
+    const recipient = prof.Item;
+    if (!recipient) return resp(404, { error: 'Recipient not found' });
+
+    const clientName = ((recipient.first_name || '') + ' ' + (recipient.last_name || '')).trim() || 'Client';
+    let dispatch = { ok: false, detail: '' };
+
+    if (channel === 'email') {
+      if (!recipient.email) return resp(400, { error: 'Recipient has no email on file' });
+      dispatch = await sendEmail(recipient.email, b.subject || `A message from ${FIRM_NAME}`, b.body, clientName);
+    } else {
+      const phone = recipient.phone || recipient.phone_number;
+      if (!phone) return resp(400, { error: 'Recipient has no phone number on file' });
+      dispatch = await sendSms(phone, b.body);
+    }
+
+    // Log the message regardless of dispatch outcome (audit trail).
+    const id = Date.now().toString();
+    const item = {
+      PK: `USER#${str(b.to_user_id)}`, SK: `ADMINMSG#${id}`,
+      GSI1PK: 'ADMINMSG', GSI1SK: id,
+      direction: 'outbound', channel,
+      to_user_id: str(b.to_user_id), to_name: clientName,
+      to_address: channel === 'email' ? recipient.email : (recipient.phone || recipient.phone_number),
+      subject: str(b.subject) || null,
+      body: str(b.body),
+      sent_by: ctx.claims.email || ctx.userId,
+      status: dispatch.ok ? 'sent' : 'failed',
+      error: dispatch.ok ? null : str(dispatch.detail),
+      created_at: new Date().toISOString(),
+    };
+    await db().send(new PutCommand({ TableName: TABLE, Item: item }));
+
+    if (!dispatch.ok) return resp(502, { error: 'Message logged but delivery failed', detail: dispatch.detail, message: item });
+    return resp(201, { success: true, message: item });
+  }
+
+  return resp(405, { error: 'Method not allowed' });
+}
+
+// GET/POST /admin/appointments — calendar events & deadlines (firm-wide)
+async function adminAppointments(ctx) {
+  const { ScanCommand, PutCommand } = cmds();
+  if (ctx.method === 'GET') {
+    const out = await db().send(new ScanCommand({
+      TableName: TABLE,
+      FilterExpression: 'begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':sk': 'EVENT#' },
+    }));
+    const items = (out.Items || []).sort((a, b) => (a.event_date || '').localeCompare(b.event_date || ''));
+    return resp(200, { items });
+  }
+  if (ctx.method === 'POST') {
+    const b = ctx.body || {};
+    if (!b.title || !b.event_date) return resp(400, { error: 'title and event_date required' });
+    const id = Date.now().toString();
+    const item = {
+      PK: b.user_id ? `USER#${str(b.user_id)}` : 'FIRM',
+      SK: `EVENT#${id}`,
+      GSI1PK: 'EVENT', GSI1SK: str(b.event_date),
+      title: str(b.title),
+      event_date: str(b.event_date),
+      event_type: str(b.event_type) || 'court',   // court | deadline | meeting | filing
+      location: str(b.location) || null,
+      case_id: b.case_id ? str(b.case_id) : null,
+      client_name: str(b.client_name) || null,
+      notes: str(b.notes) || null,
+      created_by: ctx.claims.email || ctx.userId,
+      created_at: new Date().toISOString(),
+    };
+    await db().send(new PutCommand({ TableName: TABLE, Item: item }));
+    return resp(201, { success: true, event: item });
+  }
+  return resp(405, { error: 'Method not allowed' });
+}
+
+// --- Dispatch: SES email (branded HTML) + SNS SMS ---------------------------
+
+async function sendEmail(toAddress, subject, bodyText, clientName) {
+  try {
+    const { SendEmailCommand } = require('@aws-sdk/client-sesv2');
+    await ses().send(new SendEmailCommand({
+      FromEmailAddress: `${FIRM_NAME} <${FROM_EMAIL}>`,
+      Destination: { ToAddresses: [toAddress] },
+      Content: {
+        Simple: {
+          Subject: { Data: subject, Charset: 'UTF-8' },
+          Body: {
+            Html: { Data: emailTemplate(subject, bodyText, clientName), Charset: 'UTF-8' },
+            Text: { Data: bodyText, Charset: 'UTF-8' },
+          },
+        },
+      },
+    }));
+    return { ok: true };
+  } catch (e) {
+    console.error('SES send failed', e);
+    return { ok: false, detail: e.name === 'MessageRejected' ? 'Email rejected (recipient may be unverified — SES sandbox)' : (e.message || 'send failed') };
+  }
+}
+
+async function sendSms(phoneNumber, message) {
+  try {
+    const { PublishCommand } = require('@aws-sdk/client-sns');
+    // Normalise to E.164 (assume US if 10 digits).
+    let num = String(phoneNumber).replace(/[^\d+]/g, '');
+    if (!num.startsWith('+')) {
+      if (num.length === 10) num = '+1' + num;
+      else if (num.length === 11 && num.startsWith('1')) num = '+' + num;
+      else num = '+' + num;
+    }
+    await sns().send(new PublishCommand({
+      PhoneNumber: num,
+      Message: `${FIRM_NAME}: ${message}`,
+      MessageAttributes: {
+        'AWS.SNS.SMS.SMSType': { DataType: 'String', StringValue: 'Transactional' },
+      },
+    }));
+    return { ok: true };
+  } catch (e) {
+    console.error('SNS send failed', e);
+    return { ok: false, detail: e.message || 'sms failed' };
+  }
+}
+
+// Branded navy + gold HTML email wrapper.
+function emailTemplate(subject, bodyText, clientName) {
+  const safeBody = String(bodyText).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, '<br>');
+  return `<!DOCTYPE html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:'Segoe UI',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;">
+    <tr><td align="center">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:10px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+        <tr><td style="background:#1B365D;padding:28px 32px;text-align:center;">
+          <div style="font-size:22px;font-weight:700;color:#D4AF37;letter-spacing:.5px;">⚖️ JOHNSON LEGAL TEAM</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.6);margin-top:4px;">Attorney Rodney M. Johnson</div>
+        </td></tr>
+        <tr><td style="height:3px;background:#D4AF37;"></td></tr>
+        <tr><td style="padding:32px;">
+          <p style="font-size:15px;color:#1F2937;margin:0 0 16px;">Dear ${escHtml(clientName)},</p>
+          <div style="font-size:14px;line-height:1.7;color:#374151;">${safeBody}</div>
+          <p style="font-size:14px;color:#374151;margin:24px 0 0;">Sincerely,<br><strong>Rodney M. Johnson</strong><br>Johnson Legal Team</p>
+        </td></tr>
+        <tr><td style="background:#f9fafb;padding:20px 32px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;text-align:center;">
+          Johnson Legal Team &nbsp;•&nbsp; (313) 355-2216 &nbsp;•&nbsp; johnsonlegalteam@gmail.com<br>
+          <span style="font-size:11px;color:#9ca3af;">This message may contain confidential attorney-client information.</span>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>`;
+}
+
+function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
 
 // --- Helpers ----------------------------------------------------------------
 

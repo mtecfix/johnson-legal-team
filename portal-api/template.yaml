@@ -17,6 +17,7 @@ Globals:
         COGNITO_USER_POOL_ID: !Ref PortalUserPool
         COGNITO_CLIENT_ID: !Ref PortalUserPoolClient
         COGNITO_REGION: !Ref AWS::Region
+        FROM_EMAIL: johnsonlegalteam@gmail.com
 
 Parameters:
   CorsOrigin:
@@ -144,6 +145,13 @@ Resources:
       Policies:
         - DynamoDBCrudPolicy:
             TableName: !Ref PortalTable
+        - Statement:
+            - Effect: Allow
+              Action: [ses:SendEmail, ses:SendRawEmail]
+              Resource: '*'
+            - Effect: Allow
+              Action: [sns:Publish]
+              Resource: '*'
       Events:
         Profile:
           Type: HttpApi
@@ -166,6 +174,9 @@ Resources:
         AdminClients:
           Type: HttpApi
           Properties: { ApiId: !Ref PortalHttpApi, Path: /admin/clients, Method: ANY }
+        AdminCases:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /admin/cases, Method: ANY }
         AdminInvoices:
           Type: HttpApi
           Properties: { ApiId: !Ref PortalHttpApi, Path: /admin/invoices, Method: ANY }
@@ -175,6 +186,12 @@ Resources:
         AdminUsers:
           Type: HttpApi
           Properties: { ApiId: !Ref PortalHttpApi, Path: /admin/users, Method: ANY }
+        AdminMessages:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /admin/messages, Method: ANY }
+        AdminAppointments:
+          Type: HttpApi
+          Properties: { ApiId: !Ref PortalHttpApi, Path: /admin/appointments, Method: ANY }
 
 Outputs:
   ApiUrl:

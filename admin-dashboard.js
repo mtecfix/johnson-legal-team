@@ -82,6 +82,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Customize dashboard for role
   applyDashboardRole(currentRole);
 
+  // Wire up forms
+  setupMessageForm();
+  setupEventForm();
+
   // Load data
   loadAll();
 });
@@ -129,15 +133,17 @@ function applyDashboardRole(role) {
 
 const sectionTitles = {
   dashboard: 'Dashboard',
-  leads: 'Lead Pipeline',
+  leads: 'Leads',
   cases: 'Cases',
   contacts: 'Contacts',
   calendar: 'Calendar & Deadlines',
   documents: 'Documents',
   messages: 'Messages',
   invoices: 'Invoices & Billing',
+  payments: 'Payments & Billing',
   registrations: 'Registrations',
   users: 'User Roles',
+  system: 'System Administration',
 };
 
 function navigateTo(section) {
@@ -170,6 +176,9 @@ async function loadAll() {
     loadCases(),
     loadRegistrations(),
     loadInvoices(),
+    loadMessages(),
+    loadCalendar(),
+    loadUsers(),
   ]);
   updateStats();
 }
@@ -183,6 +192,7 @@ async function loadClients() {
     const data = await PortalAPI.admin.listClients();
     clientsData = data.items || [];
     renderContactsTable();
+    populateRecipients();
   } catch (e) {
     console.error('loadClients failed:', e.message);
     document.getElementById('contactsTable').innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load clients: ' + e.message);
@@ -267,7 +277,15 @@ function updateStats() {
   document.getElementById('statClients').textContent = clientsData.length;
   document.getElementById('statCases').textContent = casesData.filter(c => c.status === 'active').length || '0';
   const dl = document.getElementById('statDeadlines');
-  if (dl) dl.textContent = '0';
+  if (dl) {
+    const now = new Date();
+    const soon = new Date(now.getTime() + 30 * 864e5); // next 30 days
+    const upcoming = calendarData.filter(e => {
+      const d = e.event_date ? new Date(e.event_date) : null;
+      return d && d >= now && d <= soon;
+    }).length;
+    dl.textContent = upcoming;
+  }
   const pendingRegs = document.querySelectorAll('#registrationsContent .btn-success').length;
   document.getElementById('statRegistrations').textContent = pendingRegs || '0';
 
@@ -462,6 +480,219 @@ function renderInvoices(invoices) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// MESSAGES (email + SMS)
+// ═══════════════════════════════════════════════════════════════
+
+async function loadMessages() {
+  // Populate recipient dropdown from clients (once clients are loaded)
+  populateRecipients();
+  try {
+    if (!window.PortalAPI) return;
+    const data = await PortalAPI.admin.listMessages();
+    renderMessagesLog(data.items || []);
+  } catch (e) {
+    const el = document.getElementById('messagesLog');
+    if (el) el.innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load messages: ' + e.message);
+  }
+}
+
+function populateRecipients() {
+  const sel = document.getElementById('msgRecipient');
+  if (!sel) return;
+  if (!clientsData.length) { sel.innerHTML = '<option value="">No clients loaded</option>'; return; }
+  sel.innerHTML = clientsData.map(c => {
+    const uid = (c.PK || '').replace('USER#', '');
+    const name = `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || uid;
+    return `<option value="${esc(uid)}" data-email="${esc(c.email||'')}" data-phone="${esc(c.phone||c.phone_number||'')}">${esc(name)}</option>`;
+  }).join('');
+}
+
+function renderMessagesLog(items) {
+  const el = document.getElementById('messagesLog');
+  if (!el) return;
+  if (!items.length) { el.innerHTML = emptyState('fas fa-envelope', 'No messages sent yet.'); return; }
+  let html = '<table class="data-table"><thead><tr><th>To</th><th>Channel</th><th>Subject / Body</th><th>Status</th><th>Date</th></tr></thead><tbody>';
+  items.forEach(m => {
+    const icon = m.channel === 'sms' ? 'fa-comment-sms' : 'fa-envelope';
+    const statusClass = m.status === 'sent' ? 'converted' : 'lost';
+    const preview = m.subject ? `<strong>${esc(m.subject)}</strong><br>` : '';
+    const body = esc((m.body || '').slice(0, 80)) + ((m.body||'').length > 80 ? '…' : '');
+    const date = m.created_at ? new Date(m.created_at).toLocaleString() : '';
+    html += `<tr>
+      <td><strong>${esc(m.to_name || '')}</strong><br><span style="color:var(--muted);font-size:11px;">${esc(m.to_address || '')}</span></td>
+      <td><i class="fas ${icon}"></i> ${esc(m.channel)}</td>
+      <td style="font-size:12px;">${preview}${body}</td>
+      <td><span class="badge-stage ${statusClass}">${esc(m.status || '')}</span></td>
+      <td style="font-size:11px;color:var(--muted);">${date}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function setupMessageForm() {
+  const form = document.getElementById('messageForm');
+  if (!form) return;
+
+  // Toggle subject field + SMS hint based on channel
+  document.querySelectorAll('input[name="channel"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const isSms = document.getElementById('channelSms').checked;
+      document.getElementById('subjectWrap').style.display = isSms ? 'none' : '';
+      document.getElementById('smsHint').hidden = !isSms;
+    });
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = document.getElementById('msgSendBtn');
+    const result = document.getElementById('msgResult');
+    const channel = document.querySelector('input[name="channel"]:checked').value;
+    const to_user_id = document.getElementById('msgRecipient').value;
+    const subject = document.getElementById('msgSubject').value.trim();
+    const body = document.getElementById('msgBody').value.trim();
+
+    if (!to_user_id || !body) { result.innerHTML = '<span style="color:var(--danger);">Recipient and message required.</span>'; return; }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+    result.innerHTML = '';
+    try {
+      await PortalAPI.admin.sendMessage({ to_user_id, channel, subject, body });
+      result.innerHTML = '<span style="color:var(--success);"><i class="fas fa-check"></i> Message sent.</span>';
+      document.getElementById('msgBody').value = '';
+      document.getElementById('msgSubject').value = '';
+      loadMessages();
+    } catch (err) {
+      result.innerHTML = `<span style="color:var(--danger);"><i class="fas fa-exclamation-circle"></i> ${esc(err.message || 'Failed to send')}</span>`;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CALENDAR
+// ═══════════════════════════════════════════════════════════════
+
+let calendarData = [];
+async function loadCalendar() {
+  try {
+    if (!window.PortalAPI) return;
+    const data = await PortalAPI.admin.listAppointments();
+    calendarData = data.items || [];
+    renderCalendar();
+  } catch (e) {
+    const el = document.getElementById('calendarList');
+    if (el) el.innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load calendar: ' + e.message);
+  }
+}
+
+function renderCalendar() {
+  const el = document.getElementById('calendarList');
+  if (!el) return;
+  if (!calendarData.length) { el.innerHTML = emptyState('fas fa-calendar-alt', 'No events scheduled.'); return; }
+
+  const typeIcons = { court: 'fa-gavel', deadline: 'fa-hourglass-half', meeting: 'fa-handshake', filing: 'fa-file-signature' };
+  const now = new Date();
+  let html = '<table class="data-table"><thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Location</th></tr></thead><tbody>';
+  calendarData.forEach(evt => {
+    const d = evt.event_date ? new Date(evt.event_date) : null;
+    const isPast = d && d < now;
+    const dateStr = d ? d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+    const icon = typeIcons[evt.event_type] || 'fa-calendar';
+    html += `<tr style="${isPast ? 'opacity:.5;' : ''}">
+      <td style="font-size:12px;font-weight:600;">${dateStr}</td>
+      <td><strong>${esc(evt.title || '')}</strong>${evt.notes ? `<br><span style="color:var(--muted);font-size:11px;">${esc(evt.notes)}</span>` : ''}</td>
+      <td style="font-size:12px;text-transform:capitalize;"><i class="fas ${icon}" style="color:var(--gold);"></i> ${esc(evt.event_type || '')}</td>
+      <td style="font-size:12px;color:var(--muted);">${esc(evt.location || '—')}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+function setupEventForm() {
+  const form = document.getElementById('eventForm');
+  if (!form) return;
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const result = document.getElementById('evtResult');
+    const payload = {
+      title: document.getElementById('evtTitle').value.trim(),
+      event_date: document.getElementById('evtDate').value,
+      event_type: document.getElementById('evtType').value,
+      location: document.getElementById('evtLocation').value.trim(),
+      notes: document.getElementById('evtNotes').value.trim(),
+    };
+    if (!payload.title || !payload.event_date) { result.innerHTML = '<span style="color:var(--danger);">Title and date required.</span>'; return; }
+    try {
+      await PortalAPI.admin.createAppointment(payload);
+      result.innerHTML = '<span style="color:var(--success);"><i class="fas fa-check"></i> Event added.</span>';
+      form.reset();
+      loadCalendar();
+      updateStats();
+    } catch (err) {
+      result.innerHTML = `<span style="color:var(--danger);">${esc(err.message || 'Failed')}</span>`;
+    }
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════
+// USER ROLES (super_admin only)
+// ═══════════════════════════════════════════════════════════════
+
+async function loadUsers() {
+  const el = document.getElementById('usersContent');
+  if (!el) return; // panel removed for non-super_admin
+  try {
+    if (!window.PortalAPI) return;
+    const data = await PortalAPI.admin.listUsers();
+    renderUsers(data.items || []);
+  } catch (e) {
+    el.innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load users: ' + e.message);
+  }
+}
+
+function renderUsers(users) {
+  const el = document.getElementById('usersContent');
+  if (!el) return;
+  const staff = users.filter(u => u.role === 'admin' || u.role === 'super_admin' || u.role === 'staff');
+  if (!staff.length) { el.innerHTML = emptyState('fas fa-shield-alt', 'No staff accounts.'); return; }
+  let html = `<div class="alert alert-info py-2" style="font-size:12px;margin:16px;">Role changes take effect on the user's next login. Only super_admin can modify roles.</div>`;
+  html += '<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Current Role</th><th>Change To</th></tr></thead><tbody>';
+  staff.forEach(u => {
+    const uid = (u.PK || '').replace('USER#', '');
+    html += `<tr>
+      <td><strong>${esc(u.first_name || '')} ${esc(u.last_name || '')}</strong></td>
+      <td>${esc(u.email || '')}</td>
+      <td><span class="badge bg-dark">${esc(u.role || 'client')}</span></td>
+      <td>
+        <select class="form-select form-select-sm" style="width:auto;display:inline-block;font-size:12px;" onchange="changeUserRole('${esc(uid)}', this.value)">
+          <option value="">—</option>
+          <option value="staff">staff</option>
+          <option value="admin">admin</option>
+          <option value="super_admin">super_admin</option>
+        </select>
+      </td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
+}
+
+async function changeUserRole(userId, role) {
+  if (!role) return;
+  if (!confirm(`Change this user's role to "${role}"?`)) return;
+  try {
+    await PortalAPI.admin.changeRole({ user_id: userId, role });
+    alert('Role updated. Takes effect on next login.');
+    loadUsers();
+  } catch (e) { alert(e.message || 'Failed to change role.'); }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════════════════════════════
 
@@ -473,3 +704,4 @@ window.toggleLeadDetail = toggleLeadDetail;
 window.updateLeadStage = updateLeadStage;
 window.decideRegistration = decideRegistration;
 window.navigateTo = navigateTo;
+window.changeUserRole = changeUserRole;

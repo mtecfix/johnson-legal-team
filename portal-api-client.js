@@ -63,6 +63,10 @@
       decideRegistration:(data)  => request('/admin/registrations', { method: 'POST', body: data }),
       listUsers:         ()      => request('/admin/users'),
       changeRole:        (data)  => request('/admin/users', { method: 'PUT', body: data }), // super_admin only
+      listMessages:      ()      => request('/admin/messages'),
+      sendMessage:       (data)  => request('/admin/messages', { method: 'POST', body: data }),
+      listAppointments:  ()      => request('/admin/appointments'),
+      createAppointment: (data)  => request('/admin/appointments', { method: 'POST', body: data }),
     },
 
     _config: { API_BASE },

@@ -153,8 +153,9 @@
             <div class="panel-card-header"><h2>Jude AI Status</h2></div>
             <div class="panel-card-body padded" id="judeStatus">
               <div style="font-size:13px;line-height:2;">
-                <div><span class="status-dot" style="width:8px;height:8px;border-radius:50%;background:#059669;display:inline-block;"></span> Notification Pipeline: <strong>Live</strong></div>
-                <div><span class="status-dot" style="width:8px;height:8px;border-radius:50%;background:#059669;display:inline-block;"></span> Lead Scoring: <strong>Live</strong></div>
+                <div><span class="status-dot" style="width:8px;height:8px;border-radius:50%;background:#059669;display:inline-block;"></span> Email Messaging: <strong>Live</strong></div>
+                <div><span class="status-dot" style="width:8px;height:8px;border-radius:50%;background:#F59E0B;display:inline-block;"></span> SMS Messaging: <strong>Sandbox</strong></div>
+                <div><span class="status-dot" style="width:8px;height:8px;border-radius:50%;background:#059669;display:inline-block;"></span> Calendar: <strong>Live</strong></div>
                 <div><span class="status-dot" style="width:8px;height:8px;border-radius:50%;background:#F59E0B;display:inline-block;"></span> AI Reasoning: <strong>Pending Deploy</strong></div>
                 <div><span class="status-dot" style="width:8px;height:8px;border-radius:50%;background:#F59E0B;display:inline-block;"></span> Inbox Monitor: <strong>Pending Deploy</strong></div>
                 <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);color:var(--muted);font-size:11px;">Model: Gemini 3.1 Flash-Lite</div>
@@ -218,10 +219,48 @@
 
     <!-- CALENDAR -->
     <div class="panel" id="panelCalendar">
-      <div class="panel-card">
-        <div class="panel-card-header"><h2>Calendar & Deadlines</h2></div>
-        <div class="panel-card-body padded">
-          <div class="empty-state"><i class="fas fa-calendar-alt"></i><p>Calendar integration coming soon.<br>Will sync with court docket emails detected by Jude.</p></div>
+      <div class="row g-3">
+        <div class="col-lg-4">
+          <div class="panel-card">
+            <div class="panel-card-header"><h2>Add Event</h2></div>
+            <div class="panel-card-body padded">
+              <form id="eventForm">
+                <div class="mb-2">
+                  <label class="form-label" style="font-size:12px;font-weight:600;">Title</label>
+                  <input type="text" class="form-control form-control-sm" id="evtTitle" required placeholder="e.g. Pretrial hearing — Smith">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label" style="font-size:12px;font-weight:600;">Date & Time</label>
+                  <input type="datetime-local" class="form-control form-control-sm" id="evtDate" required>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label" style="font-size:12px;font-weight:600;">Type</label>
+                  <select class="form-select form-select-sm" id="evtType">
+                    <option value="court">Court Date</option>
+                    <option value="deadline">Filing Deadline</option>
+                    <option value="meeting">Client Meeting</option>
+                    <option value="filing">Filing</option>
+                  </select>
+                </div>
+                <div class="mb-2">
+                  <label class="form-label" style="font-size:12px;font-weight:600;">Location / Court</label>
+                  <input type="text" class="form-control form-control-sm" id="evtLocation" placeholder="e.g. 3rd Circuit, Wayne County">
+                </div>
+                <div class="mb-2">
+                  <label class="form-label" style="font-size:12px;font-weight:600;">Notes</label>
+                  <textarea class="form-control form-control-sm" id="evtNotes" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm w-100"><i class="fas fa-plus"></i> Add Event</button>
+                <div id="evtResult" class="mt-2" style="font-size:12px;"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-8">
+          <div class="panel-card">
+            <div class="panel-card-header"><h2>Upcoming Deadlines & Court Dates</h2></div>
+            <div class="panel-card-body" id="calendarList"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+          </div>
         </div>
       </div>
     </div>
@@ -238,10 +277,45 @@
 
     <!-- MESSAGES -->
     <div class="panel" id="panelMessages">
-      <div class="panel-card">
-        <div class="panel-card-header"><h2>Messages</h2></div>
-        <div class="panel-card-body padded">
-          <div class="empty-state"><i class="fas fa-envelope"></i><p>Secure messaging coming soon.<br>Internal communications between attorney and clients.</p></div>
+      <div class="row g-3">
+        <div class="col-lg-5">
+          <div class="panel-card">
+            <div class="panel-card-header"><h2>New Message</h2></div>
+            <div class="panel-card-body padded">
+              <form id="messageForm">
+                <div class="mb-3">
+                  <label class="form-label" style="font-size:12px;font-weight:600;">Recipient</label>
+                  <select class="form-select form-select-sm" id="msgRecipient" required></select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" style="font-size:12px;font-weight:600;">Channel</label>
+                  <div class="btn-group w-100" role="group">
+                    <input type="radio" class="btn-check" name="channel" id="channelEmail" value="email" checked>
+                    <label class="btn btn-outline-primary btn-sm" for="channelEmail"><i class="fas fa-envelope"></i> Email</label>
+                    <input type="radio" class="btn-check" name="channel" id="channelSms" value="sms">
+                    <label class="btn btn-outline-primary btn-sm" for="channelSms"><i class="fas fa-comment-sms"></i> Text (SMS)</label>
+                  </div>
+                </div>
+                <div class="mb-3" id="subjectWrap">
+                  <label class="form-label" style="font-size:12px;font-weight:600;">Subject</label>
+                  <input type="text" class="form-control form-control-sm" id="msgSubject" placeholder="Message subject">
+                </div>
+                <div class="mb-3">
+                  <label class="form-label" style="font-size:12px;font-weight:600;">Message</label>
+                  <textarea class="form-control form-control-sm" id="msgBody" rows="5" required placeholder="Type your message..."></textarea>
+                  <div style="font-size:11px;color:var(--muted);margin-top:4px;" id="smsHint" hidden>SMS is limited to ~160 chars per segment. Keep it brief.</div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-sm w-100" id="msgSendBtn"><i class="fas fa-paper-plane"></i> Send</button>
+                <div id="msgResult" class="mt-2" style="font-size:12px;"></div>
+              </form>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-7">
+          <div class="panel-card">
+            <div class="panel-card-header"><h2>Message History</h2></div>
+            <div class="panel-card-body" id="messagesLog"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
+          </div>
         </div>
       </div>
     </div>
