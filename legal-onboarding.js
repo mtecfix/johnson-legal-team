@@ -74,7 +74,7 @@ class LegalOnboarding {
                         <li>You'll receive an email notification regarding your case</li>
                         <li>If we can assist you, we'll contact you to discuss representation</li>
                     </ul>
-                    <p class="mb-0"><strong>For urgent matters, please call us immediately at (313) 355-2216</strong></p>
+                    <p class="mb-0"><strong>For urgent matters, please call us immediately at (833) 659-8378</strong></p>
                 `;
                 successDiv.classList.remove('d-none');
                 

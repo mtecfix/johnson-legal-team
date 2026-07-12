@@ -82,7 +82,7 @@ class OnboardingForm {
                         <li>You'll receive an email notification once your account is approved</li>
                         <li>After approval, you can access your client portal</li>
                     </ul>
-                    <p class="mb-0">If you have urgent matters, please call us at <strong>(313) 355-2216</strong></p>
+                    <p class="mb-0">If you have urgent matters, please call us at <strong>(833) 659-8378</strong></p>
                 `;
                 successDiv.classList.remove('d-none');
                 

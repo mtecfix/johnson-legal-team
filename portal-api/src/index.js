@@ -431,7 +431,7 @@ function emailTemplate(subject, bodyText, clientName) {
           <p style="font-size:14px;color:#374151;margin:24px 0 0;">Sincerely,<br><strong>Rodney M. Johnson</strong><br>Johnson Legal Team</p>
         </td></tr>
         <tr><td style="background:#f9fafb;padding:20px 32px;border-top:1px solid #e5e7eb;font-size:12px;color:#6b7280;text-align:center;">
-          Johnson Legal Team &nbsp;•&nbsp; (313) 355-2216 &nbsp;•&nbsp; johnsonlegalteam@gmail.com<br>
+          Johnson Legal Team &nbsp;•&nbsp; (833) 659-8378 &nbsp;•&nbsp; johnsonlegalteam@gmail.com<br>
           <span style="font-size:11px;color:#9ca3af;">This message may contain confidential attorney-client information.</span>
         </td></tr>
       </table>

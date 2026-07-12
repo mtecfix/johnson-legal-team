@@ -96,7 +96,7 @@
         setupCaptcha();
       } catch (err) {
         console.error('Contact form submission failed:', err);
-        showStatus(statusEl, 'Sorry, something went wrong sending your message. Please call us at (313) 355-2216 or try again.', 'danger');
+        showStatus(statusEl, 'Sorry, something went wrong sending your message. Please call us at (833) 659-8378 or try again.', 'danger');
       } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'Send Message';

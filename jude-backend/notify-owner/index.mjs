@@ -126,7 +126,7 @@ function buildHtmlEmail({ subject, headline, body, footer, importance, center, t
   <tr><td style="background:#1B365D;padding:16px 40px;">
     <table role="presentation" width="100%"><tr>
       <td style="color:rgba(255,255,255,0.6);font-size:10px;font-family:Arial,sans-serif;">
-        Johnson Legal Team, PLLC · (313) 355-2216
+        Johnson Legal Team, PLLC · (833) 659-8378
       </td>
       <td align="right" style="color:rgba(255,255,255,0.4);font-size:10px;font-family:Arial,sans-serif;">
         Automated · Do not reply

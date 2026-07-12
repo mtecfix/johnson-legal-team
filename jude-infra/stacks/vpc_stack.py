@@ -1,11 +1,18 @@
-"""VPC Stack — subnets, NAT (for Gemini egress), VPC endpoints, flow logs.
+"""VPC Stack — subnets, NAT instance (for Gemini egress), flow logs.
 
-Trimmed from aws-samples/sample-host-openclaw-on-amazon-bedrock-agentcore:
-dropped the Bedrock Runtime VPC endpoint (Jude's model provider is Gemini,
-reached over the internet via NAT — see docs/JUDE-OPENCLAW-SPEC.md §3/§9).
-Kept the NAT Gateway itself; the sample already had it for web_fetch/
-web_search tool egress, so no additional cost was introduced by this
-change — just one fewer interface endpoint.
+Cost-optimized: replaced the managed NAT Gateway ($32/month) and 3
+interface VPC endpoints (~$36/month) with a single t4g.nano NAT instance
+(~$3/month). Total VPC cost goes from ~$68/month to ~$4/month.
+
+Trade-offs vs. managed NAT Gateway:
+  - Not auto-healing (if the instance dies, Jude loses internet until
+    restart — acceptable for a low-volume back-office agent)
+  - No multi-AZ redundancy (single instance in one AZ)
+  - SecretsManager/CloudWatch calls now route through NAT instead of
+    private VPC endpoints (negligible latency at this volume)
+
+Uses CDK's NatInstanceProviderV2 which properly manages route table
+entries (avoids conflicts with existing 0.0.0.0/0 routes on update).
 """
 
 from aws_cdk import (
@@ -14,6 +21,7 @@ from aws_cdk import (
     aws_logs as logs,
     aws_iam as iam,
     RemovalPolicy,
+    CfnOutput,
 )
 import cdk_nag
 from constructs import Construct
@@ -27,13 +35,19 @@ class VpcStack(Stack):
 
         log_retention = self.node.try_get_context("cloudwatch_log_retention_days") or 30
 
-        # --- VPC ----------------------------------------------------------
-        # Allow override via context if AgentCore Runtime has AZ restrictions
-        # in this region. Context: "availability_zones": ["us-east-1a", "us-east-1b"]
+        # --- NAT Instance Provider (t3a.nano — ~$3.40/month) --------------------
+        # Using t3a.nano (AMD) instead of t4g.nano (ARM) due to temporary
+        # t4g.nano capacity shortage in us-east-1a.
+        nat_provider = ec2.NatProvider.instance_v2(
+            instance_type=ec2.InstanceType("t3a.nano"),
+        )
+
+        # --- VPC with NAT instance -------------------------------------------
         availability_zones = self.node.try_get_context("availability_zones")
 
         vpc_kwargs = {
             "ip_addresses": ec2.IpAddresses.cidr("10.0.0.0/16"),
+            "nat_gateway_provider": nat_provider,
             "nat_gateways": 1,
             "subnet_configuration": [
                 ec2.SubnetConfiguration(
@@ -56,7 +70,14 @@ class VpcStack(Stack):
 
         self.vpc = ec2.Vpc(self, "Vpc", **vpc_kwargs)
 
-        # VPC Flow Logs
+        # Allow all traffic from VPC CIDR to NAT instance (for forwarding)
+        nat_provider.connections.allow_from(
+            ec2.Peer.ipv4(self.vpc.vpc_cidr_block),
+            ec2.Port.all_traffic(),
+            "All traffic from VPC (private subnets route through NAT)",
+        )
+
+        # --- VPC Flow Logs ----------------------------------------------------
         flow_log_group = logs.LogGroup(
             self,
             "VpcFlowLogGroup",
@@ -76,70 +97,69 @@ class VpcStack(Stack):
             traffic_type=ec2.FlowLogTrafficType.ALL,
         )
 
-        # --- Security Groups ---------------------------------------------
-        self.vpce_sg = ec2.SecurityGroup(
-            self,
-            "VpceSecurityGroup",
-            vpc=self.vpc,
-            description="VPC Endpoint interface security group",
-            allow_all_outbound=False,
-        )
-        self.vpce_sg.add_ingress_rule(
-            peer=ec2.Peer.ipv4(self.vpc.vpc_cidr_block),
-            connection=ec2.Port.tcp(443),
-            description="HTTPS from VPC (AgentCore container)",
-        )
-
-        # --- VPC Endpoints (S3/DynamoDB/SecretsManager/CW only — no Bedrock) --
+        # --- Gateway Endpoints (FREE — keep these) ----------------------------
         private_subnets = ec2.SubnetSelection(
             subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
         )
 
-        interface_endpoints = {
-            "SecretsManager": ec2.InterfaceVpcEndpointAwsService.SECRETS_MANAGER,
-            "CwLogs": ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_LOGS,
-            "Monitoring": ec2.InterfaceVpcEndpointAwsService.CLOUDWATCH_MONITORING,
-        }
-
-        for name, service in interface_endpoints.items():
-            self.vpc.add_interface_endpoint(
-                f"{name}Endpoint",
-                service=service,
-                subnets=private_subnets,
-                security_groups=[self.vpce_sg],
-                private_dns_enabled=True,
-            )
-
-        # S3 gateway endpoint (free, no SG needed) — workspace sync
+        # S3 gateway endpoint (free) — workspace sync
         self.vpc.add_gateway_endpoint(
             "S3Endpoint",
             service=ec2.GatewayVpcEndpointAwsService.S3,
             subnets=[private_subnets],
         )
 
-        # DynamoDB gateway endpoint (free, no SG needed) — jude-leads reads
+        # DynamoDB gateway endpoint (free) — jude-leads reads
         self.vpc.add_gateway_endpoint(
             "DynamoDbEndpoint",
             service=ec2.GatewayVpcEndpointAwsService.DYNAMODB,
             subnets=[private_subnets],
         )
 
-        # NOTE: generativelanguage.googleapis.com (Gemini) has no VPC
-        # endpoint — it's reached via the NAT Gateway → internet, same
-        # path already used by OpenClaw's built-in web_fetch/web_search
-        # tools in the upstream sample.
+        # NOTE: Interface VPC endpoints (SecretsManager, CloudWatch Logs,
+        # Monitoring) REMOVED to save ~$36/month. Those services are now
+        # reached via the NAT instance → internet. At Jude's volume
+        # (a few invocations/day) this adds negligible latency and cost.
 
-        # --- cdk-nag suppressions ---
+        # --- Outputs -----------------------------------------------------------
+        CfnOutput(self, "VpcId", value=self.vpc.vpc_id)
+
+        # --- cdk-nag suppressions ----------------------------------------------
+        # Get the NAT instance(s) for suppressions
+        nat_instances = nat_provider.gateway_instances
+        for inst in nat_instances:
+            cdk_nag.NagSuppressions.add_resource_suppressions(
+                inst,
+                [
+                    cdk_nag.NagPackSuppression(
+                        id="AwsSolutions-EC26",
+                        reason="NAT instance does not need EBS encryption — no data stored, "
+                        "only forwards packets.",
+                    ),
+                    cdk_nag.NagPackSuppression(
+                        id="AwsSolutions-EC28",
+                        reason="NAT instance does not need detailed monitoring — "
+                        "low-volume single-agent traffic.",
+                    ),
+                    cdk_nag.NagPackSuppression(
+                        id="AwsSolutions-EC29",
+                        reason="NAT instance is intentionally not in an ASG — single "
+                        "instance is acceptable for this low-volume use case.",
+                    ),
+                ],
+            )
+
         cdk_nag.NagSuppressions.add_resource_suppressions(
-            self.vpce_sg,
+            nat_provider.security_group,
             [
                 cdk_nag.NagPackSuppression(
                     id="AwsSolutions-EC23",
-                    reason="Ingress uses VPC CIDR (10.0.0.0/16) which resolves via Fn::GetAtt at deploy time; not open to 0.0.0.0/0.",
+                    reason="NAT instance ingress is from VPC CIDR (10.0.0.0/16) only, "
+                    "not 0.0.0.0/0. All-traffic rule is required for NAT forwarding.",
                 ),
                 cdk_nag.NagPackSuppression(
                     id="CdkNagValidationFailure",
-                    reason="Security group rule uses Fn::GetAtt for VPC CIDR which cannot be validated at synth time.",
+                    reason="Security group uses VPC CIDR which is known at deploy time.",
                 ),
             ],
         )

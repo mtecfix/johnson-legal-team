@@ -1,7 +1,6 @@
-# KIRO SESSION RESUME — Johnson Legal Team / Jude AI Agent
-# Scan this file to restore context on relaunch.
-# Location: C:\Users\MR TEHC\johnson legal team\KIRO-RESUME.md
-# Last updated: 2026-07-10 5:56 PM ET
+# KIRO SESSION RESUME — Johnson Legal Team
+# Scan this file to restore full project context on relaunch.
+# Last updated: 2026-07-11 11:47 AM ET
 
 ---
 
@@ -22,58 +21,76 @@
 - Decap CMS (git-based, admin/config.yml)
 - GitHub Actions deploys to GitHub Pages on push to master
 - Pages: index, about, blog (5 posts), contact, practice areas (5), client portal pages
-- **BLOCKER:** Portal CORS set to dead CloudFront URL `https://d1rqv10nry9s54.cloudfront.net` — needs update to GitHub Pages URL
 
 ### Layer 2: Client Portal API (LIVE)
-- CloudFormation stack: `johnson-legal-portal`
-- Cognito pool: `us-east-1_dqqgSRKwn` (MFA required, TOTP)
+- CloudFormation stack: `johnson-legal-portal` (UPDATE_COMPLETE)
+- Cognito pool: `us-east-1_dqqgSRKwn` (MFA OPTIONAL, TOTP)
 - API Gateway: https://2hp2bdxsz6.execute-api.us-east-1.amazonaws.com
 - Lambda: `johnson-legal-portal-PortalFunction-RUckeHLKjZto` (Node.js 20)
-- DynamoDB: `johnson-legal-portal-PortalTable-BSDJNMA75SSQ` (0 items)
-- User: mrtechfixes.ai@gmail.com (super_admin, FORCE_CHANGE_PASSWORD — never logged in)
+- DynamoDB: `johnson-legal-portal-PortalTable-BSDJNMA75SSQ`
 - Routes: /profile, /cases, /documents, /messages, /invoices, /appointments, /admin/*
+- Users (2):
+  - mrtechfixes.ai@gmail.com — CONFIRMED (super_admin)
+  - johnsonlegalteam@gmail.com — CONFIRMED (created Jul 10)
 
 ### Layer 3: Jude AI Agent (PARTIALLY DEPLOYED)
 
 #### Deployed (serverless backbone):
-- `jude-leads` Lambda — captures, classifies (rule-based), scores leads, stores in DynamoDB
+- `jude-leads` Lambda — captures, classifies, scores leads, stores in DynamoDB
 - `jude-notify-owner` Lambda — notification backbone (SES email + SNS SMS)
-  - **⚠️ OWNER_EMAIL, FROM_EMAIL, OWNER_PHONE are ALL EMPTY** — notifications log but don't deliver
 - `jude-api` (API GW mpiai89295) — POST /leads (open), GET/PATCH /leads (JWT via jude-staff pool)
-- DynamoDB: `jude-leads` (0 items), `jude-events` (1 test event from today)
+- DynamoDB: `jude-leads`, `jude-events`
 - Cognito: `jude-staff` pool (1 user confirmed)
 
-#### Deployed THIS SESSION (Phase 1 CDK):
-| Stack | Resources |
-|-------|-----------|
-| JudeVpc | VPC vpc-0adc0680981af7b25, subnets subnet-0fba84e75b3951d54 + subnet-056a3b55582f9804b, NAT GW, VPC endpoints (S3, DDB, SecretsManager, CW Logs, Monitoring) |
-| JudeSecurity | KMS CMK arn:aws:kms:us-east-1:663877906756:key/f2cb1248-04fe-4146-8f63-8e673b6ac33e |
-| JudeAgentCore | Role: jude-agentcore-execution-role-us-east-1, SG: sg-06a7f96b29b47d2bf, Bucket: jude-workspace-663877906756-us-east-1 |
-| JudeObservability | SNS alarm topic: arn:aws:sns:us-east-1:663877906756:jude-alarms, CloudWatch dashboard |
+#### Deployed (Phase 1 CDK — all CREATE_COMPLETE Jul 10):
+| Stack | Status | Resources |
+|-------|--------|-----------|
+| JudeVpc | ✅ COMPLETE | VPC vpc-0adc0680981af7b25, subnets, NAT GW, VPC endpoints (S3, DDB, SecretsManager, CW Logs, Monitoring) |
+| JudeSecurity | ✅ COMPLETE | KMS CMK arn:aws:kms:us-east-1:663877906756:key/f2cb1248-04fe-4146-8f63-8e673b6ac33e |
+| JudeAgentCore | ✅ COMPLETE | Role: jude-agentcore-execution-role-us-east-1, SG: sg-06a7f96b29b47d2bf, Bucket: jude-workspace-663877906756-us-east-1 |
+| JudeObservability | ✅ COMPLETE | SNS alarm topic: arn:aws:sns:us-east-1:663877906756:jude-alarms, CloudWatch dashboard |
 
-#### NOT YET Deployed (blocked by WSL read-only filesystem):
-- **Bridge container** — Dockerfile is ready in `jude-infra/bridge/`, openclaw bumped to 2026.6.11
-- **ECR repo created:** 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge (empty, no image pushed)
-- **AgentCore Runtime** — not created yet (needs container image first)
+#### NOT YET Deployed (blocked — container not built):
+- **Bridge container** — Dockerfile ready in `jude-infra/bridge/`, ECR repo exists but **EMPTY (no images pushed)**
+- **ECR repo:** 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge
+- **AgentCore Runtime** — not created (needs container image)
 - **AgentCore Runtime Endpoint** — not created
 - **JudeRouter CDK stack** — not deployed (needs runtime_id)
 
 ---
 
+## AWS ENVIRONMENT STATUS (verified 2026-07-11)
+
+### ✅ RESOLVED since last session:
+- **jude-notify-owner env vars** — NOW POPULATED: OWNER_EMAIL=johnsonlegalteam@gmail.com, FROM_EMAIL=johnsonlegalteam@gmail.com, OWNER_PHONE=+13133552216, TECH_EMAIL=mrtechfixes.ai@gmail.com
+- **Portal CORS** — NOW SET TO `https://mtecfix.github.io` (was dead CloudFront URL)
+- **Cognito user** — mrtechfixes.ai@gmail.com is now CONFIRMED (was FORCE_CHANGE_PASSWORD)
+- **SES identities** — both mrtechfixes.ai@gmail.com AND johnsonlegalteam@gmail.com are VERIFIED
+
+### ⚠️ STILL PENDING:
+- **SES production access** — DENIED (case 178372854400925). Still sandbox: 200 emails/day, verified recipients only
+- **ECR jude-bridge** — repo exists but NO IMAGE pushed (Docker build was blocked by WSL read-only issue)
+- **AgentCore Runtime + Endpoint** — cannot create until container is pushed
+- **JudeRouter stack** — cannot deploy until runtime exists
+
+### ℹ️ NOTES:
+- Cognito MFA is OPTIONAL (not REQUIRED as previously noted)
+- Portal API Cognito Client ID: 1ceidj2abdvs0jijedhckte5um
+- jude-api CORS also correctly set to `https://mtecfix.github.io`
+
+---
+
 ## IMMEDIATE NEXT STEPS (in order)
 
-### Step 1: Fix WSL (user action)
-PowerShell (admin): `wsl --shutdown` → reopen terminal
-
-### Step 2: Build + Push Container
+### Step 1: Build + Push Container
 ```bash
-cd "/mnt/c/Users/MR TEHC/johnson legal team/jude-infra/bridge"
+cd "/mnt/d/KIRO PROJECTS/johnson legal team/jude-infra/bridge"
 aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 663877906756.dkr.ecr.us-east-1.amazonaws.com
 docker build -t 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge:v1 .
 docker push 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge:v1
 ```
 
-### Step 3: Create AgentCore Runtime
+### Step 2: Create AgentCore Runtime
 ```bash
 aws bedrock-agentcore-control create-agent-runtime \
   --agent-runtime-name jude-runtime \
@@ -86,7 +103,7 @@ aws bedrock-agentcore-control create-agent-runtime \
 ```
 → Save the `agentRuntimeId` from the response
 
-### Step 4: Create Runtime Endpoint
+### Step 3: Create Runtime Endpoint
 ```bash
 aws bedrock-agentcore-control create-agent-runtime-endpoint \
   --agent-runtime-id <RUNTIME_ID> \
@@ -95,45 +112,62 @@ aws bedrock-agentcore-control create-agent-runtime-endpoint \
   --region us-east-1
 ```
 
-### Step 5: Deploy Router Stack
+### Step 4: Deploy Router Stack
 ```bash
-cd "/mnt/c/Users/MR TEHC/johnson legal team/jude-infra"
+cd "/mnt/d/KIRO PROJECTS/johnson legal team/jude-infra"
 source .venv/bin/activate
 npx cdk deploy JudeRouter --context runtime_id=<RUNTIME_ID> --require-approval never
 ```
 
-### Step 6: Wire jude-leads to call Router
+### Step 5: Wire jude-leads to call Router
 Update `jude-leads` Lambda to POST to the new Router API after storing a lead.
 
-### Step 7: End-to-end test
+### Step 6: End-to-end test
 POST a test lead → jude-leads stores it → calls Router → AgentCore/OpenClaw triages → calls jude-notify-owner → delivers email/SMS.
 
 ---
 
 ## OTHER PENDING ITEMS (lower priority)
 
-1. **Fix Portal CORS** — redeploy with `CorsOrigin=https://mtecfix.github.io` (or wherever GitHub Pages serves it)
-2. **Configure jude-notify-owner** — set OWNER_EMAIL, FROM_EMAIL, OWNER_PHONE
-3. **Request SES production access** — currently sandbox (200 emails/day, verified-only recipients)
-4. **Commit blog images** — `images/blog/` is untracked
-5. **Set admin/config.yml backend.repo** to `mtecfix/johnson-legal-team`
-6. **Commit this session's changes** — READMEs, security_stack.py fix, Dockerfile fixes
+1. **SES production access** — re-apply or accept sandbox limits for now
+2. **Set admin/config.yml backend.repo** to `mtecfix/johnson-legal-team`
+3. **Commit any uncommitted changes** (blog images, recent code updates)
+4. Google/social login: NOT set up (email/password only). Can add later.
+5. api/ (old PHP endpoints) still present — revisit if migrating to serverless API
 
 ---
 
 ## SECRETS (reference by name only)
-- `jude/gemini-api-key` — Gemini 3.1 Flash-Lite (AIzaSy... format, paid tier)
+- `jude/gemini-api-key` — Gemini 3.1 Flash-Lite (paid tier)
 - `jude/hooks-token` — Bearer token for Router Lambda ↔ AgentCore auth
-- `jude/deepseek-api-key` — Fallback LLM (needs prepaid credit to use)
+- `jude/deepseek-api-key` — Fallback LLM (needs prepaid credit)
 - `johnson-legal/rds-credentials` — Legacy MySQL creds (unused)
 - `johnson-legal/google-oauth-client-secret` — Google OAuth (unused currently)
 
 ---
 
 ## KEY DESIGN DECISIONS (don't re-decide these)
-- Model: Gemini 3.1 Flash-Lite (paid tier) — NOT Bedrock (was blocked), NOT DeepSeek (no credit)
+- Model: Gemini 3.1 Flash-Lite (paid tier) — NOT Bedrock, NOT DeepSeek
 - Runtime: Bedrock AgentCore (serverless microVMs) — NOT App Runner, NOT EC2
 - Single-tenant: one agent "jude", one session "jude-main", one internal caller
-- OpenClaw version: 2026.6.11 (bumped from 2026.3.8 due to baileys SSH dep issue)
+- OpenClaw version: 2026.6.11
 - Notifications: SES for all + SNS SMS for urgent only
-- No Bedrock model permissions needed — Gemini is called over internet via NAT Gateway
+- No Bedrock model permissions needed — Gemini called over internet via NAT Gateway
+
+---
+
+## KEY IDENTIFIERS (copy/paste reference)
+| Resource | Value |
+|----------|-------|
+| Cognito Pool ID | us-east-1_dqqgSRKwn |
+| Cognito Client ID | 1ceidj2abdvs0jijedhckte5um |
+| Portal API URL | https://2hp2bdxsz6.execute-api.us-east-1.amazonaws.com |
+| Jude API URL | https://mpiai89295.execute-api.us-east-1.amazonaws.com |
+| Region | us-east-1 |
+| Portal CFN Stack | johnson-legal-portal |
+| ECR Repo | 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge |
+| KMS Key | arn:aws:kms:us-east-1:663877906756:key/f2cb1248-04fe-4146-8f63-8e673b6ac33e |
+| Workspace Bucket | jude-workspace-663877906756-us-east-1 |
+| GitHub user | mtecfix |
+| GitHub repo | johnson-legal-team (private) |
+| SAM deploy bucket | johnson-legal-sam-deploy-663877906756 |
