@@ -2,7 +2,7 @@
 title: "Misdemeanor vs. Felony in Michigan: What's the Difference and Why It Matters"
 publish_date: 2026-07-09T09:00:00.000Z
 author: "Johnson Legal Team"
-featured_image: "/images/Legal defense at a crossroads.png"
+featured_image: "images/blog/redemption.png"
 excerpt: "Understanding the distinction between misdemeanors and felonies in Michigan — and why even a 'minor' charge deserves serious attention."
 category: "Criminal Defense"
 tags:

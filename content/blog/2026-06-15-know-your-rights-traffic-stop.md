@@ -2,7 +2,7 @@
 title: "Know Your Rights at a Traffic Stop in Michigan"
 publish_date: 2026-06-15T09:00:00.000Z
 author: "Johnson Legal Team"
-featured_image: "/images/traffic tickets.png"
+featured_image: "images/blog/know your rights.png"
 excerpt: "A quick, practical rundown of what to do (and what not to do) if you are pulled over."
 category: "Traffic Tickets"
 tags:

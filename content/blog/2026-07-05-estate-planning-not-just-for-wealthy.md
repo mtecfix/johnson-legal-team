@@ -2,7 +2,7 @@
 title: "Estate Planning Is Not Just for the Wealthy: Why Every Michigan Family Needs a Plan"
 publish_date: 2026-07-05T09:00:00.000Z
 author: "Johnson Legal Team"
-featured_image: "/images/Securing your family's future together.png"
+featured_image: "images/Securing your family's future together.png"
 excerpt: "You don't need millions in the bank to benefit from an estate plan. Here's why every family should have one — and what happens if you don't."
 category: "Estate Planning"
 tags:

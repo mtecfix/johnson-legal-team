@@ -6,7 +6,7 @@
       "publish_date": "2026-07-09",
       "category": "Criminal Defense",
       "excerpt": "Understanding the distinction between misdemeanors and felonies in Michigan — and why even a 'minor' charge deserves serious attention.",
-      "featured_image": "/images/Legal defense at a crossroads.png"
+      "featured_image": "images/blog/redemption.png"
     },
     {
       "slug": "2026-07-05-estate-planning-not-just-for-wealthy",
@@ -14,7 +14,7 @@
       "publish_date": "2026-07-05",
       "category": "Estate Planning",
       "excerpt": "You don't need millions in the bank to benefit from an estate plan. Here's why every family should have one — and what happens if you don't.",
-      "featured_image": "/images/Securing your family's future together.png"
+      "featured_image": "images/Securing your family's future together.png"
     },
     {
       "slug": "2026-07-02-what-to-do-after-car-accident-michigan",
@@ -22,7 +22,7 @@
       "publish_date": "2026-07-02",
       "category": "Personal Injury",
       "excerpt": "The minutes and days after a crash are critical. Here's exactly what to do to protect your health and your legal rights.",
-      "featured_image": "/images/Personal injury_ we're here to help.png"
+      "featured_image": "images/Personal injury_ we're here to help.png"
     },
     {
       "slug": "2026-06-28-five-things-expungement",
@@ -30,7 +30,7 @@
       "publish_date": "2026-06-28",
       "category": "Expungements",
       "excerpt": "Clearing your record can open doors. Here is what the process looks like.",
-      "featured_image": "/images/expungement-fresh-start.png"
+      "featured_image": "images/blog/clean slate.png"
     },
     {
       "slug": "2026-06-15-know-your-rights-traffic-stop",
@@ -38,7 +38,7 @@
       "publish_date": "2026-06-15",
       "category": "Traffic Tickets",
       "excerpt": "A quick, practical rundown of what to do (and what not to do) if you are pulled over.",
-      "featured_image": "/images/traffic tickets.png"
+      "featured_image": "images/blog/know your rights.png"
     }
   ]
 }
