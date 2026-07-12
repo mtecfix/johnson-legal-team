@@ -2,7 +2,7 @@
 title: "What to Do After a Car Accident in Michigan: A Step-by-Step Guide"
 publish_date: 2026-07-02T09:00:00.000Z
 author: "Johnson Legal Team"
-featured_image: "images/slip and fall.png"
+featured_image: "images/blog/personal-injury-car-accident-consultation.png"
 excerpt: "The minutes and days after a crash are critical. Here's exactly what to do to protect your health and your legal rights."
 category: "Personal Injury"
 tags:
