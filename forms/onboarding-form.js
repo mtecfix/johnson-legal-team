@@ -10,13 +10,13 @@ class OnboardingForm {
             form.addEventListener('submit', (e) => this.handleSubmit(e));
         }
 
-        // Get user info from URL params or localStorage
+        // Get user info from URL params or sessionStorage
         const urlParams = new URLSearchParams(window.location.search);
         this.userEmail = urlParams.get('email');
         
-        // If no email in URL, check localStorage for pending registration
+        // If no email in URL, check sessionStorage for pending registration
         if (!this.userEmail) {
-            const pending = localStorage.getItem('pending_registration');
+            const pending = sessionStorage.getItem('pending_registration');
             if (pending) {
                 const data = JSON.parse(pending);
                 this.userEmail = data.email;

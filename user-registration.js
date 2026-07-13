@@ -7,8 +7,8 @@ class UserRegistration {
     }
 
     init() {
-        // Get user info from localStorage
-        this.userEmail = localStorage.getItem('user_email');
+        // Get user info from sessionStorage
+        this.userEmail = sessionStorage.getItem('user_email');
         
         if (!this.userEmail) {
             window.location.href = 'client-login.html';
@@ -120,7 +120,7 @@ class UserRegistration {
                 successDiv.classList.remove('d-none');
                 
                 // Mark registration as complete
-                localStorage.setItem('registration_complete', 'true');
+                sessionStorage.setItem('registration_complete', 'true');
                 
                 // Redirect to appropriate portal
                 setTimeout(() => {

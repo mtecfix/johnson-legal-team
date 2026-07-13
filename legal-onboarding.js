@@ -10,11 +10,11 @@ class LegalOnboarding {
             form.addEventListener('submit', (e) => this.handleSubmit(e));
         }
 
-        // Get user info from URL params or localStorage
+        // Get user info from URL params or sessionStorage
         const urlParams = new URLSearchParams(window.location.search);
         this.userEmail = urlParams.get('email');
 
-        const pending = localStorage.getItem('pending_registration');
+        const pending = sessionStorage.getItem('pending_registration');
         const pendingData = pending ? JSON.parse(pending) : {};
 
         if (!this.userEmail) this.userEmail = pendingData.email || '';

@@ -9,10 +9,10 @@ class PortalRouter {
     }
 
     redirectToPortal(email, role) {
-        // role may come from caller or fall back to localStorage
-        const resolvedRole = role || localStorage.getItem('user_role') || 'client';
-        localStorage.setItem('user_email', email);
-        localStorage.setItem('user_role',  resolvedRole);
+        // role may come from caller or fall back to sessionStorage
+        const resolvedRole = role || sessionStorage.getItem('user_role') || 'client';
+        sessionStorage.setItem('user_email', email);
+        sessionStorage.setItem('user_role',  resolvedRole);
         window.location.href = this.routeUser(email, resolvedRole);
     }
 }

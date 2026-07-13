@@ -313,7 +313,7 @@
         // Update navigation based on login state
         function updateNavigation() {
             const loginLink = document.getElementById('loginDashboardLink');
-            if (localStorage.getItem('clientLoggedIn')) {
+            if (sessionStorage.getItem('clientLoggedIn')) {
                 loginLink.textContent = 'Dashboard';
                 loginLink.href = 'client-dashboard.html';
             } else {

@@ -149,19 +149,19 @@ const POOL_DATA = {
 };
 
 const ADMIN_EMAILS = ['mrtechfixes.ai@gmail.com', 'mrtechfixes@gmail.com', 'johnsonlegalteam@gmail.com'];
-const userPool = new AmazonCognitoIdentity.CognitoUserPool(POOL_DATA);
+const userPool = new AmazonCognitoIdentity.CognitoUserPool({ ...POOL_DATA, Storage: sessionStorage });
 
 // ─── Check existing session ──────────────────────────────────────
 (function checkSession() {
-  const token = localStorage.getItem('cognito_id_token');
-  const role = localStorage.getItem('user_role');
+  const token = sessionStorage.getItem('cognito_id_token');
+  const role = sessionStorage.getItem('user_role');
   if (token && (role === 'admin' || role === 'super_admin')) {
     // Validate not expired AND has admin group
     try {
       const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g,'+').replace(/_/g,'/')));
       if (payload.exp * 1000 < Date.now()) {
         // Expired — clear and force re-login
-        localStorage.clear();
+        sessionStorage.clear();
         return;
       }
       const groups = payload['cognito:groups'] || [];
@@ -169,13 +169,13 @@ const userPool = new AmazonCognitoIdentity.CognitoUserPool(POOL_DATA);
       const hasAdminAccess = groups.includes('admin') || groups.includes('super_admin') || ADMIN_EMAILS.includes(email);
       if (!hasAdminAccess) {
         // Token missing admin group — clear and force re-login
-        localStorage.clear();
+        sessionStorage.clear();
         return;
       }
       window.location.href = '../admin-dashboard.html';
       return;
     } catch(e) {}
-    localStorage.clear();
+    sessionStorage.clear();
   }
 })();
 
@@ -260,12 +260,12 @@ function handleSuccess(result, email) {
     return;
   }
 
-  localStorage.setItem('cognito_access_token', accessToken);
-  localStorage.setItem('cognito_id_token', idToken);
-  localStorage.setItem('cognito_refresh_token', refreshToken);
-  localStorage.setItem('clientLoggedIn', 'true');
-  localStorage.setItem('user_email', email);
-  localStorage.setItem('user_role', role);
+  sessionStorage.setItem('cognito_access_token', accessToken);
+  sessionStorage.setItem('cognito_id_token', idToken);
+  sessionStorage.setItem('cognito_refresh_token', refreshToken);
+  sessionStorage.setItem('clientLoggedIn', 'true');
+  sessionStorage.setItem('user_email', email);
+  sessionStorage.setItem('user_role', role);
 
   window.location.href = '../admin-dashboard.html';
 }

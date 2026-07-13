@@ -36,12 +36,12 @@ function storeSession(tokens) {
     const email   = payload?.email || '';
     const role    = getRoleFromPayload(payload, email);
 
-    localStorage.setItem('cognito_access_token',  tokens.access_token);
-    localStorage.setItem('cognito_id_token',       tokens.id_token);
-    localStorage.setItem('cognito_refresh_token',  tokens.refresh_token || '');
-    localStorage.setItem('clientLoggedIn', 'true');
-    localStorage.setItem('user_email', email);
-    localStorage.setItem('user_role',  role);
+    sessionStorage.setItem('cognito_access_token',  tokens.access_token);
+    sessionStorage.setItem('cognito_id_token',       tokens.id_token);
+    sessionStorage.setItem('cognito_refresh_token',  tokens.refresh_token || '');
+    sessionStorage.setItem('clientLoggedIn', 'true');
+    sessionStorage.setItem('user_email', email);
+    sessionStorage.setItem('user_role',  role);
     return { email, role };
 }
 
@@ -58,7 +58,8 @@ class CognitoAuth {
         }
         this.userPool = new AmazonCognitoIdentity.CognitoUserPool({
             UserPoolId: COGNITO_CONFIG.UserPoolId,
-            ClientId:   COGNITO_CONFIG.ClientId
+            ClientId:   COGNITO_CONFIG.ClientId,
+            Storage:    sessionStorage
         });
         this.init();
     }
@@ -80,8 +81,8 @@ class CognitoAuth {
         if (currentUser) {
             currentUser.getSession((err, session) => {
                 if (!err && session.isValid()) {
-                    const email = localStorage.getItem('user_email') || '';
-                    const role  = localStorage.getItem('user_role')  || 'client';
+                    const email = sessionStorage.getItem('user_email') || '';
+                    const role  = sessionStorage.getItem('user_role')  || 'client';
                     redirectByRole(email, role);
                 }
             });
@@ -212,7 +213,7 @@ class CognitoAuth {
                 return;
             }
 
-            localStorage.setItem('pending_registration', JSON.stringify({ email, firstName, lastName, timestamp: Date.now() }));
+            sessionStorage.setItem('pending_registration', JSON.stringify({ email, firstName, lastName, timestamp: Date.now() }));
             successDiv.textContent = 'Account created! Redirecting to onboarding...';
             successDiv.classList.remove('d-none');
             document.getElementById('registerForm').reset();

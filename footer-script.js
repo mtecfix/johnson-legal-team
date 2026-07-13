@@ -3,7 +3,7 @@ function updateNavigation() {
     const loginLink = document.getElementById('loginDashboardLink');
     const loginLinkFooter = document.getElementById('loginDashboardLinkFooter');
     
-    if (localStorage.getItem('clientLoggedIn')) {
+    if (sessionStorage.getItem('clientLoggedIn')) {
         if (loginLink) {
             loginLink.textContent = 'Dashboard';
             loginLink.href = 'client-dashboard.html';

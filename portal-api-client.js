@@ -12,7 +12,7 @@
 
   function getToken() {
     // Cognito ID token, set by the auth flow at login.
-    return localStorage.getItem('cognito_id_token') || '';
+    return sessionStorage.getItem('cognito_id_token') || '';
   }
 
   async function request(path, { method = 'GET', body = null } = {}) {
@@ -37,7 +37,7 @@
   }
 
   function redirectToLogin() {
-    try { localStorage.removeItem('cognito_id_token'); } catch (_) {}
+    try { sessionStorage.removeItem('cognito_id_token'); } catch (_) {}
     if (!/client-login\.html$/.test(location.pathname)) location.href = 'client-login.html';
   }
 

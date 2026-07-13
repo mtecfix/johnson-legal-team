@@ -122,7 +122,7 @@ async function sendMessage() {
 }
 
 function logout() {
-  ['cognito_id_token', 'user_email', 'user_role'].forEach(k => { try { localStorage.removeItem(k); } catch (_) {} });
+  ['cognito_id_token', 'user_email', 'user_role'].forEach(k => { try { sessionStorage.removeItem(k); } catch (_) {} });
   location.href = 'client-login.html';
 }
 

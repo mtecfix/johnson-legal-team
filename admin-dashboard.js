@@ -33,8 +33,8 @@ const ROLE_DASHBOARD = {
 // ═══════════════════════════════════════════════════════════════
 
 document.addEventListener('DOMContentLoaded', () => {
-  currentRole = localStorage.getItem('user_role') || 'client';
-  const email = localStorage.getItem('user_email') || '';
+  currentRole = sessionStorage.getItem('user_role') || 'client';
+  const email = sessionStorage.getItem('user_email') || '';
 
   document.getElementById('userEmail').textContent = email;
   document.getElementById('roleBadge').textContent = ROLE_LABELS[currentRole] || currentRole;
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Logout
   document.getElementById('logoutBtn').addEventListener('click', e => {
     e.preventDefault();
-    localStorage.clear();
+    sessionStorage.clear();
     window.location.href = 'admin/index.html';
   });
 
@@ -373,7 +373,7 @@ function toggleLeadDetail(leadId) {
 
 async function updateLeadStage(leadId, stage) {
   try {
-    const token = localStorage.getItem('cognito_access_token');
+    const token = sessionStorage.getItem('cognito_access_token');
     await fetch(`${JUDE_API}/leads/${leadId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
