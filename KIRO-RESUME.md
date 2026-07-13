@@ -1,6 +1,6 @@
 # KIRO SESSION RESUME — Johnson Legal Team
 # Scan this file to restore full project context on relaunch.
-# Last updated: 2026-07-11 11:47 AM ET
+# Last updated: 2026-07-13 7:51 PM ET
 
 ---
 
@@ -17,10 +17,10 @@
 ## THE SYSTEM (3 layers)
 
 ### Layer 1: Static Website + CMS (LIVE)
-- S3 bucket `johnsonlegalteam-www` (public HTTP, website hosting enabled)
-- Decap CMS (git-based, admin/config.yml)
+- GitHub Pages: https://mtecfix.github.io/johnson-legal-team/
+- Decap CMS (git-based, admin/config.yml, GitHub OAuth backend)
 - GitHub Actions deploys to GitHub Pages on push to master
-- Pages: index, about, blog (5 posts), contact, practice areas (5), client portal pages
+- Pages: index, about, blog (5 posts), contact, practice areas (5), client portal pages, legal onboarding, pay-invoice, privacy, terms, 404
 
 ### Layer 2: Client Portal API (LIVE)
 - CloudFormation stack: `johnson-legal-portal` (UPDATE_COMPLETE)
@@ -31,7 +31,7 @@
 - Routes: /profile, /cases, /documents, /messages, /invoices, /appointments, /admin/*
 - Users (2):
   - mrtechfixes.ai@gmail.com — CONFIRMED (super_admin)
-  - johnsonlegalteam@gmail.com — CONFIRMED (created Jul 10)
+  - johnsonlegalteam@gmail.com — CONFIRMED (password reset Jul 13: `JLT@2026!secure`)
 
 ### Layer 3: Jude AI Agent (PARTIALLY DEPLOYED)
 
@@ -39,61 +39,63 @@
 - `jude-leads` Lambda — captures, classifies, scores leads, stores in DynamoDB
 - `jude-notify-owner` Lambda — notification backbone (SES email + SNS SMS)
 - `jude-api` (API GW mpiai89295) — POST /leads (open), GET/PATCH /leads (JWT via jude-staff pool)
-- DynamoDB: `jude-leads`, `jude-events`
+- DynamoDB: `jude-leads`, `jude-events` (19 events logged as of Jul 13)
 - Cognito: `jude-staff` pool (1 user confirmed)
+- **Email delivery CONFIRMED WORKING** (Jul 13) — sent to johnsonlegalteam@gmail.com successfully
 
 #### Deployed (Phase 1 CDK — all CREATE_COMPLETE Jul 10):
 | Stack | Status | Resources |
 |-------|--------|-----------|
-| JudeVpc | ✅ COMPLETE | VPC vpc-0adc0680981af7b25, subnets, NAT GW, VPC endpoints (S3, DDB, SecretsManager, CW Logs, Monitoring) |
-| JudeSecurity | ✅ COMPLETE | KMS CMK arn:aws:kms:us-east-1:663877906756:key/f2cb1248-04fe-4146-8f63-8e673b6ac33e |
-| JudeAgentCore | ✅ COMPLETE | Role: jude-agentcore-execution-role-us-east-1, SG: sg-06a7f96b29b47d2bf, Bucket: jude-workspace-663877906756-us-east-1 |
-| JudeObservability | ✅ COMPLETE | SNS alarm topic: arn:aws:sns:us-east-1:663877906756:jude-alarms, CloudWatch dashboard |
+| JudeVpc | ✅ UPDATE_COMPLETE | VPC vpc-0adc0680981af7b25, subnets, NAT GW, VPC endpoints |
+| JudeSecurity | ✅ CREATE_COMPLETE | KMS CMK |
+| JudeAgentCore | ✅ CREATE_COMPLETE | Role, SG, Bucket |
+| JudeObservability | ✅ CREATE_COMPLETE | SNS alarm topic, CloudWatch dashboard |
 
-#### NOT YET Deployed (blocked — container not built):
-- **Bridge container** — Dockerfile ready in `jude-infra/bridge/`, ECR repo exists but **EMPTY (no images pushed)**
-- **ECR repo:** 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge
-- **AgentCore Runtime** — not created (needs container image)
-- **AgentCore Runtime Endpoint** — not created
-- **JudeRouter CDK stack** — not deployed (needs runtime_id)
+#### ECR Container Images ✅ PUSHED (previously was blocker):
+- `663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge`
+- Tags: `v1`, `v1-x86`, `v1-arm64`, `latest`, `latest-arm64`
+
+#### ⛔ BLOCKED — AgentCore Runtime:
+- **Cannot create agent runtime** — account quota override sets "Total Agents per Account" to 0
+- AWS default is 1000, but account 663877906756 has applied value of 0
+- This is an account activation issue, NOT a normal quota request
+- Service Quotas API rejects increase (says default is already 1000)
+- **Resolution:** Open AWS Support case requesting AgentCore Runtime activation
+- Affected quotas: L-F4575653 (agents=0), L-0A9E32B3 (docker size=0), L-9B442722 (endpoints=0), L-3E5722B2 (sessions=0)
 
 ---
 
-## AWS ENVIRONMENT STATUS (verified 2026-07-11)
+## AWS ENVIRONMENT STATUS (verified 2026-07-13)
 
-### ✅ RESOLVED since last session:
-- **jude-notify-owner env vars** — NOW POPULATED: OWNER_EMAIL=johnsonlegalteam@gmail.com, FROM_EMAIL=johnsonlegalteam@gmail.com, OWNER_PHONE=+13133552216, TECH_EMAIL=mrtechfixes.ai@gmail.com
-- **Portal CORS** — NOW SET TO `https://mtecfix.github.io` (was dead CloudFront URL)
-- **Cognito user** — mrtechfixes.ai@gmail.com is now CONFIRMED (was FORCE_CHANGE_PASSWORD)
-- **SES identities** — both mrtechfixes.ai@gmail.com AND johnsonlegalteam@gmail.com are VERIFIED
+### ✅ WORKING:
+- Portal CORS → `https://mtecfix.github.io`
+- Jude API CORS → `https://mtecfix.github.io`
+- SES sending enabled, 0/200 used today
+- SES verified: `mrtechfixes.ai@gmail.com`, `johnsonlegalteam@gmail.com`
+- jude-notify-owner env vars: OWNER_EMAIL, FROM_EMAIL, OWNER_PHONE, TECH_EMAIL all set
+- Cognito users: both confirmed and working
+- Email delivery: confirmed working Jul 13 (2 emails sent successfully)
+- ECR images: 5 images pushed (v1, latest, arm64 variants)
 
-### ⚠️ STILL PENDING:
-- **SES production access** — DENIED (case 178372854400925). Still sandbox: 200 emails/day, verified recipients only
-- **ECR jude-bridge** — repo exists but NO IMAGE pushed (Docker build was blocked by WSL read-only issue)
-- **AgentCore Runtime + Endpoint** — cannot create until container is pushed
-- **JudeRouter stack** — cannot deploy until runtime exists
-
-### ℹ️ NOTES:
-- Cognito MFA is OPTIONAL (not REQUIRED as previously noted)
-- Portal API Cognito Client ID: 1ceidj2abdvs0jijedhckte5um
-- jude-api CORS also correctly set to `https://mtecfix.github.io`
+### ⚠️ LIMITATIONS:
+- **SES sandbox** — 200 emails/day, verified recipients only (production access DENIED, case 178372854400925)
+- **AgentCore not activated** — account needs AWS Support intervention to enable
+- **JudeRouter stack** — cannot deploy until AgentCore runtime exists
 
 ---
 
 ## IMMEDIATE NEXT STEPS (in order)
 
-### Step 1: Build + Push Container
-```bash
-cd "/mnt/d/KIRO PROJECTS/johnson legal team/jude-infra/bridge"
-aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin 663877906756.dkr.ecr.us-east-1.amazonaws.com
-docker build -t 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge:v1 .
-docker push 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge:v1
-```
+### Step 1: Open AWS Support Case (MANUAL — user must do this)
+- Go to: https://support.console.aws.amazon.com/support/home#/case/create
+- Category: Service limit increase → Bedrock AgentCore
+- Body: "Account 663877906756 has 'Total Agents per Account' (L-F4575653) applied quota of 0. The AWS default is 1000. Please activate Bedrock AgentCore Runtime for this account in us-east-1. We have all infrastructure ready (VPC, IAM role, ECR container) and need to create our first agent runtime."
+- Also mention: L-9B442722 (Endpoints), L-3E5722B2 (Active Sessions), L-0A9E32B3 (Docker image size)
 
-### Step 2: Create AgentCore Runtime
+### Step 2: Once Quotas Activated — Create Runtime
 ```bash
 aws bedrock-agentcore-control create-agent-runtime \
-  --agent-runtime-name jude-runtime \
+  --agent-runtime-name judeRuntime \
   --agent-runtime-artifact '{"containerConfiguration":{"containerUri":"663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge:v1"}}' \
   --role-arn arn:aws:iam::663877906756:role/jude-agentcore-execution-role-us-east-1 \
   --network-configuration '{"networkMode":"VPC","networkModeConfig":{"securityGroups":["sg-06a7f96b29b47d2bf"],"subnets":["subnet-0fba84e75b3951d54","subnet-056a3b55582f9804b"]}}' \
@@ -101,7 +103,7 @@ aws bedrock-agentcore-control create-agent-runtime \
   --environment-variables '{"GEMINI_API_KEY_SECRET":"jude/gemini-api-key","HOOKS_TOKEN_SECRET":"jude/hooks-token","WORKSPACE_BUCKET":"jude-workspace-663877906756-us-east-1","AWS_REGION":"us-east-1"}' \
   --region us-east-1
 ```
-→ Save the `agentRuntimeId` from the response
+NOTE: Runtime name must match `[a-zA-Z][a-zA-Z0-9_]{0,47}` (no hyphens!)
 
 ### Step 3: Create Runtime Endpoint
 ```bash
@@ -119,21 +121,127 @@ source .venv/bin/activate
 npx cdk deploy JudeRouter --context runtime_id=<RUNTIME_ID> --require-approval never
 ```
 
-### Step 5: Wire jude-leads to call Router
-Update `jude-leads` Lambda to POST to the new Router API after storing a lead.
-
+### Step 5: Wire jude-leads → Router
 ### Step 6: End-to-end test
-POST a test lead → jude-leads stores it → calls Router → AgentCore/OpenClaw triages → calls jude-notify-owner → delivers email/SMS.
 
 ---
 
-## OTHER PENDING ITEMS (lower priority)
+## SITE STRUCTURE (as of Jul 13, 2026)
 
-1. **SES production access** — re-apply or accept sandbox limits for now
-2. **Set admin/config.yml backend.repo** to `mtecfix/johnson-legal-team`
-3. **Commit any uncommitted changes** (blog images, recent code updates)
-4. Google/social login: NOT set up (email/password only). Can add later.
-5. api/ (old PHP endpoints) still present — revisit if migrating to serverless API
+### Public Pages (HTML)
+| File | Purpose |
+|------|---------|
+| index.html | Homepage |
+| about.html | About the firm |
+| blog.html | Blog listing |
+| contact.html | Contact form (leads → Jude) |
+| practice-areas.html | Practice area overview |
+| expungements.html | Practice area detail |
+| misdemeanors.html | Practice area detail |
+| traffic-tickets.html | Practice area detail |
+| personal-injury.html | Practice area detail |
+| probate-estate-planning.html | Practice area detail |
+| practice-area.html | Dynamic practice area template |
+| team.html | Attorney profiles |
+| privacy-policy.html | Legal |
+| terms-of-service.html | Legal |
+| 404.html | Error page |
+| sitemap.xml | SEO |
+
+### Portal/Auth Pages
+| File | Purpose |
+|------|---------|
+| admin/ (index.html) | Staff portal login (Cognito auth) |
+| admin-dashboard.html | Admin view (cases, clients) |
+| client-login.html | Client portal login |
+| client-dashboard.html | Client portal view |
+| user-registration.html | New user registration |
+| reset-password.html | Password reset |
+| pay-invoice.html | Invoice payment |
+| legal-onboarding.html | Client onboarding form |
+| forms/client-onboarding.html | Extended onboarding |
+| jude-leads-dashboard.html | Staff leads dashboard |
+| google-oauth-setup.html | OAuth setup helper |
+
+### JavaScript Modules
+| File | Purpose |
+|------|---------|
+| cognito-auth.js | Cognito authentication library |
+| portal-config.js | Portal configuration (pool ID, API URL) |
+| portal-api-client.js | API client (window.PortalAPI) |
+| portal-router.js | SPA routing |
+| admin-dashboard.js | Admin dashboard logic |
+| client-dashboard.js | Client dashboard logic |
+| blog.js | Blog rendering |
+| contact-form.js | Contact form → Jude leads |
+| chat-widget.js | Chat widget |
+| content.js | CMS content loader |
+| footer-script.js | Footer interactions |
+| legal-onboarding.js | Onboarding form logic |
+| user-registration.js | Registration flow |
+| search.js | Site search |
+| practice-area.js | Practice area dynamic loading |
+| team.js | Team page rendering |
+| forms/onboarding-form.js | Onboarding form validation |
+
+### Backend
+| Path | Purpose |
+|------|---------|
+| portal-api/ | SAM stack (Lambda + API GW + DDB + Cognito) |
+| jude-backend/leads/ | Lead capture/classify/score Lambda |
+| jude-backend/notify-owner/ | Multi-channel notification Lambda |
+| jude-infra/ | CDK app (5 stacks: VPC, Security, AgentCore, Router, Observability) |
+| jude-infra/bridge/ | AgentCore container (Dockerfile, OpenClaw workspace) |
+| lambda/ | Legacy registration_approver.py |
+| api/ | Legacy PHP endpoints (DEAD CODE — replaced by Cognito) |
+
+### Content (CMS-managed)
+| Path | Purpose |
+|------|---------|
+| content/blog/ | 5 blog posts (markdown) |
+| content/practice-areas/ | Practice area descriptions |
+| content/team/ | Attorney bio |
+| content/settings/ | Site config (contact info, general) |
+| content/pages/ | Static page content |
+
+### Config & Deploy
+| File | Purpose |
+|------|---------|
+| .github/workflows/deploy-pages.yml | GitHub Pages deployment |
+| .github/workflows/build-jude-bridge.yml | ECR container build pipeline |
+| admin/config.yml | Decap CMS configuration |
+| netlify.toml | Netlify config (alternative host) |
+| package.json | NPM scripts (cms, serve, dev) |
+| .gitignore | Git exclusions |
+| .env.example | Environment template |
+| DEPLOY.md | Deployment guide |
+| KIRO-RESUME.md | This file |
+
+---
+
+## CREDENTIALS REFERENCE
+
+### Portal Login (Staff)
+- **URL:** https://mtecfix.github.io/johnson-legal-team/admin/
+- **Admin:** mrtechfixes.ai@gmail.com (super_admin)
+- **Firm:** johnsonlegalteam@gmail.com / `JLT@2026!secure` (reset Jul 13)
+- **MFA:** TOTP required (authenticator app)
+
+### AWS Resources
+| Resource | Value |
+|----------|-------|
+| Cognito Pool ID | us-east-1_dqqgSRKwn |
+| Cognito Client ID | 1ceidj2abdvs0jijedhckte5um |
+| Portal API URL | https://2hp2bdxsz6.execute-api.us-east-1.amazonaws.com |
+| Jude API URL | https://mpiai89295.execute-api.us-east-1.amazonaws.com |
+| Region | us-east-1 |
+| Portal CFN Stack | johnson-legal-portal |
+| ECR Repo | 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge |
+| KMS Key | arn:aws:kms:us-east-1:663877906756:key/f2cb1248-04fe-4146-8f63-8e673b6ac33e |
+| Workspace Bucket | jude-workspace-663877906756-us-east-1 |
+| GitHub user | mtecfix |
+| GitHub repo | johnson-legal-team (private) |
+| SAM deploy bucket | johnson-legal-sam-deploy-663877906756 |
 
 ---
 
@@ -153,21 +261,4 @@ POST a test lead → jude-leads stores it → calls Router → AgentCore/OpenCla
 - OpenClaw version: 2026.6.11
 - Notifications: SES for all + SNS SMS for urgent only
 - No Bedrock model permissions needed — Gemini called over internet via NAT Gateway
-
----
-
-## KEY IDENTIFIERS (copy/paste reference)
-| Resource | Value |
-|----------|-------|
-| Cognito Pool ID | us-east-1_dqqgSRKwn |
-| Cognito Client ID | 1ceidj2abdvs0jijedhckte5um |
-| Portal API URL | https://2hp2bdxsz6.execute-api.us-east-1.amazonaws.com |
-| Jude API URL | https://mpiai89295.execute-api.us-east-1.amazonaws.com |
-| Region | us-east-1 |
-| Portal CFN Stack | johnson-legal-portal |
-| ECR Repo | 663877906756.dkr.ecr.us-east-1.amazonaws.com/jude-bridge |
-| KMS Key | arn:aws:kms:us-east-1:663877906756:key/f2cb1248-04fe-4146-8f63-8e673b6ac33e |
-| Workspace Bucket | jude-workspace-663877906756-us-east-1 |
-| GitHub user | mtecfix |
-| GitHub repo | johnson-legal-team (private) |
-| SAM deploy bucket | johnson-legal-sam-deploy-663877906756 |
+- Runtime name: `judeRuntime` (no hyphens — AWS naming constraint)

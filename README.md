@@ -6,11 +6,13 @@ A serverless web presence + client portal + AI practice-management agent for a s
 
 | Component | Status | URL / ARN |
 |-----------|--------|-----------|
-| Static site (S3) | ✅ Deployed | `johnsonlegalteam-www` (HTTP; HTTPS via GitHub Pages pending CORS fix) |
+| Static site | ✅ Live | https://mtecfix.github.io/johnson-legal-team/ |
 | Client portal API | ✅ Live | https://2hp2bdxsz6.execute-api.us-east-1.amazonaws.com |
-| Cognito auth | ✅ Live | Pool `us-east-1_dqqgSRKwn`, MFA required (TOTP) |
+| Cognito auth | ✅ Live | Pool `us-east-1_dqqgSRKwn`, MFA optional (TOTP) |
 | Jude leads API | ✅ Live | https://mpiai89295.execute-api.us-east-1.amazonaws.com |
-| Jude AI (AgentCore) | 🔧 CDK ready, not deployed | See `jude-infra/` |
+| Jude notifications | ✅ Live | SES email + SNS SMS (sandbox mode) |
+| Jude CDK infra | ✅ Deployed | VPC, Security, AgentCore IAM, Observability |
+| Jude AI (AgentCore) | ⛔ Blocked | Account needs AgentCore activation (quota=0) |
 
 ---
 
@@ -147,12 +149,18 @@ See `docs/JUDE-OPENCLAW-SPEC.md` for the full specification.
 
 | # | Issue | Impact | Resolution |
 |---|-------|--------|------------|
-| 1 | Portal CORS points to dead CloudFront URL | Portal login broken from browser | Update `CorsOrigin` param to GitHub Pages URL |
-| 2 | CloudFront blocked on account | Can't use AWS HTTPS hosting | Using GitHub Pages / Netlify instead |
-| 3 | SES in sandbox | Can't email unverified addresses | Request SES production access |
-| 4 | jude-notify-owner env vars empty | Notifications logged but never delivered | Set OWNER_EMAIL + FROM_EMAIL + OWNER_PHONE |
-| 5 | Jude CDK stacks not deployed | No AI reasoning yet | Deploy Phase 1 stacks |
-| 6 | Cognito user still FORCE_CHANGE_PASSWORD | Can't complete first login until CORS fixed | Fix CORS first, then login |
+| 1 | ⛔ AgentCore quota = 0 (account not activated) | Cannot create agent runtime — AI reasoning blocked | Open AWS Support case for AgentCore activation |
+| 2 | SES in sandbox | Can't email unverified addresses (200/day limit) | Reapply for SES production access |
+| 3 | JudeRouter stack not deployed | No API to invoke AI agent | Deploy after AgentCore activation |
+
+### ✅ Previously Resolved
+| # | Was | Fixed |
+|---|-----|-------|
+| ~~4~~ | Portal CORS → dead CloudFront URL | Now points to `https://mtecfix.github.io` |
+| ~~5~~ | jude-notify-owner env vars empty | All set: OWNER_EMAIL, FROM_EMAIL, OWNER_PHONE, TECH_EMAIL |
+| ~~6~~ | Cognito user FORCE_CHANGE_PASSWORD | Both users CONFIRMED |
+| ~~7~~ | ECR jude-bridge repo empty | 5 images pushed (v1, latest, arm64 variants) |
+| ~~8~~ | Jude CDK stacks not deployed | Phase 1 stacks all CREATE_COMPLETE |
 
 ---
 
