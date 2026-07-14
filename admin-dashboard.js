@@ -257,7 +257,7 @@ function renderCasesTable() {
     const statusClass = c.status === 'active' ? 'qualified' : c.status === 'closed' ? 'lost' : 'new';
     const typeLabel = caseTypeLabels[c.case_type] || c.case_type || 'General';
     const date = c.opened_at ? new Date(c.opened_at).toLocaleDateString() : '';
-    const caseId = c.case_id || '';
+    const caseId = c.case_id || (c.SK ? c.SK.replace('CASE#', '') : '') || idx.toString();
     return `<tr style="cursor:pointer;" onclick="openCaseDetail('${esc(caseId)}')">
       <td><strong>${esc(c.client_name || '—')}</strong><br><span style="color:var(--muted);font-size:11px;">${esc(c.client_email || '')}</span></td>
       <td style="font-size:12px;"><i class="${caseTypeIcons[c.case_type] || 'fas fa-briefcase'}" style="margin-right:4px;color:var(--navy);"></i>${esc(typeLabel)}</td>
@@ -292,7 +292,10 @@ function renderCasesTable() {
 // ═══════════════════════════════════════════════════════════════
 
 function openCaseDetail(caseId) {
-  const caseItem = casesData.find(c => c.case_id === caseId);
+  const caseItem = casesData.find(c => {
+    const id = c.case_id || (c.SK ? c.SK.replace('CASE#', '') : '');
+    return id === caseId;
+  });
   if (!caseItem) return;
 
   // Switch view
@@ -346,7 +349,7 @@ function openCaseDetail(caseId) {
       <div><i class="fas fa-user" style="width:20px;color:var(--navy);"></i> <strong>${esc(clientName)}</strong></div>
       <div><i class="fas fa-envelope" style="width:20px;color:var(--muted);"></i> ${esc(caseItem.client_email || 'No email on file')}</div>
       <div><i class="fas fa-phone" style="width:20px;color:var(--muted);"></i> ${esc(caseItem.client_phone || 'No phone on file')}</div>
-      <div><i class="fas fa-id-badge" style="width:20px;color:var(--muted);"></i> <span style="font-family:monospace;font-size:11px;">${esc(caseItem.user_id || '')}</span></div>
+      <div><i class="fas fa-id-badge" style="width:20px;color:var(--muted);"></i> <span style="font-family:monospace;font-size:11px;">${esc(caseItem.user_id || caseItem.PK || '')}</span></div>
     </div>
   `;
   document.getElementById('caseDetailClient').innerHTML = clientHtml;
