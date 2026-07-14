@@ -59,7 +59,20 @@ A serverless web presence + client portal + AI practice-management agent for a s
 │       ├── agentcore-contract.js     AgentCore runtime contract impl
 │       ├── workspace-sync.js         S3 workspace sync
 │       ├── entrypoint.sh
-│       └── workspace-jude/           Agent persona (AGENTS.md, SOUL.md, TOOLS.md)
+│       └── workspace-jude/           Agent persona + skills
+│           ├── AGENTS.md             Operating rules + core duties
+│           ├── SOUL.md               Persona + voice + tone
+│           ├── TOOLS.md              Tool usage notes + guardrails
+│           └── skills/
+│               ├── gmail-inbox/      Email monitoring rules
+│               ├── owner-notify/     Notification format + rate limits
+│               ├── case-lookup/      Client/case cross-reference
+│               ├── client-lifecycle/ Onboarding + closure automation + MEMORY.md
+│               ├── leads-triage/     Lead classification rules
+│               └── filing-tracker/   MiFILE monitoring (planned)
+│
+├── lambda/
+│   └── jude-inbox-monitor/index.js   Gmail inbox checker (runs every 3h via EventBridge)
 │
 ├── docs/                             Architecture + specs
 │   ├── JUDE-OPENCLAW-SPEC.md         Full Jude agent spec (v3, current)
@@ -125,6 +138,25 @@ Jude is an autonomous back-office agent built on the [OpenClaw](https://github.c
 
 **Model:** Google Gemini 3.1 Flash-Lite (paid tier) via OpenAI-compatible endpoint.
 
+### Jude Active Services (live)
+
+| Service | Function | Schedule |
+|---------|----------|----------|
+| `jude-inbox-monitor` Lambda | Checks Gmail for new emails, classifies by tier, sends SMS/email digest | Every 3 hours (EventBridge) |
+| Client lifecycle notifications | Auto-sends welcome letter on client creation, thank-you on case closure | Triggered by portal API |
+| Communication memory | Logs outgoing message patterns for style-matching | On every admin message send |
+
+### Jude Skills (workspace)
+
+| Skill | Status | Description |
+|-------|--------|-------------|
+| `gmail-inbox` | ✅ Active | Email monitoring, tier classification, digest generation |
+| `owner-notify` | ✅ Active | SMS + email notifications to Attorney Johnson |
+| `case-lookup` | ✅ Active | Cross-reference contacts against case database |
+| `client-lifecycle` | ✅ Active | Welcome letters, thank-you letters, feedback prompts |
+| `leads-triage` | ⏸ Reserved | New-business lead scoring (awaiting inbox-monitor pipeline) |
+| `filing-tracker` | 📋 Planned | MiFILE notification monitoring |
+
 See `docs/JUDE-OPENCLAW-SPEC.md` for the full specification.
 
 ---
@@ -134,14 +166,30 @@ See `docs/JUDE-OPENCLAW-SPEC.md` for the full specification.
 | Service | Status | Detail |
 |---------|--------|--------|
 | SES | ⚠️ Sandbox | 200 emails/day max, only to verified addresses |
-| Verified sender | `mrtechfixes.ai@gmail.com` | Only identity verified |
-| jude-notify-owner | ⚠️ Not configured | `OWNER_EMAIL`, `FROM_EMAIL`, `OWNER_PHONE` env vars are empty |
-| Newsletter | Not started | Planned to reuse MetroTec subscriber pattern |
+| Verified sender | `johnsonlegalteam@gmail.com` | Used for all outbound correspondence |
+| Gmail API | ✅ Active | OAuth refresh token with Calendar + Gmail scopes |
+| Google Calendar | ✅ Synced | Events created from dashboard appear on Google Calendar |
+| jude-inbox-monitor | ✅ Active | Reads inbox every 3 hours, classifies, notifies |
+| Lifecycle emails | ✅ Active | Welcome + Thank-you letters auto-sent |
 
-**To enable email notifications:**
-1. Set `FROM_EMAIL` and `OWNER_EMAIL` on the `jude-notify-owner` Lambda
-2. Both addresses must be SES-verified (sandbox mode) OR request SES production access
-3. For SMS: set `OWNER_PHONE` (format: `+13135551234`)
+---
+
+## Admin Dashboard Features (as of July 14, 2026)
+
+| Section | Status | Capabilities |
+|---------|--------|-------------|
+| Dashboard | ✅ | Stats, recent cases, Jude status |
+| Cases | ✅ | Create, edit, close, delete, notes, category tabs, detail view |
+| Contacts | ✅ | Create, edit, search, filter by type/category |
+| Calendar | ✅ | Google Calendar embed (requires login), add events via modal (syncs to GCal) |
+| Messages | ✅ | Send email/SMS to contacts, message history log |
+| Invoices | ✅ | Create invoices, mark as paid |
+| Registrations | ✅ | Approve/reject pending client registrations |
+| Users | ✅ | Role management (super_admin only) |
+| Documents | 📋 Planned | File upload + S3 integration |
+| Leads | ⏸ Reserved | Awaiting Jude inbox-monitor pipeline for new-business detection |
+| Payments | 📋 Planned | Stripe integration |
+| System | ✅ | Static infrastructure status display |
 
 ---
 
@@ -149,9 +197,9 @@ See `docs/JUDE-OPENCLAW-SPEC.md` for the full specification.
 
 | # | Issue | Impact | Resolution |
 |---|-------|--------|------------|
-| 1 | ⛔ AgentCore quota = 0 (account not activated) | Cannot create agent runtime — AI reasoning blocked | Open AWS Support case for AgentCore activation |
-| 2 | SES in sandbox | Can't email unverified addresses (200/day limit) | Reapply for SES production access |
-| 3 | JudeRouter stack not deployed | No API to invoke AI agent | Deploy after AgentCore activation |
+| 1 | ⛔ AgentCore quota = 0 (account not activated) | Cannot create agent runtime — conversational Jude blocked | AWS Support case open for quota increase |
+| 2 | SES in sandbox | Can't email unverified addresses (200/day limit) | Request SES production access |
+| 3 | No firm domain | Jude can't have its own reply-to email for conversations | Purchase domain + set up email |
 
 ### ✅ Previously Resolved
 | # | Was | Fixed |
@@ -161,6 +209,10 @@ See `docs/JUDE-OPENCLAW-SPEC.md` for the full specification.
 | ~~6~~ | Cognito user FORCE_CHANGE_PASSWORD | Both users CONFIRMED |
 | ~~7~~ | ECR jude-bridge repo empty | 5 images pushed (v1, latest, arm64 variants) |
 | ~~8~~ | Jude CDK stacks not deployed | Phase 1 stacks all CREATE_COMPLETE |
+| ~~9~~ | Portal API CORS preflight 401 | Fixed: explicit method routes replace ANY routes |
+| ~~10~~ | Cases API NetworkError | Fixed: OPTIONS routes without JWT auth |
+| ~~11~~ | Google Calendar API not enabled | Enabled in Google Cloud project |
+| ~~12~~ | Gmail refresh token missing calendar scope | Re-authorized with calendar + gmail.readonly |
 
 ---
 
