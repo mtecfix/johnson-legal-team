@@ -6,6 +6,8 @@ const JUDE_API = 'https://mpiai89295.execute-api.us-east-1.amazonaws.com';
 let currentRole = 'client';
 let leadsData = [];
 let clientsData = [];
+let currentCaseId = null;
+let currentCaseUserId = null;
 
 // ═══════════════════════════════════════════════════════════════
 // ROLE DEFINITIONS
@@ -938,9 +940,6 @@ async function changeUserRole(userId, role) {
 // ═══════════════════════════════════════════════════════════════
 // CASE CRUD (New, Edit, Close, Delete, Notes)
 // ═══════════════════════════════════════════════════════════════
-
-let currentCaseId = null;
-let currentCaseUserId = null;
 
 function setupCaseCrud() {
   // New Case button
