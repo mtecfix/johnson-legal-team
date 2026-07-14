@@ -205,6 +205,20 @@ async function adminClients(ctx) {
       created_at: new Date().toISOString(),
     };
     await db().send(new PutCommand({ TableName: TABLE, Item: item }));
+
+    // Lifecycle: notify admin about new client (if role is 'client')
+    if ((b.role || 'client') === 'client') {
+      const clientName = ((b.first_name || '') + ' ' + (b.last_name || '')).trim();
+      try {
+        await lifecycleNotify('CLIENT_CREATED', {
+          client_name: clientName,
+          client_email: b.email || '',
+          client_phone: b.phone || '',
+          user_id: id,
+        }, ctx);
+      } catch (e) { console.error('Lifecycle notify failed:', e.message); }
+    }
+
     return resp(201, { success: true, user_id: id, item });
   }
 
@@ -313,6 +327,29 @@ async function adminCases(ctx) {
       ExpressionAttributeNames: names,
       ExpressionAttributeValues: values,
     }));
+
+    // Lifecycle: notify admin when case is closed
+    if (b.status === 'closed') {
+      try {
+        // Get client profile for the notification
+        const { QueryCommand: QC } = cmds();
+        const prof = await db().send(new QC({
+          TableName: TABLE,
+          KeyConditionExpression: 'PK = :pk AND SK = :sk',
+          ExpressionAttributeValues: { ':pk': `USER#${str(b.user_id)}`, ':sk': 'PROFILE' },
+        }));
+        const p = (prof.Items && prof.Items[0]) || {};
+        const clientName = ((p.first_name || '') + ' ' + (p.last_name || '')).trim() || 'Client';
+        await lifecycleNotify('CASE_CLOSED', {
+          client_name: clientName,
+          client_email: p.email || '',
+          user_id: b.user_id,
+          case_id: b.case_id,
+          case_type: b.case_type || '',
+        }, ctx);
+      } catch (e) { console.error('Lifecycle notify (case close) failed:', e.message); }
+    }
+
     return resp(200, { success: true });
   }
 
@@ -786,6 +823,195 @@ function emailTemplate(subject, bodyText, clientName) {
 }
 
 function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// --- Client Lifecycle Notifications -----------------------------------------
+
+async function lifecycleNotify(eventType, data, ctx) {
+  const { PutCommand } = cmds();
+
+  if (eventType === 'CLIENT_CREATED') {
+    // 1. Notify admin via internal admin message
+    const adminMsg = `[CLIENT-NEW] ${data.client_name} added to portal.\nEmail: ${data.client_email || 'none'} | Phone: ${data.client_phone || 'none'}\n\nWould you like onboarding documentation sent to this client? Use the Messages section to send a welcome letter.`;
+
+    // Log as admin notification
+    const id = Date.now().toString();
+    await db().send(new PutCommand({
+      TableName: TABLE,
+      Item: {
+        PK: 'FIRM', SK: `NOTIFY#${id}`,
+        GSI1PK: 'NOTIFY', GSI1SK: id,
+        type: 'CLIENT_CREATED',
+        message: adminMsg,
+        client_name: data.client_name,
+        client_email: data.client_email,
+        user_id: data.user_id,
+        status: 'pending_action',
+        created_at: new Date().toISOString(),
+      },
+    }));
+
+    // 2. Auto-send welcome letter to client (if email exists)
+    if (data.client_email) {
+      const firstName = data.client_name.split(' ')[0] || 'Client';
+      await sendEmail(
+        data.client_email,
+        'Welcome to Johnson Legal Team — Getting Started',
+        welcomeLetterText(firstName),
+        firstName
+      );
+
+      // Log that welcome was sent
+      const wId = (Date.now() + 1).toString();
+      await db().send(new PutCommand({
+        TableName: TABLE,
+        Item: {
+          PK: `USER#${data.user_id}`, SK: `ADMINMSG#${wId}`,
+          GSI1PK: 'ADMINMSG', GSI1SK: wId,
+          direction: 'outbound', channel: 'email',
+          to_user_id: data.user_id, to_name: data.client_name,
+          to_address: data.client_email,
+          subject: 'Welcome to Johnson Legal Team — Getting Started',
+          body: '[Auto] Welcome/onboarding letter sent via Jude lifecycle.',
+          sent_by: 'jude-lifecycle',
+          status: 'sent',
+          created_at: new Date().toISOString(),
+        },
+      }));
+    }
+
+    // 3. Notify admin that welcome was sent + ask about intake questionnaire
+    const followupId = (Date.now() + 2).toString();
+    await db().send(new PutCommand({
+      TableName: TABLE,
+      Item: {
+        PK: 'FIRM', SK: `NOTIFY#${followupId}`,
+        GSI1PK: 'NOTIFY', GSI1SK: followupId,
+        type: 'LIFECYCLE_FOLLOWUP',
+        message: `✓ Welcome letter sent to ${data.client_name} (${data.client_email}).\n\nWant to send an intake questionnaire to learn more about their legal matter? Use Messages → select ${data.client_name} → ask about their case details.`,
+        client_name: data.client_name,
+        user_id: data.user_id,
+        status: 'info',
+        created_at: new Date().toISOString(),
+      },
+    }));
+  }
+
+  if (eventType === 'CASE_CLOSED') {
+    // 1. Notify admin
+    const adminMsg = `[CASE-CLOSED] ${data.client_name} — ${data.case_type || 'general'}\nCase ${(data.case_id || '').substring(0, 8)} closed on ${new Date().toLocaleDateString()}.\n\nA thank-you letter has been sent. Would you like to send a feedback request as well? Use Messages to follow up.`;
+
+    const id = Date.now().toString();
+    await db().send(new PutCommand({
+      TableName: TABLE,
+      Item: {
+        PK: 'FIRM', SK: `NOTIFY#${id}`,
+        GSI1PK: 'NOTIFY', GSI1SK: id,
+        type: 'CASE_CLOSED',
+        message: adminMsg,
+        client_name: data.client_name,
+        client_email: data.client_email,
+        user_id: data.user_id,
+        case_id: data.case_id,
+        status: 'pending_action',
+        created_at: new Date().toISOString(),
+      },
+    }));
+
+    // 2. Auto-send thank you letter
+    if (data.client_email) {
+      const firstName = data.client_name.split(' ')[0] || 'Client';
+      await sendEmail(
+        data.client_email,
+        'Thank You — Johnson Legal Team',
+        thankYouLetterText(firstName),
+        firstName
+      );
+
+      // Log
+      const tId = (Date.now() + 1).toString();
+      await db().send(new PutCommand({
+        TableName: TABLE,
+        Item: {
+          PK: `USER#${data.user_id}`, SK: `ADMINMSG#${tId}`,
+          GSI1PK: 'ADMINMSG', GSI1SK: tId,
+          direction: 'outbound', channel: 'email',
+          to_user_id: data.user_id, to_name: data.client_name,
+          to_address: data.client_email,
+          subject: 'Thank You — Johnson Legal Team',
+          body: '[Auto] Thank-you letter sent via Jude lifecycle on case closure.',
+          sent_by: 'jude-lifecycle',
+          status: 'sent',
+          created_at: new Date().toISOString(),
+        },
+      }));
+    }
+
+    // 3. Ask admin about feedback request
+    const fbId = (Date.now() + 2).toString();
+    await db().send(new PutCommand({
+      TableName: TABLE,
+      Item: {
+        PK: 'FIRM', SK: `NOTIFY#${fbId}`,
+        GSI1PK: 'NOTIFY', GSI1SK: fbId,
+        type: 'LIFECYCLE_FOLLOWUP',
+        message: `✓ Thank-you letter sent to ${data.client_name}.\n\nWant to request feedback? Send a message asking about their experience and include your Google Review link.`,
+        client_name: data.client_name,
+        user_id: data.user_id,
+        case_id: data.case_id,
+        status: 'info',
+        created_at: new Date().toISOString(),
+      },
+    }));
+  }
+}
+
+function welcomeLetterText(firstName) {
+  return `Dear ${firstName},
+
+Welcome to Johnson Legal Team! I'm pleased to confirm that you are now a client of our firm. Attorney Rodney M. Johnson will be handling your matter personally.
+
+WHAT HAPPENS NEXT:
+• We will review the details of your case and reach out to schedule an initial consultation (in person or by phone).
+• If we need any documents or information from you, we'll let you know exactly what's needed.
+• You can expect to hear from us within 1-2 business days.
+
+HOW TO REACH US:
+• Phone: (833) 659-8378
+• Email: johnsonlegalteam@gmail.com
+• Hours: Monday–Friday, 9:00 AM – 5:00 PM ET
+
+IMPORTANT:
+All communications between you and our office are protected by attorney-client privilege. Your privacy is our priority.
+
+We look forward to working with you.
+
+Warm regards,
+Rodney M. Johnson, Esq.
+Johnson Legal Team, PLLC`;
+}
+
+function thankYouLetterText(firstName) {
+  return `Dear ${firstName},
+
+Thank you for trusting Johnson Legal Team with your legal matter. It has been a privilege to represent you, and I'm glad we could bring your case to resolution.
+
+YOUR FILE:
+Your case file will be retained per our records policy. If you ever need copies of documents or have questions about your matter, don't hesitate to reach out.
+
+FUTURE NEEDS:
+Should you or anyone you know need legal assistance in the future — family law, criminal defense, probate, real estate, or personal injury — we are always here to help.
+
+SHARE YOUR EXPERIENCE:
+If you had a positive experience, a Google review helps others in our community find quality legal representation:
+→ https://g.page/r/johnsonlegalteam/review
+
+Thank you again for choosing Johnson Legal Team.
+
+With appreciation,
+Rodney M. Johnson, Esq.
+Johnson Legal Team, PLLC
+(833) 659-8378`;
+}
 
 // --- Helpers ----------------------------------------------------------------
 
