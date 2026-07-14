@@ -109,6 +109,8 @@
     // Admin (require admin/super_admin — server enforces)
     admin: {
       listClients:       ()      => request('/admin/clients'),
+      createClient:      (data)  => request('/admin/clients', { method: 'POST', body: data }),
+      updateClient:      (data)  => request('/admin/clients', { method: 'PUT', body: data }),
       listCases:         ()      => request('/admin/cases'),
       createCase:        (data)  => request('/admin/cases', { method: 'POST', body: data }),
       updateCase:        (data)  => request('/admin/cases', { method: 'PUT', body: data }),

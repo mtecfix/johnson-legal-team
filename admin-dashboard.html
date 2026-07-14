@@ -346,9 +346,9 @@
               <option value="expert">Experts</option>
               <option value="vendor">Vendors</option>
               <option value="bar">Bar</option>
-              <option value="lead">Leads</option>
             </select>
             <input type="text" class="form-control form-control-sm" placeholder="Search..." id="contactSearch" style="width:180px;font-size:12px;">
+            <button class="btn btn-sm btn-primary" id="newContactBtn" style="font-size:12px;"><i class="fas fa-plus"></i> Add</button>
           </div>
         </div>
         <div class="panel-card-body" id="contactsTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
@@ -659,6 +659,82 @@
         <textarea class="form-control form-control-sm" id="noteFormText" rows="5" placeholder="Enter case note..."></textarea>
         <div id="noteFormResult" style="font-size:12px;margin-top:8px;"></div>
         <button class="btn btn-primary btn-sm w-100 mt-2" id="noteFormSaveBtn"><i class="fas fa-save"></i> Save Note</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Contact Form Modal -->
+<div class="modal fade" id="contactFormModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background:var(--navy);color:#fff;padding:16px 20px;">
+        <h5 class="modal-title" id="contactFormTitle" style="font-size:15px;font-weight:600;">New Contact</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body" style="padding:20px;">
+        <form id="contactForm">
+          <input type="hidden" id="contactFormId">
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label" style="font-size:12px;font-weight:600;">First Name</label>
+              <input type="text" class="form-control form-control-sm" id="contactFormFirst" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label" style="font-size:12px;font-weight:600;">Last Name</label>
+              <input type="text" class="form-control form-control-sm" id="contactFormLast">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" style="font-size:12px;font-weight:600;">Email</label>
+            <input type="email" class="form-control form-control-sm" id="contactFormEmail" placeholder="email@example.com">
+          </div>
+          <div class="mb-3">
+            <label class="form-label" style="font-size:12px;font-weight:600;">Phone</label>
+            <input type="tel" class="form-control form-control-sm" id="contactFormPhone" placeholder="(313) 555-0000">
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label" style="font-size:12px;font-weight:600;">Type</label>
+              <select class="form-select form-select-sm" id="contactFormRole">
+                <option value="client">Client</option>
+                <option value="correspondent">Legal Correspondent</option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label" style="font-size:12px;font-weight:600;">Category</label>
+              <select class="form-select form-select-sm" id="contactFormCategory">
+                <option value="">— None —</option>
+                <option value="court">Court</option>
+                <option value="prosecutor">Prosecutor</option>
+                <option value="government">Government</option>
+                <option value="legal_aid">Legal Aid</option>
+                <option value="attorney">Attorney</option>
+                <option value="insurance">Insurance</option>
+                <option value="referral">Referral Source</option>
+                <option value="expert">Expert</option>
+                <option value="vendor">Vendor</option>
+                <option value="bar">Bar</option>
+              </select>
+            </div>
+          </div>
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label" style="font-size:12px;font-weight:600;">City</label>
+              <input type="text" class="form-control form-control-sm" id="contactFormCity" placeholder="Detroit">
+            </div>
+            <div class="col-6">
+              <label class="form-label" style="font-size:12px;font-weight:600;">State</label>
+              <input type="text" class="form-control form-control-sm" id="contactFormState" placeholder="MI" maxlength="2">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label" style="font-size:12px;font-weight:600;">Notes</label>
+            <textarea class="form-control form-control-sm" id="contactFormNotes" rows="2" placeholder="Optional notes..."></textarea>
+          </div>
+          <div id="contactFormResult" style="font-size:12px;margin-bottom:8px;"></div>
+          <button type="submit" class="btn btn-primary btn-sm w-100" id="contactFormSubmitBtn"><i class="fas fa-save"></i> Save Contact</button>
+        </form>
       </div>
     </div>
   </div>

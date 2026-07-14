@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
   setupEventForm();
   setupCaseCrud();
   setupInvoiceCrud();
+  setupContactCrud();
 
   // Load data
   loadAll();
@@ -626,8 +627,9 @@ function renderContactsTable() {
     referral: 'Referral', expert: 'Expert', vendor: 'Vendor', bar: 'Bar', lead: 'Lead'
   };
 
-  let html = `<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Type</th><th>Category</th></tr></thead><tbody>`;
+  let html = `<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Type</th><th>Category</th><th></th></tr></thead><tbody>`;
   filtered.forEach(c => {
+    const uid = (c.PK || '').replace('USER#', '');
     const role = c.role || 'client';
     const roleLabel = role === 'correspondent' ? 'Correspondent' : role === 'client' ? 'Client' : role;
     const cat = c.category || '';
@@ -637,12 +639,13 @@ function renderContactsTable() {
       ? `<span class="badge-cat lead">Lead</span>`
       : '<span style="color:var(--muted);font-size:11px;">—</span>';
     const phone = c.phone || c.phone_number || '';
-    html += `<tr>
+    html += `<tr style="cursor:pointer;" onclick="openEditContact('${esc(uid)}')">
       <td><strong>${esc(c.first_name || '')} ${esc(c.last_name || '')}</strong>${c.city ? `<br><span style="color:var(--muted);font-size:11px;">${esc(c.city)}${c.state ? ', ' + esc(c.state) : ''}</span>` : ''}</td>
       <td style="font-size:12px;">${esc(c.email || '')}</td>
       <td style="font-size:12px;color:var(--muted);">${esc(phone) || '—'}</td>
       <td><span class="badge-cat ${role === 'correspondent' ? 'attorney' : 'client'}">${esc(roleLabel)}</span></td>
       <td>${catBadge}</td>
+      <td style="font-size:12px;color:var(--gold);"><i class="fas fa-pen"></i></td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -938,6 +941,93 @@ async function changeUserRole(userId, role) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// CONTACT CRUD (New, Edit)
+// ═══════════════════════════════════════════════════════════════
+
+function setupContactCrud() {
+  const newBtn = document.getElementById('newContactBtn');
+  if (newBtn) newBtn.addEventListener('click', openNewContactForm);
+  const form = document.getElementById('contactForm');
+  if (form) form.addEventListener('submit', submitContactForm);
+}
+
+function openNewContactForm() {
+  document.getElementById('contactFormTitle').textContent = 'New Contact';
+  document.getElementById('contactFormId').value = '';
+  document.getElementById('contactFormFirst').value = '';
+  document.getElementById('contactFormLast').value = '';
+  document.getElementById('contactFormEmail').value = '';
+  document.getElementById('contactFormPhone').value = '';
+  document.getElementById('contactFormRole').value = 'client';
+  document.getElementById('contactFormCategory').value = '';
+  document.getElementById('contactFormCity').value = '';
+  document.getElementById('contactFormState').value = '';
+  document.getElementById('contactFormNotes').value = '';
+  document.getElementById('contactFormResult').innerHTML = '';
+  new bootstrap.Modal(document.getElementById('contactFormModal')).show();
+}
+
+function openEditContact(userId) {
+  const contact = clientsData.find(c => (c.PK || '').replace('USER#', '') === userId);
+  if (!contact) return;
+  document.getElementById('contactFormTitle').textContent = 'Edit Contact';
+  document.getElementById('contactFormId').value = userId;
+  document.getElementById('contactFormFirst').value = contact.first_name || '';
+  document.getElementById('contactFormLast').value = contact.last_name || '';
+  document.getElementById('contactFormEmail').value = contact.email || '';
+  document.getElementById('contactFormPhone').value = contact.phone || contact.phone_number || '';
+  document.getElementById('contactFormRole').value = contact.role || 'client';
+  document.getElementById('contactFormCategory').value = contact.category || '';
+  document.getElementById('contactFormCity').value = contact.city || '';
+  document.getElementById('contactFormState').value = contact.state || '';
+  document.getElementById('contactFormNotes').value = contact.notes || '';
+  document.getElementById('contactFormResult').innerHTML = '';
+  new bootstrap.Modal(document.getElementById('contactFormModal')).show();
+}
+
+async function submitContactForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('contactFormSubmitBtn');
+  const result = document.getElementById('contactFormResult');
+  const userId = document.getElementById('contactFormId').value;
+
+  const data = {
+    first_name: document.getElementById('contactFormFirst').value.trim(),
+    last_name: document.getElementById('contactFormLast').value.trim(),
+    email: document.getElementById('contactFormEmail').value.trim(),
+    phone: document.getElementById('contactFormPhone').value.trim(),
+    role: document.getElementById('contactFormRole').value,
+    category: document.getElementById('contactFormCategory').value,
+    city: document.getElementById('contactFormCity').value.trim(),
+    state: document.getElementById('contactFormState').value.trim(),
+    notes: document.getElementById('contactFormNotes').value.trim(),
+  };
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+  result.innerHTML = '';
+
+  try {
+    if (userId) {
+      data.user_id = userId;
+      await PortalAPI.admin.updateClient(data);
+      result.innerHTML = '<span style="color:var(--success);"><i class="fas fa-check"></i> Contact updated.</span>';
+    } else {
+      await PortalAPI.admin.createClient(data);
+      result.innerHTML = '<span style="color:var(--success);"><i class="fas fa-check"></i> Contact created.</span>';
+    }
+    await loadClients();
+    updateStats();
+    setTimeout(() => bootstrap.Modal.getInstance(document.getElementById('contactFormModal'))?.hide(), 800);
+  } catch (err) {
+    result.innerHTML = `<span style="color:var(--danger);"><i class="fas fa-exclamation-circle"></i> ${esc(err.message)}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save Contact';
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // CASE CRUD (New, Edit, Close, Delete, Notes)
 // ═══════════════════════════════════════════════════════════════
 
@@ -1209,3 +1299,4 @@ window.navigateTo = navigateTo;
 window.changeUserRole = changeUserRole;
 window.openCaseDetail = openCaseDetail;
 window.markInvoicePaid = markInvoicePaid;
+window.openEditContact = openEditContact;

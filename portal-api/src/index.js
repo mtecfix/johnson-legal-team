@@ -155,7 +155,7 @@ async function handleMessages(ctx) {
 async function handleAdmin(ctx) {
   const resource = ctx.segments[1] || '';
   switch (resource) {
-    case 'clients':       return await adminList(ctx, 'USER');
+    case 'clients':       return await adminClients(ctx);
     case 'cases':         return await adminCases(ctx);
     case 'invoices':      return await adminInvoices(ctx);
     case 'registrations': return await adminRegistrations(ctx);
@@ -177,6 +177,68 @@ async function adminList(ctx, entityType) {
     ExpressionAttributeValues: { ':pk': entityType },
   }));
   return resp(200, { items: out.Items || [] });
+}
+
+// Admin clients: list, create, update
+async function adminClients(ctx) {
+  const { PutCommand, UpdateCommand } = cmds();
+
+  if (ctx.method === 'GET') return adminList(ctx, 'USER');
+
+  if (ctx.method === 'POST') {
+    // Create new contact: { email, first_name, last_name, phone, role, category, city, state, notes }
+    const b = ctx.body || {};
+    if (!b.first_name && !b.last_name) return resp(400, { error: 'first_name or last_name required' });
+    const id = require('crypto').randomUUID();
+    const item = {
+      PK: `USER#${id}`, SK: 'PROFILE',
+      GSI1PK: 'USER', GSI1SK: id,
+      email: str(b.email) || '',
+      first_name: str(b.first_name) || '',
+      last_name: str(b.last_name) || '',
+      phone: str(b.phone) || '',
+      role: str(b.role) || 'client',
+      category: str(b.category) || '',
+      city: str(b.city) || '',
+      state: str(b.state) || '',
+      notes: str(b.notes) || '',
+      created_at: new Date().toISOString(),
+    };
+    await db().send(new PutCommand({ TableName: TABLE, Item: item }));
+    return resp(201, { success: true, user_id: id, item });
+  }
+
+  if (ctx.method === 'PUT') {
+    // Update contact: { user_id, first_name?, last_name?, email?, phone?, role?, category?, city?, state?, notes? }
+    const b = ctx.body || {};
+    if (!b.user_id) return resp(400, { error: 'user_id required' });
+    const updates = [];
+    const names = {};
+    const values = {};
+    const fields = ['first_name','last_name','email','phone','role','category','city','state','notes'];
+    fields.forEach((f, i) => {
+      if (b[f] !== undefined) {
+        const alias = `#f${i}`;
+        const valAlias = `:v${i}`;
+        updates.push(`${alias} = ${valAlias}`);
+        names[alias] = f;
+        values[valAlias] = str(b[f]);
+      }
+    });
+    if (!updates.length) return resp(400, { error: 'No fields to update' });
+    updates.push('#ua = :ua'); names['#ua'] = 'updated_at'; values[':ua'] = new Date().toISOString();
+
+    await db().send(new UpdateCommand({
+      TableName: TABLE,
+      Key: { PK: `USER#${str(b.user_id)}`, SK: 'PROFILE' },
+      UpdateExpression: 'SET ' + updates.join(', '),
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: values,
+    }));
+    return resp(200, { success: true });
+  }
+
+  return resp(405, { error: 'Method not allowed' });
 }
 
 // All cases across all users — scan for SK begins_with CASE#, join with profile
