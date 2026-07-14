@@ -527,18 +527,45 @@ async function adminMessages(ctx) {
 // GET/POST /admin/appointments — calendar events & deadlines (firm-wide)
 async function adminAppointments(ctx) {
   const { ScanCommand, PutCommand } = cmds();
+
   if (ctx.method === 'GET') {
+    // Fetch from Google Calendar + local DynamoDB events
+    let gcalEvents = [];
+    try {
+      gcalEvents = await fetchGoogleCalendarEvents();
+    } catch (e) {
+      console.error('Google Calendar fetch failed:', e.message);
+    }
+
+    // Also get local DynamoDB events (for any that weren't synced to gcal)
     const out = await db().send(new ScanCommand({
       TableName: TABLE,
       FilterExpression: 'begins_with(SK, :sk)',
       ExpressionAttributeValues: { ':sk': 'EVENT#' },
     }));
-    const items = (out.Items || []).sort((a, b) => (a.event_date || '').localeCompare(b.event_date || ''));
-    return resp(200, { items });
+    const localItems = out.Items || [];
+
+    // Merge: Google Calendar events + local-only events
+    const gcalIds = new Set(gcalEvents.map(e => e.gcal_id));
+    const localOnly = localItems.filter(e => !e.gcal_id || !gcalIds.has(e.gcal_id));
+    const merged = [...gcalEvents, ...localOnly].sort((a, b) => (a.event_date || '').localeCompare(b.event_date || ''));
+
+    return resp(200, { items: merged, source: 'google_calendar' });
   }
+
   if (ctx.method === 'POST') {
     const b = ctx.body || {};
     if (!b.title || !b.event_date) return resp(400, { error: 'title and event_date required' });
+
+    // Create on Google Calendar
+    let gcalId = null;
+    try {
+      gcalId = await createGoogleCalendarEvent(b);
+    } catch (e) {
+      console.error('Google Calendar create failed:', e.message);
+    }
+
+    // Also save locally in DynamoDB
     const id = Date.now().toString();
     const item = {
       PK: b.user_id ? `USER#${str(b.user_id)}` : 'FIRM',
@@ -546,18 +573,138 @@ async function adminAppointments(ctx) {
       GSI1PK: 'EVENT', GSI1SK: str(b.event_date),
       title: str(b.title),
       event_date: str(b.event_date),
-      event_type: str(b.event_type) || 'court',   // court | deadline | meeting | filing
+      event_type: str(b.event_type) || 'court',
       location: str(b.location) || null,
       case_id: b.case_id ? str(b.case_id) : null,
       client_name: str(b.client_name) || null,
       notes: str(b.notes) || null,
+      gcal_id: gcalId,
       created_by: ctx.claims.email || ctx.userId,
       created_at: new Date().toISOString(),
     };
     await db().send(new PutCommand({ TableName: TABLE, Item: item }));
-    return resp(201, { success: true, event: item });
+    return resp(201, { success: true, event: item, google_calendar: !!gcalId });
   }
+
   return resp(405, { error: 'Method not allowed' });
+}
+
+// --- Google Calendar integration ---
+
+const GOOGLE_SECRET_ID = 'johnson-legal/gmail-refresh-token';
+const GOOGLE_CLIENT_SECRET_ID = 'johnson-legal/google-oauth-client-secret';
+
+let _gcalCreds = null;
+async function getGoogleCredentials() {
+  if (_gcalCreds) return _gcalCreds;
+  const { SecretsManagerClient, GetSecretValueCommand } = require('@aws-sdk/client-secrets-manager');
+  const sm = new SecretsManagerClient({});
+
+  const [tokenRes, clientRes] = await Promise.all([
+    sm.send(new GetSecretValueCommand({ SecretId: GOOGLE_SECRET_ID })),
+    sm.send(new GetSecretValueCommand({ SecretId: GOOGLE_CLIENT_SECRET_ID })),
+  ]);
+
+  const tokenData = JSON.parse(tokenRes.SecretString);
+  const clientData = JSON.parse(clientRes.SecretString);
+  const web = clientData.web;
+
+  _gcalCreds = {
+    clientId: web.client_id,
+    clientSecret: web.client_secret,
+    refreshToken: tokenData.refresh_token,
+  };
+  return _gcalCreds;
+}
+
+async function getGoogleAccessToken() {
+  const creds = await getGoogleCredentials();
+  const params = new URLSearchParams({
+    client_id: creds.clientId,
+    client_secret: creds.clientSecret,
+    refresh_token: creds.refreshToken,
+    grant_type: 'refresh_token',
+  });
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: params.toString(),
+  });
+  const data = await res.json();
+  if (!data.access_token) throw new Error('Failed to get Google access token');
+  return data.access_token;
+}
+
+async function fetchGoogleCalendarEvents() {
+  const token = await getGoogleAccessToken();
+  const now = new Date();
+  const timeMin = new Date(now.getTime() - 30 * 864e5).toISOString(); // 30 days ago
+  const timeMax = new Date(now.getTime() + 90 * 864e5).toISOString(); // 90 days ahead
+
+  const params = new URLSearchParams({
+    timeMin, timeMax,
+    maxResults: '100',
+    singleEvents: 'true',
+    orderBy: 'startTime',
+  });
+
+  const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!data.items) return [];
+
+  // Map Google Calendar events to our format
+  return data.items.map(e => {
+    const start = e.start?.dateTime || e.start?.date || '';
+    const typeGuess = guessEventType(e.summary || '', e.location || '');
+    return {
+      gcal_id: e.id,
+      title: e.summary || '(No title)',
+      event_date: start,
+      event_type: typeGuess,
+      location: e.location || null,
+      notes: e.description || null,
+      source: 'google_calendar',
+    };
+  });
+}
+
+function guessEventType(title, location) {
+  const t = (title + ' ' + location).toLowerCase();
+  if (t.includes('court') || t.includes('hearing') || t.includes('trial') || t.includes('arraign')) return 'court';
+  if (t.includes('deadline') || t.includes('due') || t.includes('filing deadline')) return 'deadline';
+  if (t.includes('filing') || t.includes('file') || t.includes('motion')) return 'filing';
+  if (t.includes('meeting') || t.includes('consult') || t.includes('client')) return 'meeting';
+  return 'meeting';
+}
+
+async function createGoogleCalendarEvent(eventData) {
+  const token = await getGoogleAccessToken();
+  const startDate = new Date(eventData.event_date);
+  const endDate = new Date(startDate.getTime() + 60 * 60 * 1000); // 1 hour default
+
+  const gcalEvent = {
+    summary: eventData.title,
+    location: eventData.location || '',
+    description: [
+      eventData.notes || '',
+      eventData.event_type ? `Type: ${eventData.event_type}` : '',
+      eventData.client_name ? `Client: ${eventData.client_name}` : '',
+    ].filter(Boolean).join('\n'),
+    start: { dateTime: startDate.toISOString(), timeZone: 'America/Detroit' },
+    end: { dateTime: endDate.toISOString(), timeZone: 'America/Detroit' },
+    reminders: { useDefault: false, overrides: [{ method: 'popup', minutes: 60 }, { method: 'popup', minutes: 1440 }] },
+  };
+
+  const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(gcalEvent),
+  });
+  const data = await res.json();
+  if (!data.id) throw new Error(data.error?.message || 'Failed to create event');
+  return data.id;
 }
 
 // --- Dispatch: SES email (branded HTML) + SNS SMS ---------------------------
