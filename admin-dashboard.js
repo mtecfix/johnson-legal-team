@@ -862,6 +862,15 @@ function renderCalendar() {
 }
 
 function setupEventForm() {
+  // Add Event button opens modal
+  const addBtn = document.getElementById('addEventBtn');
+  if (addBtn) {
+    addBtn.addEventListener('click', () => {
+      document.getElementById('evtResult').innerHTML = '';
+      new bootstrap.Modal(document.getElementById('eventFormModal')).show();
+    });
+  }
+
   const form = document.getElementById('eventForm');
   if (!form) return;
   form.addEventListener('submit', async (e) => {
@@ -877,10 +886,9 @@ function setupEventForm() {
     if (!payload.title || !payload.event_date) { result.innerHTML = '<span style="color:var(--danger);">Title and date required.</span>'; return; }
     try {
       await PortalAPI.admin.createAppointment(payload);
-      result.innerHTML = '<span style="color:var(--success);"><i class="fas fa-check"></i> Event added.</span>';
+      result.innerHTML = '<span style="color:var(--success);"><i class="fas fa-check"></i> Event added to Google Calendar.</span>';
       form.reset();
-      loadCalendar();
-      updateStats();
+      setTimeout(() => bootstrap.Modal.getInstance(document.getElementById('eventFormModal'))?.hide(), 1000);
     } catch (err) {
       result.innerHTML = `<span style="color:var(--danger);">${esc(err.message || 'Failed')}</span>`;
     }
