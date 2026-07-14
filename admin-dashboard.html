@@ -82,6 +82,12 @@
     /* Lead detail */
     .lead-detail{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:20px;margin-top:12px;}
     .lead-detail .lead-message{background:var(--card);border-left:3px solid var(--gold);padding:12px 16px;border-radius:0 6px 6px 0;margin:12px 0;font-size:13px;line-height:1.6;color:#374151;}
+    /* Case tabs */
+    .case-tab{padding:12px 20px;font-size:13px;font-weight:500;border:none;background:none;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .15s;white-space:nowrap;}
+    .case-tab:hover{color:var(--text);background:rgba(27,54,93,.02);}
+    .case-tab.active{color:var(--navy);border-bottom-color:var(--gold);font-weight:600;}
+    .case-tab-count{font-size:10px;background:var(--bg);padding:1px 6px;border-radius:10px;margin-left:4px;color:var(--muted);}
+    .case-tab.active .case-tab-count{background:rgba(212,175,55,.15);color:var(--gold);}
     /* Empty state */
     .empty-state{text-align:center;padding:48px 20px;color:var(--muted);}
     .empty-state i{font-size:36px;margin-bottom:12px;opacity:.4;}
@@ -219,28 +225,26 @@
     <div class="panel" id="panelCases">
       <!-- Cases List View -->
       <div id="casesListView">
+        <!-- Category Tabs -->
+        <div class="panel-card" style="margin-bottom:16px;">
+          <div class="panel-card-body" style="padding:0;overflow-x:auto;">
+            <div id="caseTypeTabs" style="display:flex;border-bottom:none;gap:0;">
+              <button class="case-tab active" data-type="">All <span class="case-tab-count" id="tabCountAll"></span></button>
+              <button class="case-tab" data-type="general">General <span class="case-tab-count" id="tabCountGeneral"></span></button>
+              <button class="case-tab" data-type="probate-estate">Probate & Estate <span class="case-tab-count" id="tabCountProbate"></span></button>
+              <button class="case-tab" data-type="family-law">Family Law <span class="case-tab-count" id="tabCountFamily"></span></button>
+              <button class="case-tab" data-type="criminal-defense">Criminal Defense <span class="case-tab-count" id="tabCountCriminal"></span></button>
+              <button class="case-tab" data-type="personal-injury">Personal Injury <span class="case-tab-count" id="tabCountPI"></span></button>
+              <button class="case-tab" data-type="real-estate">Real Estate <span class="case-tab-count" id="tabCountRE"></span></button>
+              <button class="case-tab" data-type="traffic">Traffic <span class="case-tab-count" id="tabCountTraffic"></span></button>
+            </div>
+          </div>
+        </div>
+
         <div class="panel-card">
           <div class="panel-card-header">
-            <h2>Cases</h2>
-            <div style="display:flex;align-items:center;gap:12px;">
-              <span style="font-size:12px;color:var(--muted);" id="casesCount"></span>
-              <select class="form-select form-select-sm" id="caseFilterType" style="width:auto;font-size:12px;">
-                <option value="">All Types</option>
-                <option value="general">General</option>
-                <option value="probate-estate">Probate & Estate</option>
-                <option value="family-law">Family Law</option>
-                <option value="criminal-defense">Criminal Defense</option>
-                <option value="personal-injury">Personal Injury</option>
-                <option value="real-estate">Real Estate</option>
-                <option value="traffic">Traffic</option>
-              </select>
-              <select class="form-select form-select-sm" id="caseFilterStatus" style="width:auto;font-size:12px;">
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="closed">Closed</option>
-                <option value="pending">Pending</option>
-              </select>
-            </div>
+            <h2 id="casesHeading">All Cases</h2>
+            <span style="font-size:12px;color:var(--muted);" id="casesCount"></span>
           </div>
           <div class="panel-card-body" id="casesContent"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading cases...</p></div></div>
         </div>

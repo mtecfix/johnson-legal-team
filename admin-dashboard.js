@@ -89,6 +89,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (cftEl) cftEl.addEventListener('change', renderCasesTable);
   if (cfsEl) cfsEl.addEventListener('change', renderCasesTable);
 
+  // Case type tabs
+  document.querySelectorAll('.case-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.case-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      renderCasesTable();
+    });
+  });
+
   // Case detail back button
   const caseBackBtn = document.getElementById('caseBackBtn');
   if (caseBackBtn) caseBackBtn.addEventListener('click', closeCaseDetail);
@@ -243,15 +252,29 @@ function renderCasesTable() {
     document.getElementById('casesContent').innerHTML = emptyState('fas fa-briefcase', 'No cases yet.');
     const rc = document.getElementById('recentCases');
     if (rc) rc.innerHTML = emptyState('fas fa-briefcase', 'No cases yet.');
+    updateCaseTabCounts();
     return;
   }
 
-  // Apply filters
-  const filterType = document.getElementById('caseFilterType') ? document.getElementById('caseFilterType').value : '';
-  const filterStatus = document.getElementById('caseFilterStatus') ? document.getElementById('caseFilterStatus').value : '';
+  // Get active tab type
+  const activeTab = document.querySelector('.case-tab.active');
+  const filterType = activeTab ? activeTab.dataset.type : '';
+
+  // Filter by type
   let filtered = casesData;
   if (filterType) filtered = filtered.filter(c => c.case_type === filterType);
-  if (filterStatus) filtered = filtered.filter(c => c.status === filterStatus);
+
+  // Sort by opened_at descending (newest first)
+  filtered.sort((a, b) => (b.opened_at || '').localeCompare(a.opened_at || ''));
+
+  // Update heading
+  const heading = document.getElementById('casesHeading');
+  if (heading) {
+    heading.textContent = filterType ? (caseTypeLabels[filterType] || 'Cases') : 'All Cases';
+  }
+
+  // Update tab counts
+  updateCaseTabCounts();
 
   const rowHtml = (c, idx) => {
     const statusClass = c.status === 'active' ? 'qualified' : c.status === 'closed' ? 'lost' : 'new';
@@ -383,6 +406,26 @@ function openCaseDetail(caseId) {
 function closeCaseDetail() {
   document.getElementById('caseDetailView').style.display = 'none';
   document.getElementById('casesListView').style.display = 'block';
+}
+
+function updateCaseTabCounts() {
+  const counts = { '': casesData.length };
+  const typeMap = {
+    'general': 'General', 'probate-estate': 'Probate', 'family-law': 'Family',
+    'criminal-defense': 'Criminal', 'personal-injury': 'PI', 'real-estate': 'RE', 'traffic': 'Traffic'
+  };
+  for (const key of Object.keys(typeMap)) {
+    counts[key] = casesData.filter(c => c.case_type === key).length;
+  }
+  const el = (id, val) => { const e = document.getElementById(id); if (e) e.textContent = val; };
+  el('tabCountAll', counts['']);
+  el('tabCountGeneral', counts['general']);
+  el('tabCountProbate', counts['probate-estate']);
+  el('tabCountFamily', counts['family-law']);
+  el('tabCountCriminal', counts['criminal-defense']);
+  el('tabCountPI', counts['personal-injury']);
+  el('tabCountRE', counts['real-estate']);
+  el('tabCountTraffic', counts['traffic']);
 }
 
 async function loadRegistrations() {
