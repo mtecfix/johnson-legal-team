@@ -110,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wire up forms
   setupMessageForm();
   setupEventForm();
-  setupCalendarNav();
   setupCaseCrud();
   setupInvoiceCrud();
   setupContactCrud();
@@ -826,8 +825,6 @@ function setupMessageForm() {
 // ═══════════════════════════════════════════════════════════════
 
 let calendarData = [];
-let calViewDate = new Date(); // current month being viewed
-
 async function loadCalendar() {
   try {
     if (!window.PortalAPI) return;
@@ -835,80 +832,33 @@ async function loadCalendar() {
     calendarData = data.items || [];
     renderCalendar();
   } catch (e) {
-    const el = document.getElementById('calendarGrid');
-    if (el) el.innerHTML = `<div style="grid-column:1/-1;padding:40px;text-align:center;color:var(--muted);">Failed to load: ${esc(e.message)}</div>`;
+    const el = document.getElementById('calendarList');
+    if (el) el.innerHTML = emptyState('fas fa-exclamation-triangle', 'Failed to load calendar: ' + e.message);
   }
 }
 
 function renderCalendar() {
-  const grid = document.getElementById('calendarGrid');
-  if (!grid) return;
+  const el = document.getElementById('calendarList');
+  if (!el) return;
+  if (!calendarData.length) { el.innerHTML = emptyState('fas fa-calendar-alt', 'No events scheduled.'); return; }
 
-  const year = calViewDate.getFullYear();
-  const month = calViewDate.getMonth();
-
-  // Update month label
-  const label = document.getElementById('calMonthLabel');
-  if (label) label.textContent = calViewDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-
-  // Day headers
-  const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  let html = days.map(d => `<div class="cal-header">${d}</div>`).join('');
-
-  // Calculate grid
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const today = new Date();
-  const todayStr = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
-
-  // Previous month padding
-  const prevMonthDays = new Date(year, month, 0).getDate();
-  for (let i = firstDay - 1; i >= 0; i--) {
-    html += `<div class="cal-day other-month"><div class="cal-day-num">${prevMonthDays - i}</div></div>`;
-  }
-
-  // Current month days
-  for (let d = 1; d <= daysInMonth; d++) {
-    const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-    const isToday = dateStr === todayStr;
-    const dayEvents = calendarData.filter(evt => {
-      if (!evt.event_date) return false;
-      return evt.event_date.startsWith(dateStr);
-    });
-
-    let eventsHtml = '';
-    dayEvents.slice(0, 3).forEach(evt => {
-      const type = evt.event_type || 'meeting';
-      eventsHtml += `<div class="cal-event ${type}" title="${esc(evt.title || '')}">${esc(evt.title || '(no title)')}</div>`;
-    });
-    if (dayEvents.length > 3) {
-      eventsHtml += `<div style="font-size:9px;color:var(--muted);">+${dayEvents.length - 3} more</div>`;
-    }
-
-    html += `<div class="cal-day${isToday ? ' today' : ''}"><div class="cal-day-num">${d}</div>${eventsHtml}</div>`;
-  }
-
-  // Next month padding (fill to 42 cells = 6 rows)
-  const totalCells = firstDay + daysInMonth;
-  const remaining = (7 - (totalCells % 7)) % 7;
-  for (let i = 1; i <= remaining; i++) {
-    html += `<div class="cal-day other-month"><div class="cal-day-num">${i}</div></div>`;
-  }
-
-  grid.innerHTML = html;
-}
-
-function setupCalendarNav() {
-  const prev = document.getElementById('calPrev');
-  const next = document.getElementById('calNext');
-  if (prev) prev.addEventListener('click', () => {
-    calViewDate.setMonth(calViewDate.getMonth() - 1);
-    renderCalendar();
+  const typeIcons = { court: 'fa-gavel', deadline: 'fa-hourglass-half', meeting: 'fa-handshake', filing: 'fa-file-signature' };
+  const now = new Date();
+  let html = '<table class="data-table"><thead><tr><th>Date</th><th>Event</th><th>Type</th><th>Location</th></tr></thead><tbody>';
+  calendarData.forEach(evt => {
+    const d = evt.event_date ? new Date(evt.event_date) : null;
+    const isPast = d && d < now;
+    const dateStr = d ? d.toLocaleString([], {month:'short', day:'numeric', hour:'2-digit', minute:'2-digit'}) : '';
+    const icon = typeIcons[evt.event_type] || 'fa-calendar';
+    html += `<tr style="${isPast ? 'opacity:.5;' : ''}">
+      <td style="font-size:12px;font-weight:600;">${dateStr}</td>
+      <td><strong>${esc(evt.title || '')}</strong>${evt.notes ? `<br><span style="color:var(--muted);font-size:11px;">${esc(evt.notes)}</span>` : ''}</td>
+      <td style="font-size:12px;text-transform:capitalize;"><i class="fas ${icon}" style="color:var(--gold);"></i> ${esc(evt.event_type || '')}</td>
+      <td style="font-size:12px;color:var(--muted);">${esc(evt.location || '—')}</td>
+    </tr>`;
   });
-  if (next) next.addEventListener('click', () => {
-    calViewDate.setMonth(calViewDate.getMonth() + 1);
-    renderCalendar();
-  });
+  html += '</tbody></table>';
+  el.innerHTML = html;
 }
 
 function setupEventForm() {
