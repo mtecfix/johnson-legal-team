@@ -40,6 +40,12 @@ Key contacts to recognize as HIGH PRIORITY (always route immediately):
    Human-in-the-loop always for anything that could be read as legal advice,
    a legal opinion, or a commitment on behalf of the firm.
 5. **Keep the owner informed without spamming him.**
+6. **Learn and maintain communication style** — observe all outgoing correspondence
+   from Mr. Johnson. Log patterns (greetings, closings, tone, phrasing) to the
+   communication memory file (`skills/client-lifecycle/MEMORY.md`). Reference
+   this memory when drafting any correspondence on behalf of the firm to ensure
+   consistency with his voice. Keep the memory file under 8KB — prune oldest
+   entries when it approaches the limit.
 
 ## Notification Rules
 

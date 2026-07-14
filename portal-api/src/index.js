@@ -554,6 +554,17 @@ async function adminMessages(ctx) {
     };
     await db().send(new PutCommand({ TableName: TABLE, Item: item }));
 
+    // Log to communication memory (for Jude style-learning)
+    try {
+      await logToMemory({
+        to: clientName,
+        channel,
+        subject: str(b.subject) || null,
+        body_preview: (str(b.body) || '').slice(0, 120),
+        sent_by: ctx.claims.email || ctx.userId,
+      });
+    } catch (e) { console.error('Memory log failed:', e.message); }
+
     if (!dispatch.ok) return resp(502, { error: 'Message logged but delivery failed', detail: dispatch.detail, message: item });
     return resp(201, { success: true, message: item });
   }
@@ -823,6 +834,62 @@ function emailTemplate(subject, bodyText, clientName) {
 }
 
 function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+
+// --- Communication Memory (style learning) -----------------------------------
+
+// Logs a compact summary of every outgoing message for Jude to reference
+// when matching Attorney Johnson's communication style. Stored as a rolling
+// buffer in DynamoDB — max 50 entries, oldest pruned automatically.
+async function logToMemory(data) {
+  const { PutCommand, QueryCommand, DeleteCommand } = cmds();
+  const ts = new Date().toISOString();
+  const id = Date.now().toString();
+
+  // Extract style signals from the message
+  const body = data.body_preview || '';
+  let greeting = '—';
+  if (body.match(/^Greetings,/i)) greeting = 'Greetings,';
+  else if (body.match(/^Good (morning|afternoon|evening)/i)) greeting = body.match(/^Good \w+,?/i)?.[0] || '—';
+  else if (body.match(/^Hello/i)) greeting = 'Hello [name],';
+  else if (body.match(/^Dear/i)) greeting = 'Dear [name],';
+
+  let closing = '—';
+  if (body.match(/Best,?\s*$/i)) closing = 'Best,';
+  else if (body.match(/Respectfully,?\s*$/i)) closing = 'Respectfully,';
+  else if (body.match(/Thank you,?\s*$/i)) closing = 'Thank you,';
+
+  const entry = {
+    PK: 'MEMORY', SK: `MSG#${id}`,
+    timestamp: ts,
+    to: str(data.to) || '',
+    channel: data.channel || 'email',
+    subject: str(data.subject) || '',
+    body_preview: str(data.body_preview) || '',
+    greeting,
+    closing,
+    sent_by: str(data.sent_by) || '',
+    word_count: body.split(/\s+/).length,
+  };
+
+  await db().send(new PutCommand({ TableName: TABLE, Item: entry }));
+
+  // Prune: keep only most recent 50 entries
+  try {
+    const existing = await db().send(new QueryCommand({
+      TableName: TABLE,
+      KeyConditionExpression: 'PK = :pk AND begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':pk': 'MEMORY', ':sk': 'MSG#' },
+      ScanIndexForward: true, // oldest first
+    }));
+    const items = existing.Items || [];
+    if (items.length > 50) {
+      const toDelete = items.slice(0, items.length - 50);
+      for (const old of toDelete) {
+        await db().send(new DeleteCommand({ TableName: TABLE, Key: { PK: old.PK, SK: old.SK } }));
+      }
+    }
+  } catch (_) { /* pruning is best-effort */ }
+}
 
 // --- Client Lifecycle Notifications -----------------------------------------
 
