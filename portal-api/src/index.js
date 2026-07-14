@@ -157,7 +157,7 @@ async function handleAdmin(ctx) {
   switch (resource) {
     case 'clients':       return await adminList(ctx, 'USER');
     case 'cases':         return await adminCases(ctx);
-    case 'invoices':      return await adminList(ctx, 'INV');
+    case 'invoices':      return await adminInvoices(ctx);
     case 'registrations': return await adminRegistrations(ctx);
     case 'users':         return await adminUsers(ctx);
     case 'messages':      return await adminMessages(ctx);
@@ -181,33 +181,169 @@ async function adminList(ctx, entityType) {
 
 // All cases across all users — scan for SK begins_with CASE#, join with profile
 async function adminCases(ctx) {
-  if (ctx.method !== 'GET') return resp(405, { error: 'Method not allowed' });
-  const { ScanCommand, QueryCommand } = cmds();
-  const out = await db().send(new ScanCommand({
-    TableName: TABLE,
-    FilterExpression: 'begins_with(SK, :sk)',
-    ExpressionAttributeValues: { ':sk': 'CASE#' },
-  }));
-  // Enrich with client name from profiles
-  const cases = out.Items || [];
-  const profileCache = {};
-  for (const c of cases) {
-    const pk = c.PK;
-    if (!profileCache[pk]) {
-      try {
-        const p = await db().send(new QueryCommand({
-          TableName: TABLE,
-          KeyConditionExpression: 'PK = :pk AND SK = :sk',
-          ExpressionAttributeValues: { ':pk': pk, ':sk': 'PROFILE' },
-        }));
-        profileCache[pk] = (p.Items && p.Items[0]) || {};
-      } catch (_) { profileCache[pk] = {}; }
+  const { ScanCommand, QueryCommand, PutCommand, UpdateCommand, DeleteCommand } = cmds();
+
+  if (ctx.method === 'GET') {
+    const out = await db().send(new ScanCommand({
+      TableName: TABLE,
+      FilterExpression: 'begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':sk': 'CASE#' },
+    }));
+    const cases = out.Items || [];
+    const profileCache = {};
+    for (const c of cases) {
+      const pk = c.PK;
+      if (!profileCache[pk]) {
+        try {
+          const p = await db().send(new QueryCommand({
+            TableName: TABLE,
+            KeyConditionExpression: 'PK = :pk AND SK = :sk',
+            ExpressionAttributeValues: { ':pk': pk, ':sk': 'PROFILE' },
+          }));
+          profileCache[pk] = (p.Items && p.Items[0]) || {};
+        } catch (_) { profileCache[pk] = {}; }
+      }
+      const prof = profileCache[pk];
+      c.client_name = ((prof.first_name || '') + ' ' + (prof.last_name || '')).trim();
+      c.client_email = prof.email || '';
+      c.client_phone = prof.phone || prof.phone_number || '';
     }
-    const prof = profileCache[pk];
-    c.client_name = ((prof.first_name || '') + ' ' + (prof.last_name || '')).trim();
-    c.client_email = prof.email || '';
+    return resp(200, { items: cases });
   }
-  return resp(200, { items: cases });
+
+  if (ctx.method === 'POST') {
+    // Create case: { user_id, case_type, folder, notes }
+    const b = ctx.body || {};
+    if (!b.user_id) return resp(400, { error: 'user_id required' });
+    const id = require('crypto').randomBytes(4).toString('hex');
+    const item = {
+      PK: `USER#${str(b.user_id)}`, SK: `CASE#${id}`,
+      case_type: str(b.case_type) || 'general',
+      status: 'active',
+      folder: str(b.folder) || '',
+      notes: str(b.notes) || '',
+      opened_at: new Date().toISOString(),
+      created_by: ctx.claims.email || ctx.userId,
+    };
+    await db().send(new PutCommand({ TableName: TABLE, Item: item }));
+    return resp(201, { success: true, case_id: id, item });
+  }
+
+  if (ctx.method === 'PUT') {
+    // Update case: { user_id, case_id, status?, case_type?, folder?, notes? }
+    const b = ctx.body || {};
+    if (!b.user_id || !b.case_id) return resp(400, { error: 'user_id and case_id required' });
+    const updates = [];
+    const names = {};
+    const values = {};
+    if (b.status !== undefined)    { updates.push('#st = :st');   names['#st'] = 'status';    values[':st'] = str(b.status); }
+    if (b.case_type !== undefined) { updates.push('#ct = :ct');   names['#ct'] = 'case_type'; values[':ct'] = str(b.case_type); }
+    if (b.folder !== undefined)    { updates.push('#fo = :fo');   names['#fo'] = 'folder';    values[':fo'] = str(b.folder); }
+    if (b.notes !== undefined)     { updates.push('#no = :no');   names['#no'] = 'notes';     values[':no'] = str(b.notes); }
+    if (b.closed_at !== undefined) { updates.push('#cl = :cl');   names['#cl'] = 'closed_at'; values[':cl'] = str(b.closed_at); }
+    if (!updates.length) return resp(400, { error: 'No fields to update' });
+    updates.push('#ua = :ua'); names['#ua'] = 'updated_at'; values[':ua'] = new Date().toISOString();
+
+    await db().send(new UpdateCommand({
+      TableName: TABLE,
+      Key: { PK: `USER#${str(b.user_id)}`, SK: `CASE#${str(b.case_id)}` },
+      UpdateExpression: 'SET ' + updates.join(', '),
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: values,
+    }));
+    return resp(200, { success: true });
+  }
+
+  if (ctx.method === 'DELETE') {
+    const b = ctx.body || {};
+    if (!b.user_id || !b.case_id) return resp(400, { error: 'user_id and case_id required' });
+    await db().send(new DeleteCommand({
+      TableName: TABLE,
+      Key: { PK: `USER#${str(b.user_id)}`, SK: `CASE#${str(b.case_id)}` },
+    }));
+    return resp(200, { success: true });
+  }
+
+  return resp(405, { error: 'Method not allowed' });
+}
+
+// Admin invoices: list all + create + mark paid
+async function adminInvoices(ctx) {
+  const { ScanCommand, PutCommand, UpdateCommand, QueryCommand } = cmds();
+
+  if (ctx.method === 'GET') {
+    const out = await db().send(new ScanCommand({
+      TableName: TABLE,
+      FilterExpression: 'begins_with(SK, :sk)',
+      ExpressionAttributeValues: { ':sk': 'INV#' },
+    }));
+    const invoices = (out.Items || []).sort((a, b) => (b.created_at || '').localeCompare(a.created_at || ''));
+    // Enrich with client name
+    const profileCache = {};
+    for (const inv of invoices) {
+      const pk = inv.PK;
+      if (!profileCache[pk]) {
+        try {
+          const p = await db().send(new QueryCommand({
+            TableName: TABLE,
+            KeyConditionExpression: 'PK = :pk AND SK = :sk',
+            ExpressionAttributeValues: { ':pk': pk, ':sk': 'PROFILE' },
+          }));
+          profileCache[pk] = (p.Items && p.Items[0]) || {};
+        } catch (_) { profileCache[pk] = {}; }
+      }
+      const prof = profileCache[pk];
+      inv.client_name = ((prof.first_name || '') + ' ' + (prof.last_name || '')).trim();
+      inv.client_email = prof.email || '';
+    }
+    return resp(200, { invoices });
+  }
+
+  if (ctx.method === 'POST') {
+    // Create invoice: { user_id, amount, description, due_date }
+    const b = ctx.body || {};
+    if (!b.user_id || !b.amount) return resp(400, { error: 'user_id and amount required' });
+    const id = Date.now().toString();
+    const item = {
+      PK: `USER#${str(b.user_id)}`, SK: `INV#${id}`,
+      GSI1PK: 'INV', GSI1SK: id,
+      amount: Number(b.amount) || 0,
+      description: str(b.description) || '',
+      status: 'pending',
+      due_date: str(b.due_date) || null,
+      case_id: str(b.case_id) || null,
+      created_by: ctx.claims.email || ctx.userId,
+      created_at: new Date().toISOString(),
+    };
+    await db().send(new PutCommand({ TableName: TABLE, Item: item }));
+    return resp(201, { success: true, invoice_id: id, item });
+  }
+
+  if (ctx.method === 'PUT') {
+    // Update invoice (mark paid, update amount, etc): { user_id, invoice_id, status?, amount? }
+    const b = ctx.body || {};
+    if (!b.user_id || !b.invoice_id) return resp(400, { error: 'user_id and invoice_id required' });
+    const updates = [];
+    const names = {};
+    const values = {};
+    if (b.status !== undefined)      { updates.push('#st = :st');   names['#st'] = 'status';      values[':st'] = str(b.status); }
+    if (b.amount !== undefined)      { updates.push('#am = :am');   names['#am'] = 'amount';      values[':am'] = Number(b.amount) || 0; }
+    if (b.description !== undefined) { updates.push('#de = :de');   names['#de'] = 'description'; values[':de'] = str(b.description); }
+    if (b.paid_at !== undefined)     { updates.push('#pa = :pa');   names['#pa'] = 'paid_at';     values[':pa'] = str(b.paid_at); }
+    if (!updates.length) return resp(400, { error: 'No fields to update' });
+    updates.push('#ua = :ua'); names['#ua'] = 'updated_at'; values[':ua'] = new Date().toISOString();
+
+    await db().send(new UpdateCommand({
+      TableName: TABLE,
+      Key: { PK: `USER#${str(b.user_id)}`, SK: `INV#${str(b.invoice_id)}` },
+      UpdateExpression: 'SET ' + updates.join(', '),
+      ExpressionAttributeNames: names,
+      ExpressionAttributeValues: values,
+    }));
+    return resp(200, { success: true });
+  }
+
+  return resp(405, { error: 'Method not allowed' });
 }
 
 async function adminRegistrations(ctx) {

@@ -108,6 +108,8 @@ document.addEventListener('DOMContentLoaded', () => {
   // Wire up forms
   setupMessageForm();
   setupEventForm();
+  setupCaseCrud();
+  setupInvoiceCrud();
 
   // Load data
   loadAll();
@@ -320,6 +322,9 @@ function openCaseDetail(caseId) {
     return id === caseId;
   });
   if (!caseItem) return;
+
+  currentCaseId = caseId;
+  currentCaseUserId = (caseItem.PK || '').replace('USER#', '');
 
   // Switch view
   document.getElementById('casesListView').style.display = 'none';
@@ -686,13 +691,18 @@ function renderInvoices(invoices) {
     document.getElementById('invoicesTable').innerHTML = emptyState('fas fa-file-invoice-dollar', 'No invoices yet.');
     return;
   }
-  let html = `<table class="data-table"><thead><tr><th>Client</th><th>Amount</th><th>Status</th><th>Date</th></tr></thead><tbody>`;
+  let html = `<table class="data-table"><thead><tr><th>Client</th><th>Description</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody>`;
   invoices.forEach(inv => {
+    const userId = (inv.PK || '').replace('USER#', '');
+    const invId = (inv.SK || '').replace('INV#', '');
+    const isPaid = inv.status === 'paid';
     html += `<tr>
-      <td>${esc(inv.client_name || inv.email || '')}</td>
+      <td><strong>${esc(inv.client_name || inv.email || '')}</strong></td>
+      <td style="font-size:12px;">${esc(inv.description || '—')}</td>
       <td><strong>$${(inv.amount || 0).toFixed(2)}</strong></td>
-      <td><span class="badge-stage ${inv.status === 'paid' ? 'converted' : 'new'}">${esc(inv.status || 'pending')}</span></td>
-      <td style="font-size:12px;">${inv.createdAt ? new Date(inv.createdAt).toLocaleDateString() : ''}</td>
+      <td><span class="badge-stage ${isPaid ? 'converted' : 'new'}">${esc(inv.status || 'pending')}</span></td>
+      <td style="font-size:12px;">${inv.created_at ? new Date(inv.created_at).toLocaleDateString() : ''}</td>
+      <td>${isPaid ? '<span style="font-size:11px;color:var(--muted);"><i class="fas fa-check-circle"></i> Paid</span>' : `<button class="btn btn-sm btn-success" onclick="markInvoicePaid('${esc(userId)}','${esc(invId)}')" style="font-size:11px;"><i class="fas fa-check"></i> Mark Paid</button>`}</td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -926,6 +936,266 @@ async function changeUserRole(userId, role) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// CASE CRUD (New, Edit, Close, Delete, Notes)
+// ═══════════════════════════════════════════════════════════════
+
+let currentCaseId = null;
+let currentCaseUserId = null;
+
+function setupCaseCrud() {
+  // New Case button
+  const newBtn = document.getElementById('newCaseBtn');
+  if (newBtn) newBtn.addEventListener('click', openNewCaseForm);
+
+  // Detail action buttons
+  const editBtn = document.getElementById('editCaseBtn');
+  const closeBtn = document.getElementById('closeCaseBtn');
+  const deleteBtn = document.getElementById('deleteCaseBtn');
+  const noteBtn = document.getElementById('addNoteBtn');
+  if (editBtn) editBtn.addEventListener('click', openEditCaseForm);
+  if (closeBtn) closeBtn.addEventListener('click', closeCaseAction);
+  if (deleteBtn) deleteBtn.addEventListener('click', deleteCaseAction);
+  if (noteBtn) noteBtn.addEventListener('click', openNoteForm);
+
+  // Case form submit
+  const caseForm = document.getElementById('caseForm');
+  if (caseForm) caseForm.addEventListener('submit', submitCaseForm);
+
+  // Note save
+  const noteSaveBtn = document.getElementById('noteFormSaveBtn');
+  if (noteSaveBtn) noteSaveBtn.addEventListener('click', saveNote);
+}
+
+function populateCaseClientDropdown() {
+  const sel = document.getElementById('caseFormClient');
+  if (!sel || !clientsData.length) return;
+  const clients = clientsData.filter(c => (c.role || 'client') === 'client');
+  sel.innerHTML = clients.map(c => {
+    const uid = (c.PK || '').replace('USER#', '');
+    const name = `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email;
+    return `<option value="${esc(uid)}">${esc(name)}</option>`;
+  }).join('');
+}
+
+function openNewCaseForm() {
+  document.getElementById('caseFormTitle').textContent = 'New Case';
+  document.getElementById('caseFormId').value = '';
+  document.getElementById('caseFormUserId').value = '';
+  document.getElementById('caseFormType').value = 'general';
+  document.getElementById('caseFormFolder').value = '';
+  document.getElementById('caseFormNotes').value = '';
+  document.getElementById('caseFormResult').innerHTML = '';
+  document.getElementById('caseFormClient').disabled = false;
+  populateCaseClientDropdown();
+  new bootstrap.Modal(document.getElementById('caseFormModal')).show();
+}
+
+function openEditCaseForm() {
+  const caseItem = casesData.find(c => {
+    const id = c.case_id || (c.SK ? c.SK.replace('CASE#', '') : '');
+    return id === currentCaseId;
+  });
+  if (!caseItem) return;
+  document.getElementById('caseFormTitle').textContent = 'Edit Case';
+  document.getElementById('caseFormId').value = currentCaseId;
+  const userId = (caseItem.PK || '').replace('USER#', '');
+  document.getElementById('caseFormUserId').value = userId;
+  document.getElementById('caseFormType').value = caseItem.case_type || 'general';
+  document.getElementById('caseFormFolder').value = caseItem.folder || '';
+  document.getElementById('caseFormNotes').value = caseItem.notes || '';
+  document.getElementById('caseFormResult').innerHTML = '';
+  // Set client dropdown and disable it (can't move case between clients)
+  populateCaseClientDropdown();
+  document.getElementById('caseFormClient').value = userId;
+  document.getElementById('caseFormClient').disabled = true;
+  new bootstrap.Modal(document.getElementById('caseFormModal')).show();
+}
+
+async function submitCaseForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('caseFormSubmitBtn');
+  const result = document.getElementById('caseFormResult');
+  const caseId = document.getElementById('caseFormId').value;
+  const userId = document.getElementById('caseFormUserId').value || document.getElementById('caseFormClient').value;
+
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Saving...';
+  result.innerHTML = '';
+
+  try {
+    if (caseId) {
+      // Edit existing
+      await PortalAPI.admin.updateCase({
+        user_id: userId,
+        case_id: caseId,
+        case_type: document.getElementById('caseFormType').value,
+        folder: document.getElementById('caseFormFolder').value,
+        notes: document.getElementById('caseFormNotes').value,
+      });
+      result.innerHTML = '<span style="color:var(--success);"><i class="fas fa-check"></i> Case updated.</span>';
+    } else {
+      // Create new
+      await PortalAPI.admin.createCase({
+        user_id: userId,
+        case_type: document.getElementById('caseFormType').value,
+        folder: document.getElementById('caseFormFolder').value,
+        notes: document.getElementById('caseFormNotes').value,
+      });
+      result.innerHTML = '<span style="color:var(--success);"><i class="fas fa-check"></i> Case created.</span>';
+    }
+    // Reload cases
+    await loadCases();
+    updateStats();
+    // Close modal after short delay
+    setTimeout(() => {
+      bootstrap.Modal.getInstance(document.getElementById('caseFormModal'))?.hide();
+      if (caseId) openCaseDetail(caseId); // refresh detail view
+    }, 800);
+  } catch (err) {
+    result.innerHTML = `<span style="color:var(--danger);"><i class="fas fa-exclamation-circle"></i> ${esc(err.message)}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save"></i> Save Case';
+  }
+}
+
+async function closeCaseAction() {
+  if (!confirm('Close this case? It will be marked as closed.')) return;
+  const caseItem = casesData.find(c => {
+    const id = c.case_id || (c.SK ? c.SK.replace('CASE#', '') : '');
+    return id === currentCaseId;
+  });
+  if (!caseItem) return;
+  const userId = (caseItem.PK || '').replace('USER#', '');
+  try {
+    await PortalAPI.admin.updateCase({
+      user_id: userId,
+      case_id: currentCaseId,
+      status: 'closed',
+      closed_at: new Date().toISOString(),
+    });
+    await loadCases();
+    updateStats();
+    openCaseDetail(currentCaseId);
+  } catch (err) { alert('Failed: ' + err.message); }
+}
+
+async function deleteCaseAction() {
+  if (!confirm('Permanently delete this case? This cannot be undone.')) return;
+  const caseItem = casesData.find(c => {
+    const id = c.case_id || (c.SK ? c.SK.replace('CASE#', '') : '');
+    return id === currentCaseId;
+  });
+  if (!caseItem) return;
+  const userId = (caseItem.PK || '').replace('USER#', '');
+  try {
+    await PortalAPI.admin.deleteCase({ user_id: userId, case_id: currentCaseId });
+    await loadCases();
+    updateStats();
+    closeCaseDetail();
+  } catch (err) { alert('Failed: ' + err.message); }
+}
+
+function openNoteForm() {
+  const caseItem = casesData.find(c => {
+    const id = c.case_id || (c.SK ? c.SK.replace('CASE#', '') : '');
+    return id === currentCaseId;
+  });
+  document.getElementById('noteFormText').value = caseItem?.notes || '';
+  document.getElementById('noteFormResult').innerHTML = '';
+  new bootstrap.Modal(document.getElementById('noteFormModal')).show();
+}
+
+async function saveNote() {
+  const caseItem = casesData.find(c => {
+    const id = c.case_id || (c.SK ? c.SK.replace('CASE#', '') : '');
+    return id === currentCaseId;
+  });
+  if (!caseItem) return;
+  const userId = (caseItem.PK || '').replace('USER#', '');
+  const notes = document.getElementById('noteFormText').value;
+  const result = document.getElementById('noteFormResult');
+  try {
+    await PortalAPI.admin.updateCase({ user_id: userId, case_id: currentCaseId, notes });
+    result.innerHTML = '<span style="color:var(--success);"><i class="fas fa-check"></i> Saved.</span>';
+    await loadCases();
+    openCaseDetail(currentCaseId);
+    setTimeout(() => bootstrap.Modal.getInstance(document.getElementById('noteFormModal'))?.hide(), 600);
+  } catch (err) {
+    result.innerHTML = `<span style="color:var(--danger);">${esc(err.message)}</span>`;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INVOICE CRUD
+// ═══════════════════════════════════════════════════════════════
+
+function setupInvoiceCrud() {
+  const newBtn = document.getElementById('newInvoiceBtn');
+  if (newBtn) newBtn.addEventListener('click', openNewInvoiceForm);
+  const form = document.getElementById('invoiceForm');
+  if (form) form.addEventListener('submit', submitInvoiceForm);
+}
+
+function populateInvoiceClientDropdown() {
+  const sel = document.getElementById('invoiceFormClient');
+  if (!sel || !clientsData.length) return;
+  const clients = clientsData.filter(c => (c.role || 'client') === 'client');
+  sel.innerHTML = clients.map(c => {
+    const uid = (c.PK || '').replace('USER#', '');
+    const name = `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email;
+    return `<option value="${esc(uid)}">${esc(name)}</option>`;
+  }).join('');
+}
+
+function openNewInvoiceForm() {
+  document.getElementById('invoiceFormAmount').value = '';
+  document.getElementById('invoiceFormDesc').value = '';
+  document.getElementById('invoiceFormDue').value = '';
+  document.getElementById('invoiceFormResult').innerHTML = '';
+  populateInvoiceClientDropdown();
+  new bootstrap.Modal(document.getElementById('invoiceFormModal')).show();
+}
+
+async function submitInvoiceForm(e) {
+  e.preventDefault();
+  const btn = document.getElementById('invoiceFormSubmitBtn');
+  const result = document.getElementById('invoiceFormResult');
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating...';
+  result.innerHTML = '';
+  try {
+    await PortalAPI.admin.createInvoice({
+      user_id: document.getElementById('invoiceFormClient').value,
+      amount: parseFloat(document.getElementById('invoiceFormAmount').value),
+      description: document.getElementById('invoiceFormDesc').value,
+      due_date: document.getElementById('invoiceFormDue').value || null,
+    });
+    result.innerHTML = '<span style="color:var(--success);"><i class="fas fa-check"></i> Invoice created.</span>';
+    await loadInvoices();
+    setTimeout(() => bootstrap.Modal.getInstance(document.getElementById('invoiceFormModal'))?.hide(), 800);
+  } catch (err) {
+    result.innerHTML = `<span style="color:var(--danger);"><i class="fas fa-exclamation-circle"></i> ${esc(err.message)}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-file-invoice-dollar"></i> Create Invoice';
+  }
+}
+
+async function markInvoicePaid(userId, invoiceId) {
+  if (!confirm('Mark this invoice as paid?')) return;
+  try {
+    await PortalAPI.admin.updateInvoice({
+      user_id: userId,
+      invoice_id: invoiceId,
+      status: 'paid',
+      paid_at: new Date().toISOString(),
+    });
+    await loadInvoices();
+  } catch (err) { alert('Failed: ' + err.message); }
+}
+
+// ═══════════════════════════════════════════════════════════════
 // UTILS
 // ═══════════════════════════════════════════════════════════════
 
@@ -938,3 +1208,5 @@ window.updateLeadStage = updateLeadStage;
 window.decideRegistration = decideRegistration;
 window.navigateTo = navigateTo;
 window.changeUserRole = changeUserRole;
+window.openCaseDetail = openCaseDetail;
+window.markInvoicePaid = markInvoicePaid;
