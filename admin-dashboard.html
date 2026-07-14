@@ -57,6 +57,20 @@
     .badge-stage.qualified{background:#D1FAE5;color:#065F46;}
     .badge-stage.converted{background:#ECFDF5;color:#047857;}
     .badge-stage.lost{background:#F3F4F6;color:#6B7280;}
+    /* Category badges */
+    .badge-cat{padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.3px;}
+    .badge-cat.court{background:#EDE9FE;color:#5B21B6;}
+    .badge-cat.prosecutor{background:#FEE2E2;color:#991B1B;}
+    .badge-cat.government{background:#DBEAFE;color:#1E40AF;}
+    .badge-cat.legal_aid{background:#D1FAE5;color:#065F46;}
+    .badge-cat.attorney{background:#FEF3C7;color:#92400E;}
+    .badge-cat.insurance{background:#E0E7FF;color:#3730A3;}
+    .badge-cat.referral{background:#FCE7F3;color:#9D174D;}
+    .badge-cat.expert{background:#CCFBF1;color:#115E59;}
+    .badge-cat.vendor{background:#F3F4F6;color:#4B5563;}
+    .badge-cat.bar{background:#FEF9C3;color:#854D0E;}
+    .badge-cat.lead{background:#FED7AA;color:#9A3412;}
+    .badge-cat.client{background:#E5E7EB;color:#374151;}
     /* Section panels */
     .panel{display:none;}
     .panel.active{display:block;}
@@ -212,7 +226,31 @@
     <!-- CONTACTS -->
     <div class="panel" id="panelContacts">
       <div class="panel-card">
-        <div class="panel-card-header"><h2>Contacts</h2><input type="text" class="form-control form-control-sm" placeholder="Search clients..." id="contactSearch" style="width:200px;font-size:12px;"></div>
+        <div class="panel-card-header">
+          <h2>Contacts <span style="font-size:12px;color:var(--muted);font-weight:400;" id="contactsCount"></span></h2>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <select class="form-select form-select-sm" id="contactTypeFilter" style="width:auto;font-size:12px;">
+              <option value="">All Contacts</option>
+              <option value="client">Clients</option>
+              <option value="correspondent">Legal Correspondents</option>
+            </select>
+            <select class="form-select form-select-sm" id="contactCategoryFilter" style="width:auto;font-size:12px;">
+              <option value="">All Categories</option>
+              <option value="court">Courts</option>
+              <option value="prosecutor">Prosecutors</option>
+              <option value="government">Government</option>
+              <option value="legal_aid">Legal Aid</option>
+              <option value="attorney">Attorneys</option>
+              <option value="insurance">Insurance</option>
+              <option value="referral">Referral Sources</option>
+              <option value="expert">Experts</option>
+              <option value="vendor">Vendors</option>
+              <option value="bar">Bar</option>
+              <option value="lead">Leads</option>
+            </select>
+            <input type="text" class="form-control form-control-sm" placeholder="Search..." id="contactSearch" style="width:180px;font-size:12px;">
+          </div>
+        </div>
         <div class="panel-card-body" id="contactsTable"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
       </div>
     </div>

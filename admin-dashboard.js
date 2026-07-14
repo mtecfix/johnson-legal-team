@@ -76,8 +76,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (lfStage) lfStage.addEventListener('change', renderLeadsTable);
   if (lfUrg) lfUrg.addEventListener('change', renderLeadsTable);
 
-  // Contact search
+  // Contact search + filters
   document.getElementById('contactSearch').addEventListener('input', renderContactsTable);
+  const ctf = document.getElementById('contactTypeFilter');
+  const ccf = document.getElementById('contactCategoryFilter');
+  if (ctf) ctf.addEventListener('change', renderContactsTable);
+  if (ccf) ccf.addEventListener('change', renderContactsTable);
 
   // Customize dashboard for role
   applyDashboardRole(currentRole);
@@ -274,7 +278,9 @@ async function loadInvoices() {
 }
 
 function updateStats() {
-  document.getElementById('statClients').textContent = clientsData.length;
+  // Count only actual clients (exclude legal correspondents and admins)
+  const realClients = clientsData.filter(c => (c.role || 'client') === 'client');
+  document.getElementById('statClients').textContent = realClients.length;
   document.getElementById('statCases').textContent = casesData.filter(c => c.status === 'active').length || '0';
   const dl = document.getElementById('statDeadlines');
   if (dl) {
@@ -395,27 +401,70 @@ async function updateLeadStage(leadId, stage) {
 
 function renderContactsTable() {
   const search = (document.getElementById('contactSearch').value || '').toLowerCase();
-  let filtered = clientsData;
+  const typeFilter = (document.getElementById('contactTypeFilter')?.value || '');
+  const catFilter = (document.getElementById('contactCategoryFilter')?.value || '');
+
+  let filtered = clientsData.filter(c => (c.role || 'client') !== 'super_admin');
+
+  if (typeFilter) {
+    filtered = filtered.filter(c => (c.role || 'client') === typeFilter);
+  }
+  if (catFilter) {
+    filtered = filtered.filter(c => (c.category || '') === catFilter);
+  }
   if (search) {
     filtered = filtered.filter(c =>
       (c.first_name || '').toLowerCase().includes(search) ||
       (c.last_name || '').toLowerCase().includes(search) ||
-      (c.email || '').toLowerCase().includes(search)
+      (c.email || '').toLowerCase().includes(search) ||
+      (c.category || '').toLowerCase().includes(search)
     );
   }
 
+  // Update count display
+  const countEl = document.getElementById('contactsCount');
+  if (countEl) {
+    const clientCount = filtered.filter(c => (c.role || 'client') === 'client').length;
+    const corrCount = filtered.filter(c => c.role === 'correspondent').length;
+    countEl.textContent = `${filtered.length} shown · ${clientCount} clients, ${corrCount} correspondents`;
+  }
+
   if (!filtered.length) {
-    document.getElementById('contactsTable').innerHTML = emptyState('fas fa-users', clientsData.length ? 'No matches.' : 'No clients registered yet.');
+    document.getElementById('contactsTable').innerHTML = emptyState('fas fa-users', clientsData.length ? 'No contacts match filters.' : 'No contacts yet.');
     return;
   }
 
-  let html = `<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th></tr></thead><tbody>`;
+  // Sort: clients first, then correspondents; alphabetical by last name within each
+  filtered.sort((a, b) => {
+    const roleA = (a.role || 'client') === 'client' ? 0 : 1;
+    const roleB = (b.role || 'client') === 'client' ? 0 : 1;
+    if (roleA !== roleB) return roleA - roleB;
+    return (a.last_name || '').localeCompare(b.last_name || '');
+  });
+
+  const catLabels = {
+    court: 'Court', prosecutor: 'Prosecutor', government: 'Government',
+    legal_aid: 'Legal Aid', attorney: 'Attorney', insurance: 'Insurance',
+    referral: 'Referral', expert: 'Expert', vendor: 'Vendor', bar: 'Bar', lead: 'Lead'
+  };
+
+  let html = `<table class="data-table"><thead><tr><th>Name</th><th>Email</th><th>Phone</th><th>Type</th><th>Category</th></tr></thead><tbody>`;
   filtered.forEach(c => {
+    const role = c.role || 'client';
+    const roleLabel = role === 'correspondent' ? 'Correspondent' : role === 'client' ? 'Client' : role;
+    const cat = c.category || '';
+    const catBadge = cat && cat !== 'lead'
+      ? `<span class="badge-cat ${cat}">${esc(catLabels[cat] || cat)}</span>`
+      : cat === 'lead'
+      ? `<span class="badge-cat lead">Lead</span>`
+      : '<span style="color:var(--muted);font-size:11px;">—</span>';
+    const phone = c.phone || c.phone_number || '';
     html += `<tr>
-      <td><strong>${esc(c.first_name || '')} ${esc(c.last_name || '')}</strong></td>
-      <td>${esc(c.email || '')}</td>
-      <td><span class="badge bg-secondary" style="font-size:10px;">${esc(c.role || 'client')}</span></td>
-      <td style="font-size:12px;">${esc(c.registration_status || 'active')}</td>
+      <td><strong>${esc(c.first_name || '')} ${esc(c.last_name || '')}</strong>${c.city ? `<br><span style="color:var(--muted);font-size:11px;">${esc(c.city)}${c.state ? ', ' + esc(c.state) : ''}</span>` : ''}</td>
+      <td style="font-size:12px;">${esc(c.email || '')}</td>
+      <td style="font-size:12px;color:var(--muted);">${esc(phone) || '—'}</td>
+      <td><span class="badge-cat ${role === 'correspondent' ? 'attorney' : 'client'}">${esc(roleLabel)}</span></td>
+      <td>${catBadge}</td>
     </tr>`;
   });
   html += '</tbody></table>';
@@ -499,12 +548,25 @@ async function loadMessages() {
 function populateRecipients() {
   const sel = document.getElementById('msgRecipient');
   if (!sel) return;
-  if (!clientsData.length) { sel.innerHTML = '<option value="">No clients loaded</option>'; return; }
-  sel.innerHTML = clientsData.map(c => {
+  if (!clientsData.length) { sel.innerHTML = '<option value="">No contacts loaded</option>'; return; }
+
+  const mkOption = (c) => {
     const uid = (c.PK || '').replace('USER#', '');
     const name = `${c.first_name || ''} ${c.last_name || ''}`.trim() || c.email || uid;
     return `<option value="${esc(uid)}" data-email="${esc(c.email||'')}" data-phone="${esc(c.phone||c.phone_number||'')}">${esc(name)}</option>`;
-  }).join('');
+  };
+
+  const clients = clientsData.filter(c => (c.role || 'client') === 'client');
+  const correspondents = clientsData.filter(c => c.role === 'correspondent');
+
+  let html = '';
+  if (clients.length) {
+    html += `<optgroup label="Clients">${clients.map(mkOption).join('')}</optgroup>`;
+  }
+  if (correspondents.length) {
+    html += `<optgroup label="Legal Correspondents">${correspondents.map(mkOption).join('')}</optgroup>`;
+  }
+  sel.innerHTML = html || '<option value="">No contacts</option>';
 }
 
 function renderMessagesLog(items) {
