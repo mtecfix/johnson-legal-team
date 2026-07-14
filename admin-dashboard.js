@@ -83,6 +83,16 @@ document.addEventListener('DOMContentLoaded', () => {
   if (ctf) ctf.addEventListener('change', renderContactsTable);
   if (ccf) ccf.addEventListener('change', renderContactsTable);
 
+  // Case filters
+  const cftEl = document.getElementById('caseFilterType');
+  const cfsEl = document.getElementById('caseFilterStatus');
+  if (cftEl) cftEl.addEventListener('change', renderCasesTable);
+  if (cfsEl) cfsEl.addEventListener('change', renderCasesTable);
+
+  // Case detail back button
+  const caseBackBtn = document.getElementById('caseBackBtn');
+  if (caseBackBtn) caseBackBtn.addEventListener('click', closeCaseDetail);
+
   // Customize dashboard for role
   applyDashboardRole(currentRole);
 
@@ -216,6 +226,18 @@ async function loadCases() {
   }
 }
 
+const caseTypeLabels = {
+  'family-law': 'Family Law', 'criminal-defense': 'Criminal Defense',
+  'probate-estate': 'Probate & Estate', 'personal-injury': 'Personal Injury',
+  'juvenile': 'Juvenile', 'real-estate': 'Real Estate', 'traffic': 'Traffic', 'general': 'General'
+};
+
+const caseTypeIcons = {
+  'family-law': 'fas fa-home', 'criminal-defense': 'fas fa-gavel',
+  'probate-estate': 'fas fa-landmark', 'personal-injury': 'fas fa-user-injured',
+  'juvenile': 'fas fa-child', 'real-estate': 'fas fa-building', 'traffic': 'fas fa-car', 'general': 'fas fa-briefcase'
+};
+
 function renderCasesTable() {
   if (!casesData.length) {
     document.getElementById('casesContent').innerHTML = emptyState('fas fa-briefcase', 'No cases yet.');
@@ -224,37 +246,140 @@ function renderCasesTable() {
     return;
   }
 
-  const caseTypeLabels = {
-    'family-law': 'Family Law', 'criminal-defense': 'Criminal Defense',
-    'probate-estate': 'Probate & Estate', 'personal-injury': 'Personal Injury',
-    'juvenile': 'Juvenile', 'real-estate': 'Real Estate', 'traffic': 'Traffic', 'general': 'General'
-  };
+  // Apply filters
+  const filterType = document.getElementById('caseFilterType') ? document.getElementById('caseFilterType').value : '';
+  const filterStatus = document.getElementById('caseFilterStatus') ? document.getElementById('caseFilterStatus').value : '';
+  let filtered = casesData;
+  if (filterType) filtered = filtered.filter(c => c.case_type === filterType);
+  if (filterStatus) filtered = filtered.filter(c => c.status === filterStatus);
 
-  const rowHtml = (c) => {
+  const rowHtml = (c, idx) => {
     const statusClass = c.status === 'active' ? 'qualified' : c.status === 'closed' ? 'lost' : 'new';
     const typeLabel = caseTypeLabels[c.case_type] || c.case_type || 'General';
     const date = c.opened_at ? new Date(c.opened_at).toLocaleDateString() : '';
-    return `<tr>
+    const caseId = c.case_id || '';
+    return `<tr style="cursor:pointer;" onclick="openCaseDetail('${esc(caseId)}')">
       <td><strong>${esc(c.client_name || '—')}</strong><br><span style="color:var(--muted);font-size:11px;">${esc(c.client_email || '')}</span></td>
-      <td style="font-size:12px;">${esc(typeLabel)}</td>
+      <td style="font-size:12px;"><i class="${caseTypeIcons[c.case_type] || 'fas fa-briefcase'}" style="margin-right:4px;color:var(--navy);"></i>${esc(typeLabel)}</td>
       <td><span class="badge-stage ${statusClass}">${esc(c.status || 'active')}</span></td>
       <td style="font-size:12px;color:var(--muted);">${date}</td>
+      <td style="font-size:12px;color:var(--gold);"><i class="fas fa-chevron-right"></i></td>
     </tr>`;
   };
 
-  const header = `<table class="data-table"><thead><tr><th>Client</th><th>Case Type</th><th>Status</th><th>Opened</th></tr></thead><tbody>`;
+  const header = `<table class="data-table"><thead><tr><th>Client</th><th>Case Type</th><th>Status</th><th>Opened</th><th></th></tr></thead><tbody>`;
 
-  // Full cases table
-  document.getElementById('casesContent').innerHTML = header + casesData.map(rowHtml).join('') + '</tbody></table>';
+  // Full cases table (filtered)
+  if (!filtered.length) {
+    document.getElementById('casesContent').innerHTML = emptyState('fas fa-filter', 'No cases match filters.');
+  } else {
+    document.getElementById('casesContent').innerHTML = header + filtered.map(rowHtml).join('') + '</tbody></table>';
+  }
   const cc = document.getElementById('casesCount');
-  if (cc) cc.textContent = `${casesData.length} total`;
+  if (cc) cc.textContent = `${filtered.length} of ${casesData.length} cases`;
 
   // Recent cases (dashboard home) — last 6
   const rc = document.getElementById('recentCases');
   if (rc) {
     const recent = casesData.slice().sort((a,b) => (b.opened_at||'').localeCompare(a.opened_at||'')).slice(0, 6);
-    rc.innerHTML = header + recent.map(rowHtml).join('') + '</tbody></table>';
+    const recentHeader = `<table class="data-table"><thead><tr><th>Client</th><th>Case Type</th><th>Status</th><th>Opened</th><th></th></tr></thead><tbody>`;
+    rc.innerHTML = recentHeader + recent.map(rowHtml).join('') + '</tbody></table>';
   }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CASE DETAIL VIEW
+// ═══════════════════════════════════════════════════════════════
+
+function openCaseDetail(caseId) {
+  const caseItem = casesData.find(c => c.case_id === caseId);
+  if (!caseItem) return;
+
+  // Switch view
+  document.getElementById('casesListView').style.display = 'none';
+  document.getElementById('caseDetailView').style.display = 'block';
+
+  // Populate header
+  const clientName = caseItem.client_name || 'Unknown Client';
+  const typeLabel = caseTypeLabels[caseItem.case_type] || caseItem.case_type || 'General';
+  const statusClass = caseItem.status === 'active' ? 'qualified' : caseItem.status === 'closed' ? 'lost' : 'new';
+
+  document.getElementById('caseDetailTitle').textContent = clientName;
+  document.getElementById('caseDetailSubtitle').textContent = `Case ID: ${caseId.substring(0, 8)}  •  ${caseItem.folder || ''}`;
+  document.getElementById('caseDetailStatus').textContent = caseItem.status || 'active';
+  document.getElementById('caseDetailStatus').className = `badge-stage ${statusClass}`;
+  document.getElementById('caseDetailType').innerHTML = `<i class="${caseTypeIcons[caseItem.case_type] || 'fas fa-briefcase'}" style="margin-right:4px;"></i>${typeLabel}`;
+
+  // Case Overview
+  const overviewHtml = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+      <div>
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 4px;">Case Type</p>
+        <p style="font-size:14px;font-weight:500;margin:0;"><i class="${caseTypeIcons[caseItem.case_type] || 'fas fa-briefcase'}" style="margin-right:6px;color:var(--navy);"></i>${esc(typeLabel)}</p>
+      </div>
+      <div>
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 4px;">Status</p>
+        <p style="font-size:14px;font-weight:500;margin:0;"><span class="badge-stage ${statusClass}">${esc(caseItem.status || 'active')}</span></p>
+      </div>
+      <div>
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 4px;">Case File / Folder</p>
+        <p style="font-size:13px;margin:0;"><i class="fas fa-folder" style="color:var(--gold);margin-right:6px;"></i>${esc(caseItem.folder || 'No folder assigned')}</p>
+      </div>
+      <div>
+        <p style="font-size:11px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);margin:0 0 4px;">Case ID</p>
+        <p style="font-size:13px;margin:0;font-family:monospace;">${esc(caseId)}</p>
+      </div>
+    </div>
+  `;
+  document.getElementById('caseDetailOverview').innerHTML = overviewHtml;
+
+  // Notes
+  const notes = caseItem.notes || '';
+  const notesHtml = notes
+    ? `<div style="font-size:13px;line-height:1.7;white-space:pre-wrap;background:var(--bg);padding:12px;border-radius:6px;">${esc(notes)}</div>`
+    : `<div style="font-size:13px;color:var(--muted);text-align:center;padding:24px;">No notes yet. Click "Add Note" to document case activity.</div>`;
+  document.getElementById('caseDetailNotes').innerHTML = notesHtml;
+
+  // Client info
+  const clientHtml = `
+    <div style="font-size:13px;line-height:2.2;">
+      <div><i class="fas fa-user" style="width:20px;color:var(--navy);"></i> <strong>${esc(clientName)}</strong></div>
+      <div><i class="fas fa-envelope" style="width:20px;color:var(--muted);"></i> ${esc(caseItem.client_email || 'No email on file')}</div>
+      <div><i class="fas fa-phone" style="width:20px;color:var(--muted);"></i> ${esc(caseItem.client_phone || 'No phone on file')}</div>
+      <div><i class="fas fa-id-badge" style="width:20px;color:var(--muted);"></i> <span style="font-family:monospace;font-size:11px;">${esc(caseItem.user_id || '')}</span></div>
+    </div>
+  `;
+  document.getElementById('caseDetailClient').innerHTML = clientHtml;
+
+  // Key dates
+  const openedDate = caseItem.opened_at ? new Date(caseItem.opened_at).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' }) : 'Unknown';
+  const daysSinceOpen = caseItem.opened_at ? Math.floor((Date.now() - new Date(caseItem.opened_at).getTime()) / 864e5) : '—';
+  const datesHtml = `
+    <div style="font-size:13px;line-height:2.4;">
+      <div style="display:flex;justify-content:space-between;"><span><i class="fas fa-calendar-plus" style="width:20px;color:var(--success);"></i> Opened</span><strong>${openedDate}</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span><i class="fas fa-clock" style="width:20px;color:var(--warning);"></i> Days Open</span><strong>${daysSinceOpen}</strong></div>
+      <div style="display:flex;justify-content:space-between;"><span><i class="fas fa-calendar-check" style="width:20px;color:var(--muted);"></i> Closed</span><span style="color:var(--muted);">—</span></div>
+    </div>
+  `;
+  document.getElementById('caseDetailDates').innerHTML = datesHtml;
+
+  // Case file reference
+  const folderParts = (caseItem.folder || '').split('/');
+  const fileHtml = `
+    <div style="font-size:13px;">
+      <div style="background:var(--bg);padding:12px;border-radius:6px;margin-bottom:8px;">
+        <div style="font-weight:600;margin-bottom:4px;"><i class="fas fa-folder-open" style="color:var(--gold);margin-right:6px;"></i>${esc(folderParts[folderParts.length - 1] || 'Unassigned')}</div>
+        <div style="font-size:11px;color:var(--muted);">${esc(caseItem.folder || 'No file path')}</div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);"><i class="fas fa-info-circle" style="margin-right:4px;"></i>Document management will sync case files here.</div>
+    </div>
+  `;
+  document.getElementById('caseDetailFile').innerHTML = fileHtml;
+}
+
+function closeCaseDetail() {
+  document.getElementById('caseDetailView').style.display = 'none';
+  document.getElementById('casesListView').style.display = 'block';
 }
 
 async function loadRegistrations() {

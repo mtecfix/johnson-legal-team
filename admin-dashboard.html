@@ -158,8 +158,8 @@
       <div class="row g-3">
         <div class="col-lg-8">
           <div class="panel-card">
-            <div class="panel-card-header"><h2>Recent Cases</h2></div>
-            <div class="panel-card-body" id="recentCases"><div class="empty-state"><i class="fas fa-clock"></i><p>Coming Soon</p></div></div>
+            <div class="panel-card-header"><h2>Recent Cases</h2><a href="#" data-section="cases" style="font-size:12px;color:var(--gold);">View All →</a></div>
+            <div class="panel-card-body" id="recentCases"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading...</p></div></div>
           </div>
         </div>
         <div class="col-lg-4">
@@ -217,9 +217,97 @@
 
     <!-- CASES -->
     <div class="panel" id="panelCases">
-      <div class="panel-card">
-        <div class="panel-card-header"><h2>Cases</h2><span style="font-size:12px;color:var(--muted);" id="casesCount"></span></div>
-        <div class="panel-card-body" id="casesContent"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading cases...</p></div></div>
+      <!-- Cases List View -->
+      <div id="casesListView">
+        <div class="panel-card">
+          <div class="panel-card-header">
+            <h2>Cases</h2>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span style="font-size:12px;color:var(--muted);" id="casesCount"></span>
+              <select class="form-select form-select-sm" id="caseFilterType" style="width:auto;font-size:12px;">
+                <option value="">All Types</option>
+                <option value="general">General</option>
+                <option value="probate-estate">Probate & Estate</option>
+                <option value="family-law">Family Law</option>
+                <option value="criminal-defense">Criminal Defense</option>
+                <option value="personal-injury">Personal Injury</option>
+                <option value="real-estate">Real Estate</option>
+                <option value="traffic">Traffic</option>
+              </select>
+              <select class="form-select form-select-sm" id="caseFilterStatus" style="width:auto;font-size:12px;">
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="closed">Closed</option>
+                <option value="pending">Pending</option>
+              </select>
+            </div>
+          </div>
+          <div class="panel-card-body" id="casesContent"><div class="empty-state"><i class="fas fa-spinner fa-spin"></i><p>Loading cases...</p></div></div>
+        </div>
+      </div>
+
+      <!-- Case Detail View (hidden by default) -->
+      <div id="caseDetailView" style="display:none;">
+        <div style="margin-bottom:16px;">
+          <button class="btn btn-sm btn-outline-secondary" id="caseBackBtn" style="font-size:12px;"><i class="fas fa-arrow-left"></i> Back to Cases</button>
+        </div>
+
+        <!-- Case Header -->
+        <div class="panel-card" style="margin-bottom:16px;">
+          <div class="panel-card-body padded">
+            <div style="display:flex;align-items:flex-start;justify-content:space-between;">
+              <div>
+                <h3 id="caseDetailTitle" style="font-size:18px;margin:0 0 4px 0;font-weight:700;"></h3>
+                <p id="caseDetailSubtitle" style="font-size:13px;color:var(--muted);margin:0;"></p>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <span id="caseDetailStatus" class="badge-stage"></span>
+                <span id="caseDetailType" style="padding:3px 10px;border-radius:12px;font-size:11px;font-weight:500;background:rgba(27,54,93,.1);color:var(--navy);"></span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="row g-3">
+          <!-- Left column: Case Info -->
+          <div class="col-lg-8">
+            <!-- Case Overview -->
+            <div class="panel-card" style="margin-bottom:16px;">
+              <div class="panel-card-header"><h2>Case Overview</h2></div>
+              <div class="panel-card-body padded" id="caseDetailOverview"></div>
+            </div>
+
+            <!-- Case Notes -->
+            <div class="panel-card" style="margin-bottom:16px;">
+              <div class="panel-card-header">
+                <h2>Notes & Activity</h2>
+                <button class="btn btn-sm btn-outline-primary" id="addNoteBtn" style="font-size:11px;"><i class="fas fa-plus"></i> Add Note</button>
+              </div>
+              <div class="panel-card-body padded" id="caseDetailNotes"></div>
+            </div>
+          </div>
+
+          <!-- Right column: Client & Metadata -->
+          <div class="col-lg-4">
+            <!-- Client Info -->
+            <div class="panel-card" style="margin-bottom:16px;">
+              <div class="panel-card-header"><h2>Client</h2></div>
+              <div class="panel-card-body padded" id="caseDetailClient"></div>
+            </div>
+
+            <!-- Key Dates -->
+            <div class="panel-card" style="margin-bottom:16px;">
+              <div class="panel-card-header"><h2>Key Dates</h2></div>
+              <div class="panel-card-body padded" id="caseDetailDates"></div>
+            </div>
+
+            <!-- Case File -->
+            <div class="panel-card" style="margin-bottom:16px;">
+              <div class="panel-card-header"><h2>Case File</h2></div>
+              <div class="panel-card-body padded" id="caseDetailFile"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
