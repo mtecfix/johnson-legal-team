@@ -48,6 +48,7 @@ class RouterStack(Stack):
         log_retention = self.node.try_get_context("cloudwatch_log_retention_days") or 30
         lambda_timeout = int(self.node.try_get_context("router_lambda_timeout_seconds") or "30")
         lambda_memory = int(self.node.try_get_context("router_lambda_memory_mb") or "256")
+        reserved_concurrency = int(self.node.try_get_context("router_lambda_reserved_concurrency") or "0") or None
 
         # --- Log Group ---
         router_log_group = logs.LogGroup(
@@ -68,6 +69,7 @@ class RouterStack(Stack):
             code=_lambda.Code.from_asset("lambda/router"),
             timeout=Duration.seconds(lambda_timeout),
             memory_size=lambda_memory,
+            reserved_concurrent_executions=reserved_concurrency,
             log_group=router_log_group,
             environment={
                 "RUNTIME_ARN": runtime_arn,

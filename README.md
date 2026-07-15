@@ -197,7 +197,7 @@ See `docs/JUDE-OPENCLAW-SPEC.md` for the full specification.
 
 | # | Issue | Impact | Resolution |
 |---|-------|--------|------------|
-| 1 | ⛔ AgentCore quota = 0 (account not activated) | Cannot create agent runtime — conversational Jude blocked | AWS Support case open for quota increase |
+| 1 | ⛔ AgentCore quota = 0 (Total Agents, Endpoints, Docker image size all at 0) | Cannot create agent runtime — conversational Jude blocked | Service Quotas increase request needed for `L-F4575653`, `L-9B442722`, `L-0A9E32B3` |
 | 2 | SES in sandbox | Can't email unverified addresses (200/day limit) | Request SES production access |
 | 3 | No firm domain | Jude can't have its own reply-to email for conversations | Purchase domain + set up email |
 
@@ -213,12 +213,22 @@ See `docs/JUDE-OPENCLAW-SPEC.md` for the full specification.
 | ~~10~~ | Cases API NetworkError | Fixed: OPTIONS routes without JWT auth |
 | ~~11~~ | Google Calendar API not enabled | Enabled in Google Cloud project |
 | ~~12~~ | Gmail refresh token missing calendar scope | Re-authorized with calendar + gmail.readonly |
+| ~~13~~ | Lambda concurrent executions = 10 (default) | Increased to 40 via Service Quotas (2026-07-15) |
 
 ---
 
 ## Cost
 
 All services are on pay-per-use / free-tier pricing. At current (zero-traffic) volume: **~$0/month**. The most expensive future component will be the NAT Gateway for Gemini API egress (~$0.045/hr only while Jude's AgentCore session is warm).
+
+## Service Quotas (as of July 15, 2026)
+
+| Service | Quota | Value | Notes |
+|---------|-------|-------|-------|
+| Lambda | Concurrent executions | **40** | Increased from default 10; supports all existing + future Router Lambda |
+| AgentCore | Total Agents per Account | **0** | ⛔ Needs increase to ≥ 1 |
+| AgentCore | Endpoints per Agent | **0** | ⛔ Needs increase to ≥ 1 |
+| AgentCore | Max Docker image size (MB) | **0** | ⛔ Needs increase to ≥ 500 |
 
 ---
 

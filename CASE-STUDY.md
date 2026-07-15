@@ -121,7 +121,8 @@ Solo attorneys spend 40–60% of their time on administrative tasks: triaging em
 |-----------|----------|
 | CORS failures between GitHub Pages and API Gateway | Explicit OPTIONS routes without JWT auth, aligned `Access-Control-Allow-Origin` headers |
 | Cognito users stuck in FORCE_CHANGE_PASSWORD | Admin set-user-password CLI with `--permanent` flag |
-| AgentCore quota = 0 (new service, not auto-activated) | AWS Support case filed; meanwhile, rule-based automations handle core duties |
+| AgentCore quota = 0 (new service, not auto-activated) | AWS Support case filed; meanwhile, rule-based automations handle core duties. Specific quotas needed: Total Agents, Endpoints per Agent, Docker image size — all still at 0 |
+| Lambda concurrent executions too low (default 10) | Increased to 40 via Service Quotas — supports all current functions + future Router Lambda with headroom |
 | SES sandbox limiting outbound email | Verified all necessary addresses; production access request pending |
 | Google Calendar API not responding | Discovered API not enabled in Google Cloud project; enabled + re-authorized OAuth with calendar scope |
 
