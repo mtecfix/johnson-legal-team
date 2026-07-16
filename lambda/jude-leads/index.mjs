@@ -235,7 +235,15 @@ function classifyUrgency(score, text) {
 // NOTIFICATION
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ALERTS DISABLED — pending lead notification logic finalization
+// Re-enable once SMS relay and response flow are designed.
+const ALERTS_ENABLED = process.env.ALERTS_ENABLED === "true";
+
 async function alertOwner(evt) {
+  if (!ALERTS_ENABLED) {
+    console.log("alertOwner SKIPPED (alerts disabled):", evt.type, evt.meta?.leadId);
+    return;
+  }
   try {
     await lambda.send(new InvokeCommand({
       FunctionName: NOTIFY_FN,
