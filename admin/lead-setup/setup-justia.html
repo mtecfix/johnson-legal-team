@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Setup Justia | Johnson Legal Team</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="setup-styles.css">
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container d-flex justify-content-between align-items-center">
+      <h1><i class="fas fa-gavel" style="color:var(--gold);margin-right:8px;"></i>Step 2: Justia Lawyer Directory</h1>
+      <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h2>Justia Lawyer Directory <span class="cost-badge">FREE</span></h2>
+      <p class="meta"><i class="fas fa-clock"></i> Setup time: 20 minutes | Goes live: immediately | Expected leads: 2-5/month</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <h3>Go to Justia's Profile Creation Page</h3>
+      <p>Click the link below to start creating (or claiming) your Justia profile:</p>
+      <a href="https://lawyers.justia.com/new-profile" target="_blank" class="action-link"><i class="fas fa-external-link-alt"></i>Create Justia Profile</a>
+      <div class="note"><i class="fas fa-info-circle"></i> You MUST use your law firm email (johnsonlegalteam@gmail.com). Using any other email may result in your profile being revoked.</div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <h3>Search for Your Existing Profile</h3>
+      <p>Justia may already have a basic listing pulled from State Bar records. Search by your name and "Michigan" to check.</p>
+      <p><strong>If found:</strong> Click "Claim" and verify via email.<br>
+      <strong>If not found:</strong> Complete the new profile form from Step 1.</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <h3>Complete Your Profile — Basic Info</h3>
+      <p>Fill in the following:</p>
+      <div class="copy-box">
+        <strong>Full Name:</strong> [Your full legal name]<br>
+        <strong>Firm Name:</strong> Johnson Legal Team, PLLC<br>
+        <strong>Office Address:</strong> [Office address]<br>
+        <strong>Phone:</strong> (313) 355-2216<br>
+        <strong>Email:</strong> johnsonlegalteam@gmail.com<br>
+        <strong>Website:</strong> [your website URL]<br>
+        <strong>Bar Admission:</strong> State Bar of Michigan [P-number]
+        <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <h3>Select All Practice Areas</h3>
+      <p>Check EVERY practice area that applies. More = more visibility in searches:</p>
+      <div class="checkbox-item"><input type="checkbox" id="pa1"><label for="pa1">Criminal Law</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa2"><label for="pa2">DUI & DWI</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa3"><label for="pa3">Expungement</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa4"><label for="pa4">Family Law</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa5"><label for="pa5">Divorce</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa6"><label for="pa6">Child Custody</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa7"><label for="pa7">Child Support</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa8"><label for="pa8">Probate</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa9"><label for="pa9">Estate Planning</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa10"><label for="pa10">Wills & Trusts</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa11"><label for="pa11">Personal Injury</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa12"><label for="pa12">Car Accident</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa13"><label for="pa13">Real Estate Law</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa14"><label for="pa14">Traffic Tickets</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa15"><label for="pa15">Juvenile Law</label></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <h3>Add Jurisdictions</h3>
+      <div class="checkbox-item"><input type="checkbox" id="j1"><label for="j1">Michigan</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="j2"><label for="j2">U.S. District Court - Eastern District of Michigan (if admitted)</label></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">6</div>
+      <h3>Upload Professional Photo</h3>
+      <p>Upload a high-resolution professional headshot. Requirements:</p>
+      <div class="checkbox-item"><input type="checkbox" id="ph1"><label for="ph1">Professional attire (suit or business casual)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="ph2"><label for="ph2">Clean background (solid or office setting)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="ph3"><label for="ph3">Good lighting, face clearly visible</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="ph4"><label for="ph4">At least 400x400 pixels</label></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">7</div>
+      <h3>Write Your Biography</h3>
+      <p>Write 300-500 words covering your background, approach, and practice areas. Here's a template you can customize:</p>
+      <div class="copy-box">Attorney [Name] is the founder of Johnson Legal Team, PLLC, serving clients throughout Wayne County, Oakland County, and the greater Metro Detroit area.
+
+With [X] years of experience, Attorney [Name] focuses on criminal defense, family law, probate and estate planning, personal injury, and expungements. He/she is committed to providing aggressive, compassionate legal representation to individuals and families facing challenging legal situations.
+
+Attorney [Name] has successfully handled hundreds of cases including felony and misdemeanor defense, child custody disputes, divorce proceedings, estate administration, and Michigan expungement applications under the Clean Slate Act.
+
+Practice Areas:
+- Criminal Defense & Expungements
+- Family Law, Divorce & Child Custody
+- Probate & Estate Planning
+- Personal Injury & Car Accidents
+- Traffic Violations & License Restoration
+
+Attorney [Name] earned his/her Juris Doctor from [Law School] and is admitted to the State Bar of Michigan. He/she is a member of [associations].
+
+Johnson Legal Team offers free initial consultations. Call (313) 355-2216 to discuss your case.
+        <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">8</div>
+      <h3>Add Additional Details</h3>
+      <div class="checkbox-item"><input type="checkbox" id="d1"><label for="d1">Education (law school name + graduation year)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="d2"><label for="d2">Work experience (current and past positions)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="d3"><label for="d3">Awards or recognitions (if any)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="d4"><label for="d4">Professional associations (State Bar of Michigan, etc.)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="d5"><label for="d5">Fee information: "Free initial consultation" + "Payment plans available"</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="d6"><label for="d6">Languages spoken</label></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">9</div>
+      <h3>Publish & Verify</h3>
+      <p>Click "Save" or "Publish" to make your profile live. Justia may send a verification email — check your inbox and click the link to confirm.</p>
+      <div class="note"><i class="fas fa-star" style="color:var(--gold);"></i> <strong>Why this matters:</strong> Justia has a Domain Authority of 91 (out of 100). Your profile creates a high-authority backlink to your website, which directly improves your Google search ranking. This alone makes it worth the 20 minutes.</div>
+    </div>
+
+    <button class="btn-complete" onclick="markComplete('justia')">
+      <i class="fas fa-check-circle"></i> Mark Justia as Complete
+    </button>
+
+    <div class="nav-buttons">
+      <a href="setup-google.html" class="btn-nav btn-prev"><i class="fas fa-arrow-left"></i> Previous: Google</a>
+      <a href="setup-avvo.html" class="btn-nav btn-next">Next: Avvo <i class="fas fa-arrow-right"></i></a>
+    </div>
+  </div>
+
+  <script>
+    function copyText(btn){const box=btn.parentElement;const text=box.textContent.replace('Copy','').trim();navigator.clipboard.writeText(text);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}
+    function markComplete(source){localStorage.setItem(`setup-${source}-complete`,'true');alert('Justia marked as complete! Moving to Avvo...');window.location.href='setup-avvo.html';}
+  </script>
+</body>
+</html>

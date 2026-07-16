@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Lead Source Setup Guide | Johnson Legal Team</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--navy:#1B365D;--navy-dark:#0F1F38;--gold:#D4AF37;--gold-light:#E8CD6F;--green:#28a745;--gray:#6c757d;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6f9;color:#2d3748;min-height:100vh;}
+    .top-bar{background:var(--navy-dark);padding:16px 0;border-bottom:3px solid var(--gold);}
+    .top-bar h1{color:#fff;font-size:1.3rem;margin:0;}
+    .top-bar .badge-gold{background:var(--gold);color:var(--navy-dark);font-size:0.75rem;padding:4px 10px;border-radius:12px;margin-left:10px;}
+    .progress-header{background:#fff;border-bottom:1px solid #e2e8f0;padding:20px 0;}
+    .step-indicator{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;}
+    .step-dot{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;border:2px solid #e2e8f0;color:var(--gray);background:#fff;text-decoration:none;transition:all 0.2s;}
+    .step-dot.active{border-color:var(--gold);background:var(--gold);color:var(--navy-dark);}
+    .step-dot.completed{border-color:var(--green);background:var(--green);color:#fff;}
+    .step-dot:hover{transform:scale(1.1);border-color:var(--gold);}
+    .main-content{max-width:800px;margin:30px auto;padding:0 20px;}
+    .source-card{background:#fff;border-radius:12px;padding:30px;margin-bottom:20px;box-shadow:0 2px 12px rgba(0,0,0,0.06);border:1px solid #e2e8f0;}
+    .source-card h2{color:var(--navy);font-size:1.5rem;margin-bottom:5px;}
+    .source-card .subtitle{color:var(--gray);font-size:0.9rem;margin-bottom:20px;}
+    .source-card .cost-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;}
+    .cost-free{background:#d4edda;color:#155724;}
+    .cost-low{background:#fff3cd;color:#856404;}
+    .stat-row{display:flex;gap:20px;margin:15px 0;flex-wrap:wrap;}
+    .stat-item{flex:1;min-width:120px;padding:12px;background:#f8f9fa;border-radius:8px;text-align:center;}
+    .stat-item .num{font-size:1.3rem;font-weight:700;color:var(--navy);}
+    .stat-item .label{font-size:0.75rem;color:var(--gray);text-transform:uppercase;letter-spacing:0.5px;}
+    .btn-start{background:var(--gold);color:var(--navy-dark);border:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:1rem;text-decoration:none;display:inline-block;transition:all 0.2s;}
+    .btn-start:hover{background:var(--gold-light);color:var(--navy-dark);transform:translateY(-1px);box-shadow:0 4px 12px rgba(212,175,55,0.3);}
+    .btn-start i{margin-right:8px;}
+    .source-list{list-style:none;padding:0;margin:20px 0;}
+    .source-list li{padding:16px 20px;border:1px solid #e2e8f0;border-radius:8px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;transition:all 0.2s;}
+    .source-list li:hover{border-color:var(--gold);background:#fffdf5;}
+    .source-list .source-info{display:flex;align-items:center;gap:15px;}
+    .source-list .source-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
+    .icon-google{background:#e8f5e9;color:#34a853;}
+    .icon-justia{background:#e3f2fd;color:#1565c0;}
+    .icon-avvo{background:#fce4ec;color:#c62828;}
+    .icon-nextdoor{background:#e8f5e9;color:#00b551;}
+    .icon-michbar{background:#ede7f6;color:#5e35b1;}
+    .icon-findlaw{background:#fff3e0;color:#e65100;}
+    .source-list .source-name{font-weight:600;color:var(--navy);}
+    .source-list .source-desc{font-size:0.8rem;color:var(--gray);}
+    .source-list .source-status{font-size:0.8rem;padding:4px 10px;border-radius:12px;font-weight:600;white-space:nowrap;}
+    .status-pending{background:#fff3cd;color:#856404;}
+    .status-done{background:#d4edda;color:#155724;}
+    .status-not-started{background:#f8f9fa;color:#6c757d;}
+    .welcome-box{background:linear-gradient(135deg,var(--navy),var(--navy-dark));color:#fff;border-radius:12px;padding:30px;margin-bottom:25px;}
+    .welcome-box h2{color:var(--gold);margin-bottom:10px;}
+    .welcome-box p{color:rgba(255,255,255,0.85);line-height:1.6;margin:0;}
+    @media(max-width:600px){
+      .stat-row{flex-direction:column;}
+      .source-list li{flex-direction:column;align-items:flex-start;gap:10px;}
+    }
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container">
+      <h1><i class="fas fa-balance-scale" style="color:var(--gold);margin-right:8px;"></i>Johnson Legal Team <span class="badge-gold">Lead Source Setup</span></h1>
+    </div>
+  </div>
+
+  <div class="progress-header">
+    <div class="step-indicator">
+      <a href="setup-google.html" class="step-dot" title="Google Business" id="dot-1">1</a>
+      <a href="setup-justia.html" class="step-dot" title="Justia" id="dot-2">2</a>
+      <a href="setup-avvo.html" class="step-dot" title="Avvo" id="dot-3">3</a>
+      <a href="setup-nextdoor.html" class="step-dot" title="Nextdoor" id="dot-4">4</a>
+      <a href="setup-michbar.html" class="step-dot" title="MI State Bar LRS" id="dot-5">5</a>
+      <a href="setup-findlaw.html" class="step-dot" title="FindLaw" id="dot-6">6</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="welcome-box">
+      <h2>Welcome, Attorney Johnson</h2>
+      <p>This guide will walk you through setting up each lead source one by one. Each page has exact steps, links, and what to type. Go at your own pace — you can complete one per day or all at once. Once done, leads will start flowing into your system automatically.</p>
+    </div>
+
+    <div class="source-card">
+      <div class="stat-row">
+        <div class="stat-item">
+          <div class="num">30-69</div>
+          <div class="label">Leads / Month</div>
+        </div>
+        <div class="stat-item">
+          <div class="num">$13</div>
+          <div class="label">Monthly Cost</div>
+        </div>
+        <div class="stat-item">
+          <div class="num">6</div>
+          <div class="label">Sources to Setup</div>
+        </div>
+        <div class="stat-item">
+          <div class="num">~2 hrs</div>
+          <div class="label">Total Setup Time</div>
+        </div>
+      </div>
+    </div>
+
+    <h3 style="margin:25px 0 15px;color:var(--navy);">Lead Sources — Click to Begin Setup</h3>
+
+    <ul class="source-list">
+      <li>
+        <div class="source-info">
+          <div class="source-icon icon-google"><i class="fab fa-google"></i></div>
+          <div>
+            <div class="source-name">Google Business Profile</div>
+            <div class="source-desc">Appear in Google Maps & local search results. #1 priority.</div>
+          </div>
+        </div>
+        <a href="setup-google.html" class="btn-start"><i class="fas fa-arrow-right"></i>Start</a>
+      </li>
+      <li>
+        <div class="source-info">
+          <div class="source-icon icon-justia"><i class="fas fa-gavel"></i></div>
+          <div>
+            <div class="source-name">Justia Lawyer Directory</div>
+            <div class="source-desc">Free profile on the highest-authority legal directory (DA 91).</div>
+          </div>
+        </div>
+        <a href="setup-justia.html" class="btn-start"><i class="fas fa-arrow-right"></i>Start</a>
+      </li>
+      <li>
+        <div class="source-info">
+          <div class="source-icon icon-avvo"><i class="fas fa-star"></i></div>
+          <div>
+            <div class="source-name">Avvo</div>
+            <div class="source-desc">Claim your profile, boost your rating, answer Q&A for free leads.</div>
+          </div>
+        </div>
+        <a href="setup-avvo.html" class="btn-start"><i class="fas fa-arrow-right"></i>Start</a>
+      </li>
+      <li>
+        <div class="source-info">
+          <div class="source-icon icon-nextdoor"><i class="fas fa-home"></i></div>
+          <div>
+            <div class="source-name">Nextdoor</div>
+            <div class="source-desc">Get recommended by neighbors in Southfield, Birmingham & Oak Park.</div>
+          </div>
+        </div>
+        <a href="setup-nextdoor.html" class="btn-start"><i class="fas fa-arrow-right"></i>Start</a>
+      </li>
+      <li>
+        <div class="source-info">
+          <div class="source-icon icon-michbar"><i class="fas fa-university"></i></div>
+          <div>
+            <div class="source-name">Michigan State Bar LRS</div>
+            <div class="source-desc">Get matched with people calling (800) 968-0738 looking for a lawyer. $150/yr.</div>
+          </div>
+        </div>
+        <a href="setup-michbar.html" class="btn-start"><i class="fas fa-arrow-right"></i>Start</a>
+      </li>
+      <li>
+        <div class="source-info">
+          <div class="source-icon icon-findlaw"><i class="fas fa-search"></i></div>
+          <div>
+            <div class="source-name">FindLaw + Lawyers.com</div>
+            <div class="source-desc">Claim free listings on two major legal directories.</div>
+          </div>
+        </div>
+        <a href="setup-findlaw.html" class="btn-start"><i class="fas fa-arrow-right"></i>Start</a>
+      </li>
+    </ul>
+
+    <div class="source-card" style="text-align:center;background:#f8f9fa;border:2px dashed #e2e8f0;">
+      <p style="color:var(--gray);margin:0;"><i class="fas fa-info-circle" style="margin-right:6px;"></i>Once all sources are set up, leads will flow into your Gmail inbox. Jude automatically scans, classifies, and scores every lead every 3 hours.</p>
+    </div>
+  </div>
+
+  <script>
+    // Check localStorage for completed steps
+    document.addEventListener('DOMContentLoaded', () => {
+      const steps = ['google','justia','avvo','nextdoor','michbar','findlaw'];
+      steps.forEach((s, i) => {
+        const dot = document.getElementById(`dot-${i+1}`);
+        if (localStorage.getItem(`setup-${s}-complete`) === 'true') {
+          dot.classList.add('completed');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Setup MI State Bar LRS | Johnson Legal Team</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    :root{--navy:#1B365D;--navy-dark:#0F1F38;--gold:#D4AF37;--gold-light:#E8CD6F;--green:#28a745;--gray:#6c757d;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6f9;color:#2d3748;}
+    .top-bar{background:var(--navy-dark);padding:16px 0;border-bottom:3px solid var(--gold);}
+    .top-bar h1{color:#fff;font-size:1.3rem;margin:0;}
+    .top-bar a{color:var(--gold);text-decoration:none;font-size:0.9rem;}
+    .main-content{max-width:760px;margin:30px auto;padding:0 20px;}
+    .page-header{margin-bottom:25px;}
+    .page-header h2{color:var(--navy);font-size:1.8rem;margin-bottom:5px;}
+    .page-header .meta{color:var(--gray);font-size:0.9rem;}
+    .cost-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;margin-left:8px;}
+    .cost-low{background:#fff3cd;color:#856404;}
+    .step-card{background:#fff;border-radius:12px;padding:25px 30px;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);position:relative;padding-left:70px;}
+    .step-card .step-num{position:absolute;left:20px;top:25px;width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;}
+    .step-card h3{font-size:1.1rem;color:var(--navy);margin-bottom:8px;}
+    .step-card p{color:#4a5568;line-height:1.7;margin-bottom:10px;}
+    .step-card .action-link{display:inline-block;background:var(--gold);color:var(--navy-dark);padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.9rem;margin-top:5px;transition:all 0.2s;}
+    .step-card .action-link:hover{background:var(--gold-light);transform:translateY(-1px);}
+    .step-card .action-link i{margin-right:6px;}
+    .step-card .note{background:#f0f9ff;border-left:3px solid #3b82f6;padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;color:#1e40af;margin-top:12px;}
+    .step-card .warning{background:#fff8e1;border-left:3px solid #f59e0b;padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;color:#92400e;margin-top:12px;}
+    .step-card .success{background:#d4edda;border-left:3px solid var(--green);padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;color:#155724;margin-top:12px;}
+    .copy-box{background:#f8f9fa;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;font-family:'Courier New',monospace;font-size:0.85rem;margin:12px 0;position:relative;line-height:1.6;white-space:pre-wrap;}
+    .copy-box .copy-btn{position:absolute;top:8px;right:8px;background:var(--navy);color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:0.75rem;cursor:pointer;}
+    .copy-box .copy-btn:hover{background:var(--gold);color:var(--navy-dark);}
+    .checkbox-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;}
+    .checkbox-item input[type=checkbox]{width:20px;height:20px;margin-top:2px;accent-color:var(--green);}
+    .checkbox-item label{font-size:0.9rem;color:#374151;cursor:pointer;}
+    .nav-buttons{display:flex;justify-content:space-between;margin:30px 0;gap:15px;}
+    .btn-nav{padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;transition:all 0.2s;}
+    .btn-prev{background:#e2e8f0;color:var(--navy);}
+    .btn-prev:hover{background:#cbd5e1;color:var(--navy);}
+    .btn-next{background:var(--gold);color:var(--navy-dark);}
+    .btn-next:hover{background:var(--gold-light);color:var(--navy-dark);}
+    .btn-complete{background:var(--green);color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;width:100%;margin-top:20px;}
+    .btn-complete:hover{background:#218838;}
+    .btn-complete i{margin-right:8px;}
+    .flow-diagram{background:#f8f9fa;border:1px solid #e2e8f0;border-radius:8px;padding:20px;margin:15px 0;text-align:center;font-size:0.9rem;line-height:2;}
+    .flow-diagram .arrow{color:var(--gold);font-weight:700;margin:0 8px;}
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container d-flex justify-content-between align-items-center">
+      <h1><i class="fas fa-university" style="color:var(--gold);margin-right:8px;"></i>Step 5: Michigan State Bar LRS</h1>
+      <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h2>State Bar of Michigan LRS <span class="cost-badge cost-low">$150/year</span></h2>
+      <p class="meta"><i class="fas fa-clock"></i> Setup time: 30-60 min | Approval: 1-2 weeks | Expected leads: 5-10/month (HIGH INTENT)</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <h3>Confirm Your Eligibility</h3>
+      <p>You must meet ALL of these requirements:</p>
+      <div class="checkbox-item"><input type="checkbox" id="e1"><label for="e1"><strong>Active attorney</strong> in good standing with the State Bar of Michigan</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="e2"><label for="e2"><strong>Malpractice insurance</strong> currently maintained</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="e3"><label for="e3"><strong>Enhanced profile</strong> set up in SBM Online Member Directory</label></div>
+      <div class="warning"><i class="fas fa-exclamation-triangle"></i> If you don't have malpractice insurance, you'll need to obtain it before applying. This is a strict requirement.</div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <h3>Set Up Your Enhanced SBM Member Directory Profile</h3>
+      <p>Before applying for LRS, your SBM profile must be "enhanced" (detailed):</p>
+      <a href="https://www.michbar.org" target="_blank" class="action-link"><i class="fas fa-external-link-alt"></i>Go to michbar.org</a>
+      <div style="margin-top:15px;">
+        <div class="checkbox-item"><input type="checkbox" id="m1"><label for="m1">Log in to your SBM member account</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="m2"><label for="m2">Navigate to Member Directory settings</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="m3"><label for="m3">Add a professional biography</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="m4"><label for="m4">List all practice areas</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="m5"><label for="m5">Upload professional photo</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="m6"><label for="m6">Add office address and contact information</label></div>
+        <div class="checkbox-item"><input type="checkbox" id="m7"><label for="m7">Save/publish the enhanced profile</label></div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <h3>Apply for the LRS Panel</h3>
+      <p>Submit your application online or by phone:</p>
+      <a href="http://www.michbar.org/programs/lawyerreferral_panel" target="_blank" class="action-link"><i class="fas fa-external-link-alt"></i>Apply Online at michbar.org</a>
+      <div class="copy-box"><strong>Or contact directly:</strong>
+Panel Coordinator: Monique Smith
+Phone: (517) 346-6323
+Email: msmith@michbar.org
+        <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      </div>
+      <div class="note"><i class="fas fa-info-circle"></i> Calling Monique directly is often the fastest way to get set up. She can walk you through the entire process over the phone.</div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <h3>Select Practice Areas (4 included in base fee)</h3>
+      <p>Choose your top 4 practice areas for referrals. Additional areas cost $25 each:</p>
+      <div class="checkbox-item"><input type="checkbox" id="pa1"><label for="pa1"><strong>Criminal Law / Expungements</strong> (high volume in Wayne/Oakland)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa2"><label for="pa2"><strong>Family Law / Domestic Relations</strong> (custody, divorce, support)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa3"><label for="pa3"><strong>Probate / Estate Planning</strong> (wills, trusts, guardianship)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="pa4"><label for="pa4"><strong>Personal Injury</strong> (highest case value)</label></div>
+      <p style="margin-top:10px;font-size:0.85rem;color:var(--gray);">Optional add-ons ($25 each): Traffic, Juvenile, Real Estate, General Civil</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <h3>Select Judicial Circuits (2 included in base fee)</h3>
+      <p>Choose the circuits where you want to receive referrals:</p>
+      <div class="checkbox-item"><input type="checkbox" id="jc1"><label for="jc1"><strong>3rd Circuit Court</strong> (Wayne County) - highest population, most referrals</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="jc2"><label for="jc2"><strong>6th Circuit Court</strong> (Oakland County) - affluent area, higher case values</label></div>
+      <p style="margin-top:10px;font-size:0.85rem;color:var(--gray);">Additional circuits: $25 each, or $300 for ALL Michigan judicial circuits.</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">6</div>
+      <h3>Pay Registration Fee</h3>
+      <p>The base fee is <strong>$150/year</strong> and includes 4 practice areas + 2 judicial circuits.</p>
+      <div class="checkbox-item"><input type="checkbox" id="pay1"><label for="pay1">Pay via Visa or MasterCard during application</label></div>
+      <p style="margin-top:10px;font-size:0.85rem;">Total cost breakdown:</p>
+      <div class="copy-box"><strong>Base fee:</strong> $150 (4 practice areas + 2 circuits)
+<strong>Extra practice areas:</strong> $25 each
+<strong>Extra circuits:</strong> $25 each (or $300 for all MI)
+
+<strong>Recommended total:</strong> $150 (base covers your main areas)
+        <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">7</div>
+      <h3>How Referrals Work (Once Approved)</h3>
+      <p>Here's what happens after your application is approved:</p>
+      <div class="flow-diagram">
+        Person needs a lawyer<br>
+        <span class="arrow">&darr;</span><br>
+        Calls <strong>(800) 968-0738</strong> (Mon-Fri, 8:30-4:45)<br>
+        <span class="arrow">&darr;</span><br>
+        Trained referral assistant asks about their case<br>
+        <span class="arrow">&darr;</span><br>
+        Caller pays <strong>$25</strong> for a consultation<br>
+        <span class="arrow">&darr;</span><br>
+        LRS matches them to <strong>YOU</strong> by practice area + location<br>
+        <span class="arrow">&darr;</span><br>
+        You receive the referral (email/phone)<br>
+        <span class="arrow">&darr;</span><br>
+        You provide a <strong>25-minute consultation</strong><br>
+        <span class="arrow">&darr;</span><br>
+        If they hire you: set your own fees from there
+      </div>
+
+      <div class="success"><i class="fas fa-dollar-sign"></i> <strong>ROI Reality Check:</strong> One converted case from LRS easily covers 10+ years of membership ($150/year). These are the highest-intent leads available — people who are actively paying money to find a lawyer RIGHT NOW. They've already committed $25 and talked to a human about their legal problem.</div>
+    </div>
+
+    <button class="btn-complete" onclick="markComplete('michbar')">
+      <i class="fas fa-check-circle"></i> Mark MI State Bar LRS as Complete
+    </button>
+
+    <div class="nav-buttons">
+      <a href="setup-nextdoor.html" class="btn-nav btn-prev"><i class="fas fa-arrow-left"></i> Previous: Nextdoor</a>
+      <a href="setup-findlaw.html" class="btn-nav btn-next">Next: FindLaw <i class="fas fa-arrow-right"></i></a>
+    </div>
+  </div>
+
+  <script>
+    function copyText(btn){const box=btn.parentElement;const text=box.textContent.replace('Copy','').trim();navigator.clipboard.writeText(text);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}
+    function markComplete(source){localStorage.setItem('setup-'+source+'-complete','true');alert('Michigan State Bar LRS marked as complete! Moving to FindLaw...');window.location.href='setup-findlaw.html';}
+  </script>
+</body>
+</html>
