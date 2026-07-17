@@ -141,9 +141,28 @@ Call: (313) 355-2216
     </div>
   </div>
 
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
   <script>
     function copyText(btn){const box=btn.parentElement;const text=box.textContent.replace('Copy','').trim();navigator.clipboard.writeText(text);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}
     function markComplete(source){localStorage.setItem('setup-'+source+'-complete','true');alert('Nextdoor marked as complete! Moving to Michigan State Bar LRS...');window.location.href='setup-michbar.html';}
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!localStorage.getItem('tour-nextdoor-seen')) {
+        setTimeout(() => {
+          const driverObj = window.driver.js.driver({
+            showProgress: true, animate: true, smoothScroll: true, stagePadding: 8,
+            steps: [
+              { element: '.step-card:nth-of-type(1)', popover: { title: 'Create Your Business Page', description: 'Click the gold button. Select "Professional Business" when asked. This is the quickest setup — about 10 minutes.', side: 'bottom' }},
+              { element: '.step-card:nth-of-type(4)', popover: { title: 'Verification Call', description: 'Nextdoor will call or text (313) 355-2216 to verify. Make sure someone can answer when you click verify.', side: 'bottom' }},
+              { element: '.step-card:nth-of-type(5)', popover: { title: 'Greeting is Pre-Written', description: 'We wrote a neighborly greeting message for you. Just copy and paste it into your Nextdoor profile.', side: 'top' }},
+              { element: '.btn-complete', popover: { title: 'Quick One!', description: 'This is the fastest setup. Mark done once verified and move on to the State Bar LRS (the highest-value source).', side: 'top' }}
+            ],
+            onDestroyed: () => { localStorage.setItem('tour-nextdoor-seen', 'true'); }
+          });
+          driverObj.drive();
+        }, 600);
+      }
+    });
   </script>
 </body>
 </html>
