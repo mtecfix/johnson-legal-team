@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Send Invoices | Johnson Legal Team</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
+  <style>
+    :root{--navy:#1B365D;--navy-dark:#0F1F38;--gold:#D4AF37;--gold-light:#E8CD6F;--green:#28a745;--gray:#6c757d;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6f9;color:#2d3748;}
+    .top-bar{background:var(--navy-dark);padding:16px 0;border-bottom:3px solid var(--gold);}
+    .top-bar h1{color:#fff;font-size:1.3rem;margin:0;}
+    .top-bar a{color:var(--gold);text-decoration:none;font-size:0.9rem;}
+    .main-content{max-width:760px;margin:30px auto;padding:0 20px;}
+    .page-header{margin-bottom:25px;}
+    .page-header h2{color:var(--navy);font-size:1.8rem;margin-bottom:5px;}
+    .page-header .meta{color:var(--gray);font-size:0.9rem;}
+    .cost-badge{display:inline-block;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;background:#d4edda;color:#155724;margin-left:8px;}
+    .step-card{background:#fff;border-radius:12px;padding:25px 30px;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);position:relative;padding-left:70px;}
+    .step-card .step-num{position:absolute;left:20px;top:25px;width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;}
+    .step-card h3{font-size:1.1rem;color:var(--navy);margin-bottom:8px;}
+    .step-card p{color:#4a5568;line-height:1.7;margin-bottom:10px;}
+    .step-card .action-link{display:inline-block;background:var(--gold);color:var(--navy-dark);padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.9rem;margin-top:5px;transition:all 0.2s;}
+    .step-card .action-link:hover{background:var(--gold-light);transform:translateY(-1px);}
+    .step-card .action-link i{margin-right:6px;}
+    .step-card .note{background:#f0f9ff;border-left:3px solid #3b82f6;padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;color:#1e40af;margin-top:12px;}
+    .step-card .warning{background:#fff8e1;border-left:3px solid #f59e0b;padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;color:#92400e;margin-top:12px;}
+    .checkbox-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;}
+    .checkbox-item input[type=checkbox]{width:20px;height:20px;margin-top:2px;accent-color:var(--green);}
+    .checkbox-item label{font-size:0.9rem;color:#374151;cursor:pointer;}
+    .nav-buttons{display:flex;justify-content:space-between;margin:30px 0;gap:15px;}
+    .btn-nav{padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;transition:all 0.2s;}
+    .btn-prev{background:#e2e8f0;color:var(--navy);}
+    .btn-prev:hover{background:#cbd5e1;color:var(--navy);}
+    .btn-next{background:var(--gold);color:var(--navy-dark);}
+    .btn-next:hover{background:var(--gold-light);color:var(--navy-dark);}
+    .btn-complete{background:var(--green);color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;width:100%;margin-top:20px;}
+    .btn-complete:hover{background:#218838;}
+    .btn-complete i{margin-right:8px;}
+    .screenshot-placeholder{background:#f1f5f9;border:2px dashed #cbd5e1;border-radius:8px;padding:30px;text-align:center;color:var(--gray);font-size:0.85rem;margin:12px 0;}
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container d-flex justify-content-between align-items-center">
+      <h1><i class="fas fa-file-invoice-dollar" style="color:var(--gold);margin-right:8px;"></i>Step 2: Send Invoices</h1>
+      <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h2>Send Your First Invoice</h2>
+      <p class="meta"><i class="fas fa-clock"></i> Time: 5 minutes per invoice | Client receives: professional email with "Pay" button</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <h3>Open Stripe Invoicing</h3>
+      <p>Go to your Stripe Dashboard and navigate to Invoicing:</p>
+      <a href="https://dashboard.stripe.com/invoices" target="_blank" class="action-link"><i class="fas fa-external-link-alt"></i>Open Stripe Invoices</a>
+      <p style="margin-top:10px;">Or from your dashboard: Click <strong>Revenue > Invoices</strong> in the left sidebar.</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <h3>Click "Create Invoice"</h3>
+      <p>Click the <strong>"+ Create invoice"</strong> button (top right corner of the Invoices page).</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <h3>Add Customer</h3>
+      <p>Enter your client's email address. If they're a new customer, Stripe will create a record for them.</p>
+      <div class="checkbox-item"><input type="checkbox" id="c1"><label for="c1">Type client's name</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="c2"><label for="c2">Enter their email address (where invoice is sent)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="c3"><label for="c3">Optionally add their phone number and address</label></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <h3>Add Line Items</h3>
+      <p>Add what you're billing for. Examples:</p>
+      <div class="checkbox-item"><input type="checkbox" id="li1"><label for="li1"><strong>Legal Consultation</strong> — $250.00</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="li2"><label for="li2"><strong>Expungement Filing Fee</strong> — $1,500.00</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="li3"><label for="li3"><strong>Retainer Deposit</strong> — $2,000.00</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="li4"><label for="li4"><strong>Court Filing Costs (pass-through)</strong> — $175.00</label></div>
+      <p style="margin-top:10px;font-size:0.85rem;color:var(--gray);">You can add multiple line items per invoice. Add descriptions to each for clarity.</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <h3>Set Due Date & Memo</h3>
+      <div class="checkbox-item"><input type="checkbox" id="d1"><label for="d1"><strong>Due date:</strong> Select when payment is due (Net 15 or Net 30 is standard)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="d2"><label for="d2"><strong>Invoice memo:</strong> Add any notes (e.g., "Payment due upon receipt" or case reference number)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="d3"><label for="d3"><strong>Footer:</strong> Optional legal notice (e.g., "Thank you for choosing Johnson Legal Team")</label></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">6</div>
+      <h3>Review & Send</h3>
+      <p>Click <strong>"Review invoice"</strong> to preview what your client will see. Then click <strong>"Send invoice"</strong>.</p>
+      <div class="note"><i class="fas fa-envelope"></i> <strong>What the client receives:</strong> A professional email from Stripe (branded with your logo and colors from Step 1) with a clear "Pay this invoice" button. They click it, enter their card, and pay. Done.</div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">7</div>
+      <h3>Track & Follow Up</h3>
+      <p>After sending, you can see the invoice status in your Stripe dashboard:</p>
+      <div class="checkbox-item"><input type="checkbox" id="t1"><label for="t1"><strong>Draft</strong> — not yet sent</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="t2"><label for="t2"><strong>Open</strong> — sent to client, awaiting payment</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="t3"><label for="t3"><strong>Paid</strong> — client has paid (money on way to your bank)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="t4"><label for="t4"><strong>Past due</strong> — deadline passed, unpaid</label></div>
+      <p style="margin-top:10px;">Stripe automatically sends reminder emails for past-due invoices. You can also manually resend or void invoices.</p>
+      <div class="note"><i class="fas fa-bell"></i> <strong>Tip:</strong> Enable "Smart retries" in Settings > Invoices to automatically remind clients before the due date.</div>
+    </div>
+
+    <button class="btn-complete" onclick="markComplete('stripe-invoices')">
+      <i class="fas fa-check-circle"></i> Mark Invoicing as Complete
+    </button>
+
+    <div class="nav-buttons">
+      <a href="stripe-account.html" class="btn-nav btn-prev"><i class="fas fa-arrow-left"></i> Previous: Account</a>
+      <a href="stripe-links.html" class="btn-nav btn-next">Next: Payment Links <i class="fas fa-arrow-right"></i></a>
+    </div>
+  </div>
+
+  <script>
+    function copyText(btn){const box=btn.parentElement;const text=box.textContent.replace('Copy','').trim();navigator.clipboard.writeText(text);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}
+    function markComplete(source){localStorage.setItem('setup-'+source+'-complete','true');alert('Invoicing marked complete! Next: Payment Links.');window.location.href='stripe-links.html';}
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!localStorage.getItem('tour-stripe-invoices-seen')) {
+        setTimeout(() => {
+          const driverObj = window.driver.js.driver({
+            showProgress: true, animate: true, smoothScroll: true, stagePadding: 8,
+            steps: [
+              { element: '.step-card:nth-of-type(1)', popover: { title: 'Open Invoices', description: 'Click the gold button to go straight to your Stripe invoices page.', side: 'bottom' }},
+              { element: '.step-card:nth-of-type(4)', popover: { title: 'Add What You Are Billing For', description: 'Add line items with descriptions and amounts. You can bill for consultations, retainers, filing fees — whatever applies to the case.', side: 'bottom' }},
+              { element: '.step-card:nth-of-type(6)', popover: { title: 'Send It', description: 'Review the invoice, hit send. Your client gets a professional email with a Pay button. They click it, enter their card, done.', side: 'top' }},
+              { element: '.btn-complete', popover: { title: 'Got It?', description: 'Mark complete once you understand the process. You can come back and send your first real invoice anytime.', side: 'top' }}
+            ],
+            onDestroyed: () => { localStorage.setItem('tour-stripe-invoices-seen', 'true'); }
+          });
+          driverObj.drive();
+        }, 600);
+      }
+    });
+  </script>
+</body>
+</html>

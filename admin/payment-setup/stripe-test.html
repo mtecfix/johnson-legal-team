@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Test Payment | Johnson Legal Team</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
+  <style>
+    :root{--navy:#1B365D;--navy-dark:#0F1F38;--gold:#D4AF37;--gold-light:#E8CD6F;--green:#28a745;--gray:#6c757d;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6f9;color:#2d3748;}
+    .top-bar{background:var(--navy-dark);padding:16px 0;border-bottom:3px solid var(--gold);}
+    .top-bar h1{color:#fff;font-size:1.3rem;margin:0;}
+    .top-bar a{color:var(--gold);text-decoration:none;font-size:0.9rem;}
+    .main-content{max-width:760px;margin:30px auto;padding:0 20px;}
+    .page-header{margin-bottom:25px;}
+    .page-header h2{color:var(--navy);font-size:1.8rem;margin-bottom:5px;}
+    .page-header .meta{color:var(--gray);font-size:0.9rem;}
+    .step-card{background:#fff;border-radius:12px;padding:25px 30px;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);position:relative;padding-left:70px;}
+    .step-card .step-num{position:absolute;left:20px;top:25px;width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;}
+    .step-card h3{font-size:1.1rem;color:var(--navy);margin-bottom:8px;}
+    .step-card p{color:#4a5568;line-height:1.7;margin-bottom:10px;}
+    .step-card .action-link{display:inline-block;background:var(--gold);color:var(--navy-dark);padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.9rem;margin-top:5px;transition:all 0.2s;}
+    .step-card .action-link:hover{background:var(--gold-light);transform:translateY(-1px);}
+    .step-card .action-link i{margin-right:6px;}
+    .step-card .note{background:#f0f9ff;border-left:3px solid #3b82f6;padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;color:#1e40af;margin-top:12px;}
+    .step-card .warning{background:#fff8e1;border-left:3px solid #f59e0b;padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;color:#92400e;margin-top:12px;}
+    .step-card .success{background:#d4edda;border-left:3px solid var(--green);padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;color:#155724;margin-top:12px;}
+    .copy-box{background:#f8f9fa;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;font-family:'Courier New',monospace;font-size:0.85rem;margin:12px 0;position:relative;line-height:1.6;white-space:pre-wrap;}
+    .copy-box .copy-btn{position:absolute;top:8px;right:8px;background:var(--navy);color:#fff;border:none;padding:4px 10px;border-radius:4px;font-size:0.75rem;cursor:pointer;}
+    .copy-box .copy-btn:hover{background:var(--gold);color:var(--navy-dark);}
+    .checkbox-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;}
+    .checkbox-item input[type=checkbox]{width:20px;height:20px;margin-top:2px;accent-color:var(--green);}
+    .checkbox-item label{font-size:0.9rem;color:#374151;cursor:pointer;}
+    .nav-buttons{display:flex;justify-content:space-between;margin:30px 0;gap:15px;}
+    .btn-nav{padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;transition:all 0.2s;}
+    .btn-prev{background:#e2e8f0;color:var(--navy);}
+    .btn-prev:hover{background:#cbd5e1;color:var(--navy);}
+    .btn-next{background:var(--gold);color:var(--navy-dark);}
+    .btn-next:hover{background:var(--gold-light);color:var(--navy-dark);}
+    .btn-complete{background:var(--green);color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;width:100%;margin-top:20px;}
+    .btn-complete:hover{background:#218838;}
+    .btn-complete i{margin-right:8px;}
+    .congrats-box{background:linear-gradient(135deg,#065f46,#047857);color:#fff;border-radius:12px;padding:30px;margin-top:25px;text-align:center;}
+    .congrats-box h2{color:var(--gold);margin-bottom:10px;font-size:1.5rem;}
+    .congrats-box p{color:rgba(255,255,255,0.9);line-height:1.7;margin-bottom:15px;}
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container d-flex justify-content-between align-items-center">
+      <h1><i class="fas fa-flask" style="color:var(--gold);margin-right:8px;"></i>Step 4: Test a Payment</h1>
+      <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h2>Run a Test Payment</h2>
+      <p class="meta"><i class="fas fa-clock"></i> Time: 2 minutes | No real money is charged</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <h3>Switch to Test Mode</h3>
+      <p>In your Stripe dashboard, look for the <strong>"Test mode"</strong> toggle in the top-right area. Make sure it's turned ON (orange/yellow indicator).</p>
+      <a href="https://dashboard.stripe.com/test/payments" target="_blank" class="action-link"><i class="fas fa-external-link-alt"></i>Open Stripe Test Mode</a>
+      <div class="note"><i class="fas fa-info-circle"></i> Test mode lets you simulate payments without charging real money. Everything works exactly like production, but no actual transactions happen.</div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <h3>Send Yourself a Test Invoice</h3>
+      <p>While in test mode:</p>
+      <div class="checkbox-item"><input type="checkbox" id="t1"><label for="t1">Go to <strong>Invoices > + Create invoice</strong></label></div>
+      <div class="checkbox-item"><input type="checkbox" id="t2"><label for="t2">Add your own email as the customer</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="t3"><label for="t3">Add a line item: "Test Payment" — $1.00</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="t4"><label for="t4">Click "Send invoice"</label></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <h3>Pay the Test Invoice</h3>
+      <p>Check your email for the test invoice. Click "Pay this invoice" and use this test card number:</p>
+      <div class="copy-box">Card number: 4242 4242 4242 4242
+Expiration: Any future date (e.g., 12/28)
+CVC: Any 3 digits (e.g., 123)
+ZIP: Any 5 digits (e.g., 48075)
+        <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      </div>
+      <div class="note"><i class="fas fa-shield-alt"></i> This is Stripe's official test card number. It always succeeds. No real charge happens.</div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <h3>Verify It Worked</h3>
+      <p>After paying, check these:</p>
+      <div class="checkbox-item"><input type="checkbox" id="v1"><label for="v1">You received a payment confirmation email</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="v2"><label for="v2">The invoice shows "Paid" in your Stripe dashboard</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="v3"><label for="v3">The payment appears under Payments in the dashboard</label></div>
+      <div class="success"><i class="fas fa-check-circle"></i> If all three show up — your payment system is working perfectly!</div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <h3>Switch Back to Live Mode</h3>
+      <p>Once your test works, switch the "Test mode" toggle back to OFF (live mode). Now when you send invoices or payment links, they'll process real payments.</p>
+      <div class="checkbox-item"><input type="checkbox" id="live1"><label for="live1">Test mode toggle turned OFF</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="live2"><label for="live2">Confirmed "Live mode" is active</label></div>
+      <div class="warning"><i class="fas fa-exclamation-triangle"></i> Double-check you're in Live mode before sending real invoices to clients. Test mode invoices won't actually collect money.</div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">6</div>
+      <h3>Other Test Cards (Optional)</h3>
+      <p>If you want to test different scenarios:</p>
+      <div class="copy-box">Successful payment: 4242 4242 4242 4242
+Declined card:      4000 0000 0000 0002
+Requires auth (3D): 4000 0025 0000 3155
+Insufficient funds: 4000 0000 0000 9995
+        <button class="copy-btn" onclick="copyText(this)">Copy</button>
+      </div>
+      <p style="font-size:0.85rem;color:var(--gray);">These help you see what happens when a payment fails or needs extra verification.</p>
+    </div>
+
+    <button class="btn-complete" onclick="markComplete('stripe-test')">
+      <i class="fas fa-check-circle"></i> Mark Test Payment as Complete
+    </button>
+
+    <div class="congrats-box">
+      <h2><i class="fas fa-trophy"></i> Payment Setup Complete!</h2>
+      <p>You can now accept credit card payments from clients. Here's what you can do:</p>
+      <p style="text-align:left;max-width:400px;margin:0 auto;">
+        <strong>1.</strong> Send professional invoices via email<br>
+        <strong>2.</strong> Text or email payment links for quick collection<br>
+        <strong>3.</strong> Accept retainer deposits online<br>
+        <strong>4.</strong> Track all payments in one dashboard<br>
+        <strong>5.</strong> Money deposits to your bank in 2 business days
+      </p>
+      <p style="margin-top:20px;font-size:0.9rem;opacity:0.85;">Stripe charges 2.9% + $0.30 per transaction. No monthly fees, no contracts, no minimums.</p>
+      <a href="index.html" style="display:inline-block;margin-top:15px;background:var(--gold);color:var(--navy-dark);padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:700;"><i class="fas fa-home"></i> Back to Setup Hub</a>
+    </div>
+
+    <div class="nav-buttons">
+      <a href="stripe-links.html" class="btn-nav btn-prev"><i class="fas fa-arrow-left"></i> Previous: Payment Links</a>
+      <a href="index.html" class="btn-nav btn-next">Back to Hub <i class="fas fa-home"></i></a>
+    </div>
+  </div>
+
+  <script>
+    function copyText(btn){const box=btn.parentElement;const text=box.textContent.replace('Copy','').trim();navigator.clipboard.writeText(text);btn.textContent='Copied!';setTimeout(()=>btn.textContent='Copy',2000);}
+    function markComplete(source){localStorage.setItem('setup-'+source+'-complete','true');alert('Payment setup complete! You are now ready to accept payments from clients.');window.location.href='index.html';}
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!localStorage.getItem('tour-stripe-test-seen')) {
+        setTimeout(() => {
+          const driverObj = window.driver.js.driver({
+            showProgress: true, animate: true, smoothScroll: true, stagePadding: 8,
+            steps: [
+              { element: '.step-card:nth-of-type(1)', popover: { title: 'Test Mode First', description: 'Always test before going live. Stripe has a test mode that simulates everything without real money.', side: 'bottom' }},
+              { element: '.step-card:nth-of-type(3)', popover: { title: 'Use the Test Card', description: 'Copy the test card number (4242 4242 4242 4242). It always succeeds. This verifies your whole flow works.', side: 'bottom' }},
+              { element: '.step-card:nth-of-type(5)', popover: { title: 'Go Live', description: 'Once the test works, switch to live mode. Then every invoice and payment link you send will process real payments.', side: 'top' }},
+              { element: '.congrats-box', popover: { title: 'You Are Done!', description: 'Once you pass the test, you can accept payments from any client with a credit card. Money arrives in your bank in 2 business days.', side: 'top' }}
+            ],
+            onDestroyed: () => { localStorage.setItem('tour-stripe-test-seen', 'true'); }
+          });
+          driverObj.drive();
+        }, 600);
+      }
+    });
+  </script>
+</body>
+</html>

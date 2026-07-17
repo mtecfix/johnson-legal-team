@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Payment Links | Johnson Legal Team</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/driver.js@1.3.1/dist/driver.js.iife.js"></script>
+  <style>
+    :root{--navy:#1B365D;--navy-dark:#0F1F38;--gold:#D4AF37;--gold-light:#E8CD6F;--green:#28a745;--gray:#6c757d;}
+    body{font-family:'Segoe UI',system-ui,sans-serif;background:#f4f6f9;color:#2d3748;}
+    .top-bar{background:var(--navy-dark);padding:16px 0;border-bottom:3px solid var(--gold);}
+    .top-bar h1{color:#fff;font-size:1.3rem;margin:0;}
+    .top-bar a{color:var(--gold);text-decoration:none;font-size:0.9rem;}
+    .main-content{max-width:760px;margin:30px auto;padding:0 20px;}
+    .page-header{margin-bottom:25px;}
+    .page-header h2{color:var(--navy);font-size:1.8rem;margin-bottom:5px;}
+    .page-header .meta{color:var(--gray);font-size:0.9rem;}
+    .step-card{background:#fff;border-radius:12px;padding:25px 30px;margin-bottom:16px;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,0.04);position:relative;padding-left:70px;}
+    .step-card .step-num{position:absolute;left:20px;top:25px;width:36px;height:36px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.9rem;}
+    .step-card h3{font-size:1.1rem;color:var(--navy);margin-bottom:8px;}
+    .step-card p{color:#4a5568;line-height:1.7;margin-bottom:10px;}
+    .step-card .action-link{display:inline-block;background:var(--gold);color:var(--navy-dark);padding:10px 20px;border-radius:6px;text-decoration:none;font-weight:600;font-size:0.9rem;margin-top:5px;transition:all 0.2s;}
+    .step-card .action-link:hover{background:var(--gold-light);transform:translateY(-1px);}
+    .step-card .action-link i{margin-right:6px;}
+    .step-card .note{background:#f0f9ff;border-left:3px solid #3b82f6;padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;color:#1e40af;margin-top:12px;}
+    .step-card .warning{background:#fff8e1;border-left:3px solid #f59e0b;padding:10px 14px;border-radius:0 6px 6px 0;font-size:0.85rem;color:#92400e;margin-top:12px;}
+    .checkbox-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9;}
+    .checkbox-item input[type=checkbox]{width:20px;height:20px;margin-top:2px;accent-color:var(--green);}
+    .checkbox-item label{font-size:0.9rem;color:#374151;cursor:pointer;}
+    .nav-buttons{display:flex;justify-content:space-between;margin:30px 0;gap:15px;}
+    .btn-nav{padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600;font-size:0.9rem;transition:all 0.2s;}
+    .btn-prev{background:#e2e8f0;color:var(--navy);}
+    .btn-prev:hover{background:#cbd5e1;color:var(--navy);}
+    .btn-next{background:var(--gold);color:var(--navy-dark);}
+    .btn-next:hover{background:var(--gold-light);color:var(--navy-dark);}
+    .btn-complete{background:var(--green);color:#fff;border:none;padding:14px 32px;border-radius:8px;font-weight:700;font-size:1rem;cursor:pointer;width:100%;margin-top:20px;}
+    .btn-complete:hover{background:#218838;}
+    .btn-complete i{margin-right:8px;}
+    .use-case-box{background:#f8f9fa;border:1px solid #e2e8f0;border-radius:8px;padding:16px 20px;margin:12px 0;}
+    .use-case-box h4{font-size:0.9rem;color:var(--navy);margin:0 0 8px;}
+    .use-case-box p{font-size:0.85rem;color:#4a5568;margin:0;line-height:1.6;}
+  </style>
+</head>
+<body>
+  <div class="top-bar">
+    <div class="container d-flex justify-content-between align-items-center">
+      <h1><i class="fas fa-link" style="color:var(--gold);margin-right:8px;"></i>Step 3: Payment Links</h1>
+      <a href="index.html"><i class="fas fa-arrow-left"></i> Back to Hub</a>
+    </div>
+  </div>
+
+  <div class="main-content">
+    <div class="page-header">
+      <h2>Create Payment Links</h2>
+      <p class="meta"><i class="fas fa-clock"></i> Time: 2 minutes per link | Share via: text, email, or website</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <h3>Open Payment Links</h3>
+      <p>Go to your Stripe Dashboard:</p>
+      <a href="https://dashboard.stripe.com/payment-links" target="_blank" class="action-link"><i class="fas fa-external-link-alt"></i>Open Payment Links</a>
+      <p style="margin-top:10px;">Or from dashboard: <strong>Payments > Payment Links</strong> in the left sidebar.</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <h3>Click "+ New" to Create a Link</h3>
+      <p>Click the <strong>"+ New"</strong> button. You'll set up what the client is paying for.</p>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <h3>Configure the Payment</h3>
+      <p>Choose one of these setups based on what you need:</p>
+
+      <div class="use-case-box">
+        <h4><i class="fas fa-dollar-sign" style="color:var(--gold);margin-right:6px;"></i> Fixed Amount (e.g., Consultation Fee)</h4>
+        <p>Select "Products or subscriptions" > Create new product > Name: "Legal Consultation" > Price: $250 (one-time)</p>
+      </div>
+
+      <div class="use-case-box">
+        <h4><i class="fas fa-hand-holding-dollar" style="color:var(--gold);margin-right:6px;"></i> Custom Amount (Client Chooses)</h4>
+        <p>Select "Customers choose what to pay" > Set minimum (e.g., $100) > Label: "Payment to Johnson Legal Team"</p>
+      </div>
+
+      <div class="use-case-box">
+        <h4><i class="fas fa-repeat" style="color:var(--gold);margin-right:6px;"></i> Monthly Retainer</h4>
+        <p>Select "Products or subscriptions" > Create new product > Name: "Monthly Retainer" > Price: $500/month (recurring)</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">4</div>
+      <h3>Customize Options</h3>
+      <div class="checkbox-item"><input type="checkbox" id="o1"><label for="o1"><strong>Collect billing address</strong> — recommended for records</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="o2"><label for="o2"><strong>Collect phone number</strong> — optional</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="o3"><label for="o3"><strong>Allow promotion codes</strong> — turn off (not needed for legal fees)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="o4"><label for="o4"><strong>Confirmation page</strong> — customize the thank you message</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="o5"><label for="o5"><strong>Require terms of service</strong> — optional (link to your Terms page)</label></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">5</div>
+      <h3>Create & Copy Your Link</h3>
+      <p>Click <strong>"Create link"</strong>. Stripe generates a URL like:</p>
+      <p style="font-family:monospace;background:#f8f9fa;padding:10px;border-radius:6px;font-size:0.85rem;word-break:break-all;">https://buy.stripe.com/your-unique-link-here</p>
+      <p style="margin-top:12px;"><strong>Copy this link and share it:</strong></p>
+      <div class="checkbox-item"><input type="checkbox" id="s1"><label for="s1"><strong>Text it</strong> to a client: "Here's your payment link: [paste link]"</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="s2"><label for="s2"><strong>Email it</strong> in a message or at the end of a consultation</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="s3"><label for="s3"><strong>Add to your website</strong> as a "Pay Now" button</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="s4"><label for="s4"><strong>Include in your email signature</strong> for easy repeat payments</label></div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">6</div>
+      <h3>Suggested Links to Create</h3>
+      <p>Here are the most useful payment links for a law firm. Create each one:</p>
+      <div class="checkbox-item"><input type="checkbox" id="l1"><label for="l1"><strong>Free Consultation Deposit</strong> — $50 (shows commitment, credited toward fees)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="l2"><label for="l2"><strong>Flat Fee: Expungement</strong> — $1,500</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="l3"><label for="l3"><strong>Flat Fee: Traffic Ticket</strong> — $500</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="l4"><label for="l4"><strong>Retainer Deposit</strong> — Customer chooses amount (min $500)</label></div>
+      <div class="checkbox-item"><input type="checkbox" id="l5"><label for="l5"><strong>Custom Payment</strong> — Customer enters any amount (for misc invoices)</label></div>
+      <div class="note"><i class="fas fa-lightbulb"></i> <strong>Pro tip:</strong> Save these links in your phone's notes. When a client says "I'm ready to pay," you can text them the link instantly. They pay in 30 seconds.</div>
+    </div>
+
+    <button class="btn-complete" onclick="markComplete('stripe-links')">
+      <i class="fas fa-check-circle"></i> Mark Payment Links as Complete
+    </button>
+
+    <div class="nav-buttons">
+      <a href="stripe-invoices.html" class="btn-nav btn-prev"><i class="fas fa-arrow-left"></i> Previous: Invoices</a>
+      <a href="stripe-test.html" class="btn-nav btn-next">Next: Test Payment <i class="fas fa-arrow-right"></i></a>
+    </div>
+  </div>
+
+  <script>
+    function markComplete(source){localStorage.setItem('setup-'+source+'-complete','true');alert('Payment Links marked complete! Next: Run a test payment.');window.location.href='stripe-test.html';}
+    document.addEventListener('DOMContentLoaded', () => {
+      if (!localStorage.getItem('tour-stripe-links-seen')) {
+        setTimeout(() => {
+          const driverObj = window.driver.js.driver({
+            showProgress: true, animate: true, smoothScroll: true, stagePadding: 8,
+            steps: [
+              { element: '.step-card:nth-of-type(1)', popover: { title: 'Open Payment Links', description: 'Click the gold button. Payment links are the easiest way to collect money — create a link, send it, get paid.', side: 'bottom' }},
+              { element: '.step-card:nth-of-type(3)', popover: { title: 'Three Types of Links', description: 'Fixed amount for known fees, custom amount for flexible payments, recurring for retainers. Create whichever you need.', side: 'bottom' }},
+              { element: '.step-card:nth-of-type(6)', popover: { title: 'Create These Links', description: 'We recommend creating these 5 links now. Save them in your phone so you can text them to clients instantly.', side: 'top' }},
+              { element: '.btn-complete', popover: { title: 'Created Your Links?', description: 'Mark complete once you have at least one payment link ready to share.', side: 'top' }}
+            ],
+            onDestroyed: () => { localStorage.setItem('tour-stripe-links-seen', 'true'); }
+          });
+          driverObj.drive();
+        }, 600);
+      }
+    });
+  </script>
+</body>
+</html>
