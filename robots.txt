@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /admin-dashboard.html
+Disallow: /jude-leads-dashboard.html
+Disallow: /client-dashboard.html
+
+Sitemap: https://johnsonlegalteam.org/sitemap.xml
