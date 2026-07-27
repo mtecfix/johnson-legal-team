@@ -20,11 +20,17 @@ between SignalWire and the Jude/AWS stack.
 | Item | Value |
 |------|-------|
 | Business Number (toll-free) | **(833) 659-8378** |
+| E.164 | `+18336598378` |
+| SignalWire Number ID | `f10a1818-0f8e-4f58-8578-066614836e54` |
+| Type | Tollfree |
+| Purchased | Oct 7, 2025 at 7:32 PM UTC |
+| Next Billed On | Aug 7, 2026 at 7:32 PM UTC |
+| Capabilities | Voice, Fax, SMS (unverified) |
+| Throughput | 1 Outbound Phone Call / sec (space-wide) |
+| SMS Verification | **Unverified** — must verify to send/receive SMS |
 | Provider | SignalWire |
-| Format | Toll-free (1-833) |
-| Usage | Inbound calls, voicemail, IVR (main client-facing line) |
 | Owner Personal Number | (313) 404-0939 (Zelle/CashApp, not public) |
-| Dashboard | `<space-name>.signalwire.com` — **credentials NOT stored; need from owner** |
+| Dashboard | `<space-name>.signalwire.com` — **Space URL / API credentials still needed** |
 
 The (833) number appears on:
 - Website header/footer (all pages)
@@ -115,14 +121,15 @@ dashboard.
 
 ## Action Items
 
-- [ ] **Get SignalWire Space URL, Project ID, and API Token from owner** (blocking — nothing else can proceed without this)
-- [ ] Verify which number is the toll-free: confirm (833) 659-8378 is on SignalWire
+- [ ] **Get SignalWire Space URL, Project ID, and API Token** (blocking — need these to make API calls)
+- [x] ~~Verify which number is the toll-free: confirm (833) 659-8378 is on SignalWire~~ — **Confirmed**, ID: `f10a1818-0f8e-4f58-8578-066614836e54`
+- [ ] **Verify toll-free number for SMS** — currently "Unverified", meaning SMS send/receive may not work. Submit verification through SignalWire dashboard or API.
 - [ ] Store credentials in AWS Secrets Manager (`johnsonlegalteam/signalwire-api`)
-- [ ] Verify phone number ownership via API: `GET /api/relay/rest/phone_numbers`
-- [ ] Document current call flow / IVR configuration
+- [ ] Document current call flow / IVR configuration (what happens when someone calls the 833 number?)
 - [ ] Resolve OWNER_PHONE inconsistency: jude-notify-owner uses +18336598378, jude-inbox-monitor uses +13134040939
 - [ ] Build webhook Lambda for call event monitoring (Phase 5)
 - [ ] Configure SignalWire Call Flow Builder to send events to webhook
+- [ ] Review billing: next charge Aug 7, 2026 — confirm account is in good standing
 
 ---
 
