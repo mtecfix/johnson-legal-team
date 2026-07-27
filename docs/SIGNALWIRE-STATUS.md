@@ -19,17 +19,30 @@ between SignalWire and the Jude/AWS stack.
 
 | Item | Value |
 |------|-------|
-| Business Number | (833) 659-8378 |
+| Business Number (toll-free) | **(833) 659-8378** |
 | Provider | SignalWire |
 | Format | Toll-free (1-833) |
-| Usage | Inbound calls, voicemail, IVR |
-| Dashboard | `<space-name>.signalwire.com` (credentials with owner) |
+| Usage | Inbound calls, voicemail, IVR (main client-facing line) |
+| Owner Personal Number | (313) 404-0939 (Zelle/CashApp, not public) |
+| Dashboard | `<space-name>.signalwire.com` — **credentials NOT stored; need from owner** |
 
-The number appears on:
+The (833) number appears on:
 - Website header/footer (all pages)
-- Contact page
+- Contact page (emergency phone CTA)
 - Google Business Profile
-- Practice area pages (CTA sections)
+- Practice area pages (consultation CTA sections)
+- All marketing/print materials
+
+### AWS References to These Numbers
+
+| Lambda | Env Var | Value | Purpose |
+|--------|---------|-------|---------|
+| jude-notify-owner | OWNER_PHONE | +18336598378 | SNS SMS alerts to business line |
+| jude-inbox-monitor | OWNER_PHONE | +13134040939 | SNS SMS alerts to personal cell |
+
+**Note:** The `jude-notify-owner` Lambda sends SMS to the **toll-free (833)** number,
+while `jude-inbox-monitor` sends to the **personal (313)** number. This may be
+intentional (different alert routing) or a config inconsistency to verify with owner.
 
 ---
 
@@ -77,18 +90,37 @@ SignalWire Call Events
 
 | Secret | Where to Find | Store In |
 |--------|---------------|----------|
-| Space URL | SignalWire dashboard URL (e.g., `jlt.signalwire.com`) | Secrets Manager |
-| Project ID | Dashboard → API tab | Secrets Manager |
-| API Token | Dashboard → API tab | Secrets Manager |
+| Space URL | SignalWire dashboard URL (e.g., `jlt.signalwire.com`) | Secrets Manager: `johnsonlegalteam/signalwire-api` |
+| Project ID | Dashboard → API tab | Secrets Manager: `johnsonlegalteam/signalwire-api` |
+| API Token | Dashboard → API tab | Secrets Manager: `johnsonlegalteam/signalwire-api` |
+
+**These credentials are NOT anywhere in AWS, the repo, or the local environment.**
+The owner (Attorney Rodney M. Johnson) or whoever set up the SignalWire account
+originally needs to provide them, or grant MR TECH access to the SignalWire
+dashboard.
+
+### How to Find Them
+1. Log into the SignalWire Space (the `.signalwire.com` URL used when the account was created)
+2. Go to the **API** tab in the left sidebar
+3. Copy: Space URL, Project ID, API Token
+4. Store in Secrets Manager:
+   ```bash
+   aws secretsmanager create-secret \
+     --name johnsonlegalteam/signalwire-api \
+     --secret-string '{"space_url":"YOUR_SPACE.signalwire.com","project_id":"...","api_token":"..."}' \
+     --region us-east-1
+   ```
 
 ---
 
 ## Action Items
 
-- [ ] Get SignalWire Space URL, Project ID, and API Token from owner
-- [ ] Store credentials in AWS Secrets Manager
+- [ ] **Get SignalWire Space URL, Project ID, and API Token from owner** (blocking — nothing else can proceed without this)
+- [ ] Verify which number is the toll-free: confirm (833) 659-8378 is on SignalWire
+- [ ] Store credentials in AWS Secrets Manager (`johnsonlegalteam/signalwire-api`)
 - [ ] Verify phone number ownership via API: `GET /api/relay/rest/phone_numbers`
 - [ ] Document current call flow / IVR configuration
+- [ ] Resolve OWNER_PHONE inconsistency: jude-notify-owner uses +18336598378, jude-inbox-monitor uses +13134040939
 - [ ] Build webhook Lambda for call event monitoring (Phase 5)
 - [ ] Configure SignalWire Call Flow Builder to send events to webhook
 
