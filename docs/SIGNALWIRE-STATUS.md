@@ -7,11 +7,13 @@ _Last updated: 2026-07-27_
 
 ## Current State
 
-**Status: CREDENTIALS STORED — Phone number NOT FUNCTIONAL**
+**Status: ✅ PHONE LINE ACTIVE — Forwarding to owner's cell**
 
-The SignalWire account is active and API-accessible, but the phone number has
-**no call handler configured**. All inbound calls are failing. The number needs
-a call flow, forwarding rule, or SWML script assigned before it can answer calls.
+The phone number (833) 659-8378 is now configured to answer calls via a SWML script
+that greets callers and forwards to the owner's cell phone. Voicemail is recorded
+if no one answers.
+
+Configured: **July 27, 2026 at 1:59 PM UTC**
 
 ---
 
@@ -56,44 +58,34 @@ This can be done from the dashboard UI instead.
 | Capabilities | Voice (SMS unverified) |
 | Throughput | 1 Outbound Phone Call / sec (space-wide) |
 | SMS Verification | **Unverified** — cannot send/receive SMS until verified |
-| Call Handler | **⚠️ NONE CONFIGURED — ALL CALLS FAILING** |
+| Call Handler | **SWML Script: forward-to-owner** (active) |
+| Voice URL | `https://mr-tech-fixes.signalwire.com/relay-bins/85f2253f-5d5b-4272-847c-67e7f2529b42` |
+| Call Flow (IVR, built but not assigned) | "Johnson Legal Team" (ID: e90ed97d-2a3e-493c-b871-432d1baebf98) |
 | Applications | None |
 | Queues | None |
 | Recordings | None |
 
-### ⚠️ CRITICAL ISSUE: Phone Number Not Answering Calls
+### Current Call Handling (SWML: forward-to-owner)
 
-**Every inbound call to (833) 659-8378 is failing.** There is no call flow,
-forwarding rule, SWML script, or cXML application assigned to the number.
+When someone calls (833) 659-8378:
+1. Call is answered
+2. Caller hears: *"Thank you for calling Johnson Legal Team. Please hold while we connect you."*
+3. Call forwards to **+1 (313) 404-0939** (owner's cell) — 30 second timeout
+4. If no answer: *"We are sorry, no one is available. Please leave a message after the beep."*
+5. Voicemail is recorded
 
-Call log (all 13 calls on record — ALL failed):
-```
-May 5, 2026  | +10000000000   -> +18336598378 | FAILED | 1s
-May 4, 2026  | +13138259374   -> +18336598378 | FAILED | 2s  (5 attempts)
-Apr 16, 2026 | +13138259374   -> +18336598378 | FAILED | 5s
-Apr 15, 2026 | +13138259374   -> +18336598378 | FAILED | 5s  (5 attempts)
-```
+### Existing IVR Call Flow (built, NOT currently assigned)
 
-The caller +13138259374 appears to be someone testing the line repeatedly.
-No calls have successfully connected since the number was purchased.
+A more professional IVR exists in the account ("Johnson Legal Team", v441) with:
+- **Press 1** = Billing (hold music → account number → AI agent → forward to 313-355-2216)
+- **Press 2** = Online Support (message prompt → voicemail)
+- **Press 3** = Talk to a Lawyer (forward to 313-355-2216)
+- **Press 4** = Leave a Message (voicemail)
+- Voice: Amazon Polly Kendra (female, en-US)
+- AI Agent: `90766844-494d-4147-8f15-a9bdb77557e8`
 
-### To Fix (Minimum Viable — Forward to Owner's Cell)
-
-From the SignalWire dashboard (`mr-tech-fixes.signalwire.com`):
-1. Go to **Phone Numbers** → click the (833) number
-2. Under **Incoming Call Settings**, set **Handle Calls Using** to one of:
-   - **Call Flow Builder** — to create an IVR/menu
-   - **SWML Script** — for programmatic handling
-   - **cXML Webhook** — point to a URL that returns XML instructions
-   - **Forward** — simple forward to `+13134040939` (owner's cell)
-
-Or via API (needs a token with "Numbers" scope):
-```bash
-curl -X PUT "https://mr-tech-fixes.signalwire.com/api/relay/rest/phone_numbers/f10a1818-0f8e-4f58-8578-066614836e54" \
-  -u "<project_id>:<token_with_numbers_scope>" \
-  -H "Content-Type: application/json" \
-  -d '{"call_handler": "laml_webhooks", "call_request_url": "<your_webhook_url>"}'
-```
+To switch to the IVR: In the dashboard, go to Phone Numbers → (833) number → 
+set "Handle Calls Using" to the "Johnson Legal Team" call flow.
 
 The (833) number appears on:
 - Website header/footer (all pages)
@@ -182,12 +174,13 @@ To manage the phone number configuration or send SMS, either:
 
 ## Action Items
 
-### 🔴 URGENT — Phone Not Working
-- [ ] **Configure call handler on (833) 659-8378** — currently ALL calls fail. At minimum, set up forwarding to owner's cell (+13134040939) via the SignalWire dashboard.
+### ✅ RESOLVED — Phone Now Answering
+- [x] ~~Configure call handler on (833) 659-8378~~ — **Done**, forwarding to owner's cell via SWML script
 
 ### High Priority
+- [ ] **Consider switching to the full IVR call flow** — "Johnson Legal Team" IVR is built and ready (menu with Billing/Support/Lawyer/Voicemail). Assign via dashboard: Phone Numbers → 833 → Handle Using: Call Flow.
 - [ ] **Verify toll-free number for SMS** — currently "Unverified", SMS cannot be sent/received
-- [ ] **Generate full-scope API token** — current PT token lacks Numbers and Messages access. Create new token from Dashboard → Settings → API with all scopes enabled.
+- [ ] **Generate full-scope API token** — current PT token works for compatibility API but may have edge cases. Create new token from Dashboard → Settings → API with all scopes.
 - [ ] Update Secrets Manager with new full-scope token once created
 
 ### Medium Priority (Phase 5 — Jude Integration)
@@ -195,8 +188,8 @@ To manage the phone number configuration or send SMS, either:
 - [x] ~~Verify which number is the toll-free~~ — **Confirmed**, ID: `f10a1818-0f8e-4f58-8578-066614836e54`
 - [ ] Resolve OWNER_PHONE inconsistency: jude-notify-owner uses +18336598378, jude-inbox-monitor uses +13134040939
 - [ ] Build webhook Lambda for call event monitoring
-- [ ] Configure SignalWire to POST call events to webhook
-- [ ] Review billing: next charge Aug 7, 2026 — confirm account is in good standing
+- [ ] Configure SignalWire status_callback URL to POST call events to webhook
+- [ ] Review billing: next charge Aug 7, 2026
 
 ---
 
