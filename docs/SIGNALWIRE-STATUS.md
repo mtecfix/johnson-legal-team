@@ -200,3 +200,26 @@ To manage the phone number configuration or send SMS, either:
 - [Call Flow Builder](https://docs.signalwire.com/platform/basics/guides/getting-started-without-code)
 - [Jude Architecture Blueprint](./JUDE-ARCHITECTURE-BLUEPRINT.md) — §4.2 Phone Call Center
 - [Jude OpenClaw Spec](./JUDE-OPENCLAW-SPEC.md) — `call-monitor` skill
+
+---
+
+## Known Limitations (discovered 2026-07-27)
+
+### Account Restrictions
+1. **SWML not functional** — relay-bins (SWML JSON) don't execute on calls. Only LaML (XML) 
+   via `laml-bins` works. This blocks AI agent usage.
+2. **Action URLs don't fire** — Secondary URL fetches during calls (e.g., `<Dial action="...">`) 
+   don't work. Voicemail after decline/timeout doesn't trigger.
+3. **Verified caller ID required** — Only numbers in the verified caller ID list can call in. 
+   Unverified numbers get "call cannot be completed" with no log entry.
+4. **Outbound API works fine** — All URL fetching works for outbound API-initiated calls.
+
+### Impact
+- Voicemail doesn't play after declined/missed calls
+- AI receptionist cannot be used (requires SWML)
+- Only pre-verified numbers can call the business lines
+
+### Recommended Actions
+- Open a SignalWire support ticket about SWML execution and action URL fetching
+- Ask if trial mode restrictions are still active despite "Full" account type
+- Consider hosting a webhook on AWS Lambda for dynamic call routing
