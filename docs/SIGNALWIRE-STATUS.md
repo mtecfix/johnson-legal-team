@@ -7,13 +7,41 @@ _Last updated: 2026-07-27_
 
 ## Current State
 
-**Status: NOT INTEGRATED (Phase 5 — Not Started)**
+**Status: CREDENTIALS STORED — Phone number NOT FUNCTIONAL**
 
-The firm's phone system runs on SignalWire independently of the website and AWS
-infrastructure. No API credentials, webhooks, or programmatic connections exist
-between SignalWire and the Jude/AWS stack.
+The SignalWire account is active and API-accessible, but the phone number has
+**no call handler configured**. All inbound calls are failing. The number needs
+a call flow, forwarding rule, or SWML script assigned before it can answer calls.
 
 ---
+
+## Account Details
+
+| Item | Value |
+|------|-------|
+| Space URL | `mr-tech-fixes.signalwire.com` |
+| Project ID | `e812b295-f230-4a60-a784-e74b60a4e14c` |
+| Project Name | Main |
+| Account Status | **Active** |
+| Account Created | Oct 5, 2025 |
+| Region | us-west |
+| AWS Secret | `johnsonlegalteam/signalwire-api` (Secrets Manager, us-east-1) |
+
+### API Token Scopes (PT token)
+
+| Endpoint | Access |
+|----------|--------|
+| Account Info | ✅ |
+| Calls (list/read) | ✅ |
+| Recordings | ✅ |
+| Applications | ✅ |
+| Queues | ✅ |
+| Phone Numbers (list/config) | ❌ Unauthorized |
+| Messages | ❌ Unauthorized |
+
+**Note:** The current API token (`PT...`) has limited scopes. To configure the
+phone number's call handler via API, a token with "Numbers" scope is needed.
+This can be done from the dashboard UI instead.
 
 ## Existing Phone Setup
 
@@ -25,12 +53,47 @@ between SignalWire and the Jude/AWS stack.
 | Type | Tollfree |
 | Purchased | Oct 7, 2025 at 7:32 PM UTC |
 | Next Billed On | Aug 7, 2026 at 7:32 PM UTC |
-| Capabilities | Voice, Fax, SMS (unverified) |
+| Capabilities | Voice (SMS unverified) |
 | Throughput | 1 Outbound Phone Call / sec (space-wide) |
-| SMS Verification | **Unverified** — must verify to send/receive SMS |
-| Provider | SignalWire |
-| Owner Personal Number | (313) 404-0939 (Zelle/CashApp, not public) |
-| Dashboard | `<space-name>.signalwire.com` — **Space URL / API credentials still needed** |
+| SMS Verification | **Unverified** — cannot send/receive SMS until verified |
+| Call Handler | **⚠️ NONE CONFIGURED — ALL CALLS FAILING** |
+| Applications | None |
+| Queues | None |
+| Recordings | None |
+
+### ⚠️ CRITICAL ISSUE: Phone Number Not Answering Calls
+
+**Every inbound call to (833) 659-8378 is failing.** There is no call flow,
+forwarding rule, SWML script, or cXML application assigned to the number.
+
+Call log (all 13 calls on record — ALL failed):
+```
+May 5, 2026  | +10000000000   -> +18336598378 | FAILED | 1s
+May 4, 2026  | +13138259374   -> +18336598378 | FAILED | 2s  (5 attempts)
+Apr 16, 2026 | +13138259374   -> +18336598378 | FAILED | 5s
+Apr 15, 2026 | +13138259374   -> +18336598378 | FAILED | 5s  (5 attempts)
+```
+
+The caller +13138259374 appears to be someone testing the line repeatedly.
+No calls have successfully connected since the number was purchased.
+
+### To Fix (Minimum Viable — Forward to Owner's Cell)
+
+From the SignalWire dashboard (`mr-tech-fixes.signalwire.com`):
+1. Go to **Phone Numbers** → click the (833) number
+2. Under **Incoming Call Settings**, set **Handle Calls Using** to one of:
+   - **Call Flow Builder** — to create an IVR/menu
+   - **SWML Script** — for programmatic handling
+   - **cXML Webhook** — point to a URL that returns XML instructions
+   - **Forward** — simple forward to `+13134040939` (owner's cell)
+
+Or via API (needs a token with "Numbers" scope):
+```bash
+curl -X PUT "https://mr-tech-fixes.signalwire.com/api/relay/rest/phone_numbers/f10a1818-0f8e-4f58-8578-066614836e54" \
+  -u "<project_id>:<token_with_numbers_scope>" \
+  -H "Content-Type: application/json" \
+  -d '{"call_handler": "laml_webhooks", "call_request_url": "<your_webhook_url>"}'
+```
 
 The (833) number appears on:
 - Website header/footer (all pages)
@@ -92,43 +155,47 @@ SignalWire Call Events
 
 ---
 
-## Required Credentials (Not Yet Stored)
+## Required Credentials (Now Stored ✅)
 
-| Secret | Where to Find | Store In |
-|--------|---------------|----------|
-| Space URL | SignalWire dashboard URL (e.g., `jlt.signalwire.com`) | Secrets Manager: `johnsonlegalteam/signalwire-api` |
-| Project ID | Dashboard → API tab | Secrets Manager: `johnsonlegalteam/signalwire-api` |
-| API Token | Dashboard → API tab | Secrets Manager: `johnsonlegalteam/signalwire-api` |
+Credentials stored in AWS Secrets Manager:
+```
+Secret Name: johnsonlegalteam/signalwire-api
+Region: us-east-1
+ARN: arn:aws:secretsmanager:us-east-1:663877906756:secret:johnsonlegalteam/signalwire-api-wJmxwL
+```
 
-**These credentials are NOT anywhere in AWS, the repo, or the local environment.**
-The owner (Attorney Rodney M. Johnson) or whoever set up the SignalWire account
-originally needs to provide them, or grant MR TECH access to the SignalWire
-dashboard.
+Contents:
+```json
+{
+  "space_url": "mr-tech-fixes.signalwire.com",
+  "project_id": "e812b295-f230-4a60-a784-e74b60a4e14c",
+  "api_token": "PT..."
+}
+```
 
-### How to Find Them
-1. Log into the SignalWire Space (the `.signalwire.com` URL used when the account was created)
-2. Go to the **API** tab in the left sidebar
-3. Copy: Space URL, Project ID, API Token
-4. Store in Secrets Manager:
-   ```bash
-   aws secretsmanager create-secret \
-     --name johnsonlegalteam/signalwire-api \
-     --secret-string '{"space_url":"YOUR_SPACE.signalwire.com","project_id":"...","api_token":"..."}' \
-     --region us-east-1
-   ```
+**Limitation:** The stored token has restricted scopes (no Numbers, no Messages).
+To manage the phone number configuration or send SMS, either:
+1. Use the SignalWire dashboard UI directly, OR
+2. Generate a new API token with full scopes from Dashboard → Settings → API
 
 ---
 
 ## Action Items
 
-- [ ] **Get SignalWire Space URL, Project ID, and API Token** (blocking — need these to make API calls)
-- [x] ~~Verify which number is the toll-free: confirm (833) 659-8378 is on SignalWire~~ — **Confirmed**, ID: `f10a1818-0f8e-4f58-8578-066614836e54`
-- [ ] **Verify toll-free number for SMS** — currently "Unverified", meaning SMS send/receive may not work. Submit verification through SignalWire dashboard or API.
-- [ ] Store credentials in AWS Secrets Manager (`johnsonlegalteam/signalwire-api`)
-- [ ] Document current call flow / IVR configuration (what happens when someone calls the 833 number?)
+### 🔴 URGENT — Phone Not Working
+- [ ] **Configure call handler on (833) 659-8378** — currently ALL calls fail. At minimum, set up forwarding to owner's cell (+13134040939) via the SignalWire dashboard.
+
+### High Priority
+- [ ] **Verify toll-free number for SMS** — currently "Unverified", SMS cannot be sent/received
+- [ ] **Generate full-scope API token** — current PT token lacks Numbers and Messages access. Create new token from Dashboard → Settings → API with all scopes enabled.
+- [ ] Update Secrets Manager with new full-scope token once created
+
+### Medium Priority (Phase 5 — Jude Integration)
+- [x] ~~Get SignalWire Space URL, Project ID, and API Token~~ — **Done**, stored in Secrets Manager
+- [x] ~~Verify which number is the toll-free~~ — **Confirmed**, ID: `f10a1818-0f8e-4f58-8578-066614836e54`
 - [ ] Resolve OWNER_PHONE inconsistency: jude-notify-owner uses +18336598378, jude-inbox-monitor uses +13134040939
-- [ ] Build webhook Lambda for call event monitoring (Phase 5)
-- [ ] Configure SignalWire Call Flow Builder to send events to webhook
+- [ ] Build webhook Lambda for call event monitoring
+- [ ] Configure SignalWire to POST call events to webhook
 - [ ] Review billing: next charge Aug 7, 2026 — confirm account is in good standing
 
 ---
