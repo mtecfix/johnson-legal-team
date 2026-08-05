@@ -1,5 +1,5 @@
 'use strict';
-// Jude Inbox Monitor v2 — Runs every 3 hours via EventBridge
+// JLT Inbox Monitor v2 — Runs every 3 hours via EventBridge
 // 1. Scans for potential leads & unresolved business threads
 // 2. Security scan for intrusion/phishing attempts
 // 3. Sends security summary to MR TECH for approval before quarantine
@@ -10,8 +10,8 @@ const { DynamoDBClient } = require('@aws-sdk/client-dynamodb');
 const { DynamoDBDocumentClient, PutCommand, QueryCommand } = require('@aws-sdk/lib-dynamodb');
 const { SESv2Client, SendEmailCommand } = require('@aws-sdk/client-sesv2');
 
-const TABLE_NAME = process.env.TABLE_NAME || 'jude-events';
-const LEADS_TABLE = process.env.LEADS_TABLE || 'jude-leads';
+const TABLE_NAME = process.env.TABLE_NAME || 'jlt-events';
+const LEADS_TABLE = process.env.LEADS_TABLE || 'jlt-leads';
 const OWNER_EMAIL = process.env.OWNER_EMAIL || 'johnsonlegalteam@gmail.com';
 const TECH_EMAIL = process.env.TECH_EMAIL || 'mrtechfixes.ai@gmail.com';
 const FROM_EMAIL = process.env.FROM_EMAIL || 'johnsonlegalteam@gmail.com';
@@ -88,7 +88,7 @@ const BUSINESS_THREAD_INDICATORS = [
 
 // --- Main Handler ---
 exports.handler = async (event) => {
-  console.log('Jude inbox monitor v2 triggered:', new Date().toISOString());
+  console.log('JLT inbox monitor v2 triggered:', new Date().toISOString());
 
   const ddb = DynamoDBDocumentClient.from(new DynamoDBClient({}));
   const ses = new SESv2Client({});
@@ -385,7 +385,7 @@ async function sendSecurityAlert(ses, threats) {
 
   let html = `<html><body style="font-family: monospace; padding: 20px; background: #1a1a1a; color: #e0e0e0;">`;
   html += `<div style="background: #b71c1c; padding: 15px; border-radius: 6px; margin-bottom: 20px;">`;
-  html += `<h2 style="color: #fff; margin: 0;">🛡️ JUDE SECURITY SCAN — Threats Detected</h2>`;
+  html += `<h2 style="color: #fff; margin: 0;">🛡️ JLT SECURITY SCAN — Threats Detected</h2>`;
   html += `<p style="color: #ffcdd2; margin: 5px 0 0;">Scan time: ${now} | ${threats.length} suspicious email(s) flagged</p></div>`;
 
   html += `<p style="color: #ffd54f; font-weight: bold;">⚠️ ACTION REQUIRED: Reply APPROVE to quarantine/delete, or IGNORE to leave as-is.</p>`;
@@ -407,13 +407,13 @@ async function sendSecurityAlert(ses, threats) {
   });
 
   html += `<div style="margin-top: 20px; padding: 15px; background: #263238; border-radius: 6px;">`;
-  html += `<p style="color: #80cbc4; margin: 0;"><strong>No emails have been deleted or moved.</strong> Jude is awaiting your authorization.</p>`;
+  html += `<p style="color: #80cbc4; margin: 0;"><strong>No emails have been deleted or moved.</strong> Awaiting your authorization.</p>`;
   html += `<p style="color: #90a4ae; margin: 5px 0 0;">Reply to this email with:<br/>`;
   html += `• <strong>APPROVE ALL</strong> — quarantine all flagged emails<br/>`;
   html += `• <strong>APPROVE [1,3]</strong> — quarantine specific items by number<br/>`;
   html += `• <strong>IGNORE</strong> — take no action</p></div>`;
 
-  html += `<p style="color: #616161; margin-top: 20px; font-size: 12px;">— Jude Security Module | Next scan in 3 hours</p>`;
+  html += `<p style="color: #616161; margin-top: 20px; font-size: 12px;">— JLT Security Module | Next scan in 3 hours</p>`;
   html += `</body></html>`;
 
   const textBody = threats.map((t, i) =>
@@ -424,17 +424,17 @@ async function sendSecurityAlert(ses, threats) {
   ).join('\n');
 
   await ses.send(new SendEmailCommand({
-    FromEmailAddress: `Jude Security <${FROM_EMAIL}>`,
+    FromEmailAddress: `JLT Security <${FROM_EMAIL}>`,
     Destination: { ToAddresses: [TECH_EMAIL] },
     Content: {
       Simple: {
         Subject: {
-          Data: `🛡️ [JUDE SECURITY] ${threats.length} threat(s) detected — Approval needed`,
+          Data: `🛡️ [JLT SECURITY] ${threats.length} threat(s) detected — Approval needed`,
           Charset: 'UTF-8',
         },
         Body: {
           Html: { Data: html, Charset: 'UTF-8' },
-          Text: { Data: `JUDE SECURITY SCAN\n\n${textBody}\n\nReply APPROVE to quarantine or IGNORE to skip.\n\nNo action taken without your approval.`, Charset: 'UTF-8' },
+          Text: { Data: `JLT SECURITY SCAN\n\n${textBody}\n\nReply APPROVE to quarantine or IGNORE to skip.\n\nNo action taken without your approval.`, Charset: 'UTF-8' },
         },
       },
     },
@@ -450,8 +450,8 @@ async function sendTechError(ses, errorMsg) {
       Destination: { ToAddresses: [TECH_EMAIL] },
       Content: {
         Simple: {
-          Subject: { Data: `[JUDE-ERROR] inbox-monitor: ${errorMsg.slice(0, 60)}`, Charset: 'UTF-8' },
-          Body: { Text: { Data: `Jude inbox monitor failed at ${new Date().toISOString()}\n\nError: ${errorMsg}`, Charset: 'UTF-8' } },
+          Subject: { Data: `[JLT-ERROR] inbox-monitor: ${errorMsg.slice(0, 60)}`, Charset: 'UTF-8' },
+          Body: { Text: { Data: `JLT inbox monitor failed at ${new Date().toISOString()}\n\nError: ${errorMsg}`, Charset: 'UTF-8' } },
         },
       },
     }));

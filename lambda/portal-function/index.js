@@ -554,7 +554,7 @@ async function adminMessages(ctx) {
     };
     await db().send(new PutCommand({ TableName: TABLE, Item: item }));
 
-    // Log to communication memory (for Jude style-learning)
+    // Log to communication memory (for communication style-learning)
     try {
       await logToMemory({
         to: clientName,
@@ -837,7 +837,7 @@ function escHtml(s) { return String(s || '').replace(/&/g, '&amp;').replace(/</g
 
 // --- Communication Memory (style learning) -----------------------------------
 
-// Logs a compact summary of every outgoing message for Jude to reference
+// Logs a compact summary of every outgoing message for system reference
 // when matching Attorney Johnson's communication style. Stored as a rolling
 // buffer in DynamoDB — max 50 entries, oldest pruned automatically.
 async function logToMemory(data) {
@@ -938,8 +938,8 @@ async function lifecycleNotify(eventType, data, ctx) {
           to_user_id: data.user_id, to_name: data.client_name,
           to_address: data.client_email,
           subject: 'Welcome to Johnson Legal Team — Getting Started',
-          body: '[Auto] Welcome/onboarding letter sent via Jude lifecycle.',
-          sent_by: 'jude-lifecycle',
+          body: '[Auto] Welcome/onboarding letter sent via JLT lifecycle.',
+          sent_by: jlt-lifecycle,
           status: 'sent',
           created_at: new Date().toISOString(),
         },
@@ -1005,8 +1005,8 @@ async function lifecycleNotify(eventType, data, ctx) {
           to_user_id: data.user_id, to_name: data.client_name,
           to_address: data.client_email,
           subject: 'Thank You — Johnson Legal Team',
-          body: '[Auto] Thank-you letter sent via Jude lifecycle on case closure.',
-          sent_by: 'jude-lifecycle',
+          body: '[Auto] Thank-you letter sent via JLT lifecycle on case closure.',
+          sent_by: jlt-lifecycle,
           status: 'sent',
           created_at: new Date().toISOString(),
         },

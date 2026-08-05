@@ -1,8 +1,6 @@
 // Johnson Legal Team — Practice Manager Dashboard
-// Integrates with Portal API (Cognito-authed) + Jude Leads API
 'use strict';
 
-const JUDE_API = 'https://mpiai89295.execute-api.us-east-1.amazonaws.com';
 let currentRole = 'client';
 let leadsData = [];
 let clientsData = [];
@@ -12,7 +10,6 @@ let currentCaseUserId = null;
 // ═══════════════════════════════════════════════════════════════
 // ROLE DEFINITIONS
 // ═══════════════════════════════════════════════════════════════
-// super_admin (MR TECH): Full system access — all modules + system config + user roles + Jude AI
 // admin (Attorney Johnson): Practice management — dashboard, leads, cases, contacts, calendar, docs, messages, invoices, payments, registrations
 // staff (paralegals/assistants): Limited — dashboard (read-only), cases (assigned), contacts, calendar, docs, messages
 
@@ -25,9 +22,6 @@ const ROLE_LABELS = {
 
 // What each role's dashboard home shows
 const ROLE_DASHBOARD = {
-  super_admin: { stats: ['clients','cases','deadlines','registrations'], showJudeStatus: true },
-  admin:       { stats: ['clients','cases','deadlines','registrations'], showJudeStatus: true },
-  staff:       { stats: ['cases','deadlines'], showJudeStatus: false },
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -150,9 +144,6 @@ function applyDashboardRole(role) {
     }
   });
 
-  // Jude status panel
-  const judeCol = document.querySelector('#panelDashboard .col-lg-4');
-  if (judeCol && !config.showJudeStatus) judeCol.style.display = 'none';
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -559,7 +550,6 @@ function toggleLeadDetail(leadId) {
 async function updateLeadStage(leadId, stage) {
   try {
     const token = sessionStorage.getItem('cognito_access_token');
-    await fetch(`${JUDE_API}/leads/${leadId}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
       body: JSON.stringify({ stage }),

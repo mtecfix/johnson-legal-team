@@ -1,6 +1,6 @@
 // Contact form handler for Johnson Legal Team.
-// Submits leads to the Jude Leads Engine (serverless, no auth required for
-// public submissions — see /jude-backend/leads). The backend classifies,
+// Submits leads to the leads engine (serverless, no auth required for
+// public submissions). The backend classifies,
 // scores, and stores the lead, then alerts firm staff.
 (function () {
   'use strict';
