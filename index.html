@@ -129,11 +129,11 @@
                     <p>As experienced attorneys with over 10 years of combined experience, Johnson Legal Team specializes in probate, estate planning, and family legal matters throughout Michigan. Our dedicated lawyers provide comprehensive estate administration, will contests, guardianship services, and criminal defense representation. Whether you need assistance with complex estate disputes or routine legal matters, our commitment to client success and personalized attention sets us apart.</p>
                     <div class="row mt-4">
                         
-                        <div class="col-4 text-center">
+                        <div class="col-6 text-center">
                             <h4>10+</h4>
                             <p>Years Experience</p>
                         </div>
-                        <div class="col-4 text-center">
+                        <div class="col-6 text-center">
                             <h4>24/7</h4>
                             <p>Client Support</p>
                         </div>
@@ -346,26 +346,9 @@
             form.reset();
         }
         
-        // Animate cases counter
-        function animateCounter() {
-            const counter = document.getElementById('            let current = 0;
-            const target = 99;
-            const increment = target / 50;
-            
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    counter.textContent = target + '+';
-                    clearInterval(timer);
-                } else {
-                    counter.textContent = Math.floor(current) + '+';
-                }
-            }, 40);
-        }
         
         // Initialize
         window.addEventListener('load', () => {
-            animateCounter();
             
             // Initialize captcha when page loads
             document.addEventListener('DOMContentLoaded', function() {

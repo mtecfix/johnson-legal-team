@@ -82,9 +82,6 @@
                     <div class="col-md-4">
                         <div class="stats-widget">
                             <div class="stat-item">
-                                <h3 id="                                <p>Client Satisfaction</p>
-                            </div>
-                            <div class="stat-item">
                                 <h3>10+</h3>
                                 <p>Years Experience</p>
                             </div>
@@ -212,25 +209,7 @@
     </footer>
 
     <script>
-        // Animate cases counter
-        function animateCounter() {
-            const counter = document.getElementById('            let current = 0;
-            const target = 99;
-            const increment = target / 50; // 50 steps
-            
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    counter.textContent = target + '+';
-                    clearInterval(timer);
-                } else {
-                    counter.textContent = Math.floor(current) + '+';
-                }
-            }, 40); // 40ms intervals = 2 second total animation
-        }
         
-        // Start animation when page loads
-        window.addEventListener('load', animateCounter);
     </script>
 
     <script>
