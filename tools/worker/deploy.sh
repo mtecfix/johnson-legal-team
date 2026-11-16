@@ -15,15 +15,25 @@ META=$(jq -nc --arg m "$MODE" '{main_module:"jlt-ab-split.js",compatibility_date
 curl -fsS -X PUT "${AUTH[@]}" "$CF/accounts/$ACCOUNT/workers/scripts/jlt-ab-split" \
   -F "metadata=$META;type=application/json" \
   -F "jlt-ab-split.js=@$DIR/jlt-ab-split.js;type=application/javascript+module" | jq -r '"script uploaded: " + (.success|tostring) + " " + (.errors|tostring)'
-EXISTING=$(curl -fsS "${AUTH[@]}" "$CF/zones/$ZONE/workers/routes" | jq -r '.result[].pattern')
+# Prefix routes ("/page*"): exact-path routes do not match when a query string is present (e.g. ?gclid=),
+# which would bypass the split for every ad click. Non-test paths sharing a prefix pass through the Worker.
+ROUTES=$(curl -fsS "${AUTH[@]}" "$CF/zones/$ZONE/workers/routes")
+WANTED=()
 for host in johnsonlegalteam.org www.johnsonlegalteam.org; do
   for page in expungements misdemeanors personal-injury probate-estate-planning traffic-tickets practice-areas; do
-    for path in "/$page" "/$page.html"; do
-      pattern="$host$path"
-      if grep -qxF "$pattern" <<<"$EXISTING"; then continue; fi
-      curl -fsS -X POST "${AUTH[@]}" -H "Content-Type: application/json" "$CF/zones/$ZONE/workers/routes" \
-        -d "$(jq -nc --arg p "$pattern" '{pattern:$p,script:"jlt-ab-split"}')" | jq -r --arg p "$pattern" '"route " + $p + ": " + (.success|tostring)'
-    done
+    WANTED+=("$host/$page*")
   done
+done
+# Remove this Worker's routes that are no longer wanted (e.g. older exact-path routes).
+jq -r '.result[]|select(.script=="jlt-ab-split")|.id+" "+.pattern' <<<"$ROUTES" | while read -r id pattern; do
+  if ! printf '%s\n' "${WANTED[@]}" | grep -qxF "$pattern"; then
+    curl -fsS -X DELETE "${AUTH[@]}" "$CF/zones/$ZONE/workers/routes/$id" | jq -r --arg p "$pattern" '"removed route " + $p + ": " + (.success|tostring)'
+  fi
+done
+EXISTING=$(jq -r '.result[].pattern' <<<"$ROUTES")
+for pattern in "${WANTED[@]}"; do
+  if grep -qxF "$pattern" <<<"$EXISTING"; then continue; fi
+  curl -fsS -X POST "${AUTH[@]}" -H "Content-Type: application/json" "$CF/zones/$ZONE/workers/routes" \
+    -d "$(jq -nc --arg p "$pattern" '{pattern:$p,script:"jlt-ab-split"}')" | jq -r --arg p "$pattern" '"route " + $p + ": " + (.success|tostring)'
 done
 echo "routes now: $(curl -fsS "${AUTH[@]}" "$CF/zones/$ZONE/workers/routes" | jq '[.result[]|select(.script=="jlt-ab-split")]|length') (mode: $MODE)"
