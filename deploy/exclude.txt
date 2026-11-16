@@ -1,0 +1,30 @@
+# Paths never published to the johnsonlegalteam.org bucket.
+#   /dir/   root-anchored directory      /file   root-anchored file (glob ok)      name   basename glob anywhere
+/.git/
+/.github/
+/deploy/
+/tools/
+/lambda/
+/docs/
+/api/
+/portal-api/
+/_site/
+/admin/SETUP.md
+/README.md
+/CASE-STUDY.md
+/DEPLOY.md
+/KIRO-RESUME.md
+/PICKUP-HERE.txt
+/LICENSE
+/netlify.toml
+/package.json
+/.gitignore
+/variants.html
+/plan.json
+.env*
+*.sql
+rds-credentials.json
+client_secret_*.json
+.DS_Store
+*.pyc
+__pycache__

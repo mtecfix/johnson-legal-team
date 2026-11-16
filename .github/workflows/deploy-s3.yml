@@ -1,0 +1,68 @@
+name: Deploy johnsonlegalteam.org (S3)
+
+# push to "production"        -> upload new/changed files only; never deletes
+# push tag "s3-prune-*"       -> upload + delete bucket objects that are not in the build
+# Both pause at the "production" environment for approval before anything is written.
+# Rollback: push a revert to production (or restore object versions; the bucket is versioned).
+
+on:
+  push:
+    branches: [production]
+    tags: ['s3-prune-*']
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: s3-deploy-johnsonlegalteam
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  BUCKET: johnsonlegalteam.org
+  SITE_URL: https://johnsonlegalteam.org
+  PURGE_SECRET: johnsonlegalteam/cloudflare-purge
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      changes: ${{ steps.plan.outputs.changes }}
+      plan_sha: ${{ steps.plan.outputs.plan_sha }}
+      mode: ${{ steps.mode.outputs.mode }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: mode
+        run: echo "mode=${{ startsWith(github.ref, 'refs/tags/s3-prune-') && 'prune' || 'upload' }}" >> "$GITHUB_OUTPUT"
+      - name: Build site
+        run: python3 deploy/build_site.py _site
+      - name: Pre-deploy checks
+        run: python3 deploy/check_site.py _site
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::663877906756:role/jlt-site-plan
+          aws-region: ${{ env.AWS_REGION }}
+      - id: plan
+        name: Plan (dry run)
+        run: python3 deploy/s3_plan.py _site --bucket "$BUCKET" --region "$AWS_REGION" --mode "${{ steps.mode.outputs.mode }}" --out plan.json
+
+  deploy:
+    needs: plan
+    if: needs.plan.outputs.changes != '0'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build site
+        run: python3 deploy/build_site.py _site
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::663877906756:role/jlt-site-deploy
+          aws-region: ${{ env.AWS_REGION }}
+      - name: Re-plan and confirm it matches the approved plan
+        run: python3 deploy/s3_plan.py _site --bucket "$BUCKET" --region "$AWS_REGION" --mode "${{ needs.plan.outputs.mode }}" --out plan.json --expect-sha "${{ needs.plan.outputs.plan_sha }}"
+      - name: Apply
+        run: python3 deploy/s3_apply.py plan.json _site --region "$AWS_REGION" --purge-secret "$PURGE_SECRET" --site-url "$SITE_URL"
+      - name: Smoke test
+        run: python3 deploy/smoke_test.py "$SITE_URL" plan.json
