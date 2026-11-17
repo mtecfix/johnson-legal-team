@@ -1232,4 +1232,9 @@ html {
     }
 }
 
-
+/* Desktop header alignment: move the primary navigation logo 25px left. */
+@media (min-width: 992px) {
+    .site-header .navbar-brand {
+        margin-left: -25px;
+    }
+}
