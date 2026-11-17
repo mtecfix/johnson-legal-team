@@ -1,0 +1,14 @@
+{
+  "name": "johnsonlegalteam/php-api",
+  "description": "JLT form backend (Bref on AWS Lambda, DynamoDB, SES, Cognito)",
+  "type": "project",
+  "require": {
+    "php": ">=8.3",
+    "aws/aws-sdk-php": "^3.300",
+    "bref/bref": "^3.0"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  }
+}

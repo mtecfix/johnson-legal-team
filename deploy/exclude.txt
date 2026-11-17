@@ -4,6 +4,7 @@
 /.github/
 /deploy/
 /tools/
+/backend/
 /lambda/
 /docs/
 /api/
