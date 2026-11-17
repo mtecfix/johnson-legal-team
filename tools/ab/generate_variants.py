@@ -76,6 +76,9 @@ def head_and_body(html, page, v):
               f'    <link rel="stylesheet" href="{CSS_HREF}">\n</head>')
     html, n = re.subn(r'</head>', inject, html, count=1)
     if n != 1: raise SystemExit(f"{page}: </head> not found")
+    if v == "c":
+        # Variant C's teal theme uses the gold logo.
+        html = html.replace('images/logo-cropped.png', 'images/logo-amber.png')
     html, n = re.subn(r'<body>', f'<body class="ab-v-{v}">', html, count=1)
     if n != 1: raise SystemExit(f"{page}: plain <body> not found")
     label = 'Variant D (mobile only)' if v == 'd' else f'Variant {v.upper()}'
