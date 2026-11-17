@@ -42,6 +42,27 @@
             max-width: 450px;
             width: 100%;
         }
+        /* Desktop (992px+): text and portrait sit side by side. The hero height lives in one
+           variable so the portrait always stays at 80% of it. */
+        @media (min-width: 992px) {
+            .hero-section {
+                --hero-height: 500px;
+                height: var(--hero-height);
+            }
+            .hero-section img.hero-portrait {
+                height: calc(var(--hero-height) * 0.8);
+                width: auto;
+                max-width: 100%;
+                object-fit: cover;
+            }
+        }
+        /* Below 992px the columns stack, so the portrait cannot fit inside the hero; hide it
+           (phones already hid the previous photo). */
+        @media (max-width: 991.98px) {
+            .hero-section img.hero-portrait {
+                display: none;
+            }
+        }
     </style>
     <meta property="og:title" content="Johnson Legal Team | Michigan Attorneys">
     <meta property="og:description" content="Michigan attorneys specializing in personal injury, estate planning, criminal defense, and family law. Serving Wayne and Oakland County.">
@@ -93,7 +114,7 @@
                     <a href="#contact" class="btn btn-primary">Call to Learn More</a>
                 </div>
                 <div class="col-lg-6 order-2 order-lg-2">
-                    <img src="images/attorney-rodney-johnson.png" alt="Attorney Rodney Johnson - Johnson Legal Team" class="img-fluid rounded" style="max-width: 60%; height: auto;">
+                    <img src="images/attorney-rodney-johnson-hero.jpg" alt="Attorney Rodney Johnson - Johnson Legal Team" class="img-fluid rounded hero-portrait" width="533" height="800">
                     <style>
                         @media (max-width: 768px) {
                             .hero-section {
