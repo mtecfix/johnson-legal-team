@@ -1,0 +1,23 @@
+{
+  "policy": {
+    "Statement": [
+      {
+        "Action": "s3:GetObject",
+        "Effect": "Allow",
+        "Principal": "*",
+        "Resource": "arn:aws:s3:::johnsonlegalteam.org/*",
+        "Sid": "PublicReadGetObject"
+      }
+    ],
+    "Version": "2012-10-17"
+  },
+  "versioning": "Enabled",
+  "website": {
+    "ErrorDocument": {
+      "Key": "404.html"
+    },
+    "IndexDocument": {
+      "Suffix": "index.html"
+    }
+  }
+}

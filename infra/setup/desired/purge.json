@@ -1,0 +1,11 @@
+{
+  "permission": "Cache Purge (this zone only)",
+  "secret_keys": [
+    "token",
+    "token_id",
+    "zone_id"
+  ],
+  "status": "active",
+  "zone": "johnsonlegalteam.org",
+  "zone_id": "b8246a2507cf7e50e9041f0dfa9d3c03"
+}

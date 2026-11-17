@@ -1,0 +1,38 @@
+{
+  "description": "GitHub Actions (johnson-legal-team production/s3-prune tags): list johnsonlegalteam.org for deploy plans",
+  "inline_policy": {
+    "Statement": [
+      {
+        "Action": "s3:ListBucket",
+        "Effect": "Allow",
+        "Resource": "arn:aws:s3:::johnsonlegalteam.org",
+        "Sid": "ListSiteBucket"
+      }
+    ],
+    "Version": "2012-10-17"
+  },
+  "inline_policy_name": "list-site-bucket",
+  "trust": {
+    "Statement": [
+      {
+        "Action": "sts:AssumeRoleWithWebIdentity",
+        "Condition": {
+          "StringEquals": {
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com"
+          },
+          "StringLike": {
+            "token.actions.githubusercontent.com:sub": [
+              "repo:mtecfix/johnson-legal-team:ref:refs/heads/production",
+              "repo:mtecfix/johnson-legal-team:ref:refs/tags/s3-prune-*"
+            ]
+          }
+        },
+        "Effect": "Allow",
+        "Principal": {
+          "Federated": "arn:aws:iam::663877906756:oidc-provider/token.actions.githubusercontent.com"
+        }
+      }
+    ],
+    "Version": "2012-10-17"
+  }
+}

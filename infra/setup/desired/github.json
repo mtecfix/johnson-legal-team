@@ -1,0 +1,22 @@
+{
+  "environment": {
+    "branch_policies": [
+      {
+        "name": "production",
+        "type": "branch"
+      },
+      {
+        "name": "s3-prune-*",
+        "type": "tag"
+      }
+    ],
+    "custom_branch_policies": true,
+    "reviewers": [
+      "mtecfix"
+    ]
+  },
+  "production_branch_protection": {
+    "allow_deletions": false,
+    "allow_force_pushes": false
+  }
+}
