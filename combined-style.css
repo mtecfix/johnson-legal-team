@@ -7,6 +7,7 @@
     --primary-text: #2d3748;      /* Dark gray - high contrast text */
     --secondary-text: #4a5568;    /* Medium gray - secondary text */
     --accent-primary: #1a365d;    /* Navy - primary brand color */
+}
 /* Johnson Legal Team - UX Principles-Based Design */
 
 /* 
@@ -1232,4 +1233,9 @@ html {
     }
 }
 
-
+/* Desktop header alignment: move the primary navigation logo 25px left (992px and wider only). */
+@media (min-width: 992px) {
+    .site-header .navbar-brand {
+        margin-left: -25px;
+    }
+}
