@@ -30,7 +30,7 @@ const integrationChecks = [
   ['contact endpoint', contact.includes('https://mpiai89295.execute-api.us-east-1.amazonaws.com/leads')],
   ['contact payload contract', ['from:', 'subject:', 'body,', "source:'contact-form'"].every(value => contact.includes(value))],
   ['CMS blog manifest', blog.includes("new URL('index.json',CONTENT_BASE)")],
-  ['CMS markdown article fetch', blog.includes('.md',CONTENT_BASE')],
+  ['CMS markdown article fetch', blog.includes('.md') && blog.includes('CONTENT_BASE')],
   ['existing client portal login link', layout.includes('../client-login.html')],
   ['static-hosting hash router', read('main.jsx').includes('<HashRouter>')]
 ];
