@@ -101,11 +101,21 @@ class UserRegistration {
             formData.systemRole = document.getElementById('systemRole').value;
         }
 
+        // The profile endpoint verifies this Cognito access token server-side.
+        // Never rely on sessionStorage email or the browser-supplied role as identity.
+        const accessToken = sessionStorage.getItem('cognito_access_token');
+        if (!accessToken) {
+            errorDiv.textContent = 'Your secure session has expired. Please sign in again.';
+            errorDiv.classList.remove('d-none');
+            return;
+        }
+
         try {
             const response = await fetch('api/user-registration.php', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${accessToken}`
                 },
                 body: JSON.stringify(formData)
             });

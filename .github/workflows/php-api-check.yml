@@ -1,0 +1,37 @@
+name: PHP API checks
+
+on:
+  push:
+    paths:
+      - 'php-api/**'
+      - '.github/workflows/php-api-check.yml'
+  pull_request:
+    paths:
+      - 'php-api/**'
+      - '.github/workflows/php-api-check.yml'
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, curl
+          coverage: none
+      - name: Validate Composer manifest
+        run: composer validate --strict
+        working-directory: php-api
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
+        working-directory: php-api
+      - name: PHP syntax checks
+        run: |
+          php -l public/index.php
+          php -l src/bootstrap.php
+          php -l tests/smoke.php
+        working-directory: php-api
+      - name: Smoke tests
+        run: php tests/smoke.php
+        working-directory: php-api

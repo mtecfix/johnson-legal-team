@@ -22,19 +22,21 @@ function decodeJwtPayload(token) {
 }
 
 // Derive role from ID token payload + admin email list
-function getRoleFromPayload(payload, email) {
+function getRoleFromPayload(payload) {
     if (!payload) return 'client';
-    // Support Cognito Groups
-    const groups = payload['cognito:groups'] || [];
-    if (groups.includes('super_admin') || email === 'mrtechfixes.ai@gmail.com') return 'super_admin';
-    if (groups.includes('admin') || ADMIN_EMAILS.includes(email)) return 'admin';
+    // Authorization roles come only from Cognito's signed group claims.
+    // Email addresses and browser-maintained allowlists are not role grants.
+    const raw = payload['cognito:groups'] || [];
+    const groups = Array.isArray(raw) ? raw : String(raw).replace(/[\[\]]/g, '').split(/[\s,]+/).filter(Boolean);
+    if (groups.includes('super_admin')) return 'super_admin';
+    if (groups.includes('admin')) return 'admin';
     return 'client';
 }
 
 function storeSession(tokens) {
     const payload = decodeJwtPayload(tokens.id_token);
     const email   = payload?.email || '';
-    const role    = getRoleFromPayload(payload, email);
+    const role    = getRoleFromPayload(payload);
 
     sessionStorage.setItem('cognito_access_token',  tokens.access_token);
     sessionStorage.setItem('cognito_id_token',       tokens.id_token);
@@ -176,49 +178,36 @@ class CognitoAuth {
 
     async handleRegister(e) {
         e.preventDefault();
-        const firstName = document.getElementById('firstName').value;
-        const lastName  = document.getElementById('lastName').value;
-        const email     = document.getElementById('registerEmail').value.trim();
-        const phone     = document.getElementById('phone').value;
-        const password  = document.getElementById('registerPassword').value;
-        const confirm   = document.getElementById('confirmPassword').value;
+        const firstName = document.getElementById('firstName')?.value.trim() || '';
+        const lastName  = document.getElementById('lastName')?.value.trim() || '';
+        const email     = document.getElementById('registerEmail')?.value.trim().toLowerCase() || '';
         const errorDiv  = document.getElementById('registerError');
         const successDiv = document.getElementById('registerSuccess');
 
-        errorDiv.classList.add('d-none');
-        successDiv.classList.add('d-none');
+        errorDiv?.classList.add('d-none');
+        successDiv?.classList.add('d-none');
 
-        if (password !== confirm) {
-            errorDiv.textContent = 'Passwords do not match.';
-            errorDiv.classList.remove('d-none');
+        if (!firstName || !lastName || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+            if (errorDiv) {
+                errorDiv.textContent = 'Enter your first name, last name, and a valid email address.';
+                errorDiv.classList.remove('d-none');
+            }
             return;
         }
 
-        const attrs = [
-            new AmazonCognitoIdentity.CognitoUserAttribute({ Name: 'email',       Value: email }),
-            new AmazonCognitoIdentity.CognitoUserAttribute({ Name: 'given_name',  Value: firstName }),
-            new AmazonCognitoIdentity.CognitoUserAttribute({ Name: 'family_name', Value: lastName }),
-            new AmazonCognitoIdentity.CognitoUserAttribute({ Name: 'phone_number', Value: phone.startsWith('+') ? phone : `+1${phone.replace(/\D/g,'')}` })
-        ];
-
-        this.userPool.signUp(email, password, attrs, null, (err) => {
-            if (err) {
-                const msgs = {
-                    UsernameExistsException:   'An account with this email already exists.',
-                    InvalidPasswordException:  'Password does not meet requirements.',
-                    InvalidParameterException: 'Please check your input and try again.'
-                };
-                errorDiv.textContent = msgs[err.code] || 'Registration failed. Please try again.';
-                errorDiv.classList.remove('d-none');
-                return;
-            }
-
-            sessionStorage.setItem('pending_registration', JSON.stringify({ email, firstName, lastName, timestamp: Date.now() }));
-            successDiv.textContent = 'Account created! Redirecting to onboarding...';
+        // The deployed Cognito pool is administrator-created/invite-only.
+        // Do not call signUp or collect/store a password here. The firm creates
+        // the Cognito account only after reviewing the legal intake.
+        sessionStorage.setItem('pending_registration', JSON.stringify({
+            email, firstName, lastName, timestamp: Date.now()
+        }));
+        if (successDiv) {
+            successDiv.textContent = 'Your details are saved. Complete the legal intake for attorney review. Portal access is created only after approval.';
             successDiv.classList.remove('d-none');
-            document.getElementById('registerForm').reset();
-            setTimeout(() => { window.location.href = 'legal-onboarding.html?email=' + encodeURIComponent(email); }, 2500);
-        });
+        }
+        setTimeout(() => {
+            window.location.href = 'legal-onboarding.html?email=' + encodeURIComponent(email);
+        }, 1200);
     }
 
     async exchangeCodeForTokens(code) {
