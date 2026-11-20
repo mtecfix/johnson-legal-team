@@ -31,7 +31,7 @@
 - Routes: /profile, /cases, /documents, /messages, /invoices, /appointments, /admin/*
 - Users (2):
   - mrtechfixes.ai@gmail.com — CONFIRMED (super_admin)
-  - johnsonlegalteam@gmail.com — CONFIRMED (password reset Jul 13: `JLT@2026!secure`)
+  - johnsonlegalteam@gmail.com — CONFIRMED (password reset Jul 13: `[rotated 2026-11-20; stored in Secrets Manager: johnsonlegalteam/portal-firm-credentials]`)
 
 ### Layer 3: Jude AI Agent (PARTIALLY DEPLOYED)
 
@@ -224,7 +224,7 @@ npx cdk deploy JudeRouter --context runtime_id=<RUNTIME_ID> --require-approval n
 ### Portal Login (Staff)
 - **URL:** https://mtecfix.github.io/johnson-legal-team/admin/
 - **Admin:** mrtechfixes.ai@gmail.com (super_admin)
-- **Firm:** johnsonlegalteam@gmail.com / `JLT@2026!secure` (reset Jul 13)
+- **Firm:** johnsonlegalteam@gmail.com / `[rotated 2026-11-20; stored in Secrets Manager: johnsonlegalteam/portal-firm-credentials]` (reset Jul 13)
 - **MFA:** TOTP required (authenticator app)
 
 ### AWS Resources
