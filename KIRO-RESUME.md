@@ -1,18 +1,94 @@
 # KIRO SESSION RESUME — Johnson Legal Team
-# Scan this file to restore full project context on relaunch.
-# Last updated: 2026-07-13 7:51 PM ET
+# Scan this file first when reopening the project.
+# Current handoff: 2026-11-20
+# Detailed session notes: KIRO-SESSION-2026-11-20.md
+
+> **Current source of truth:** the detailed handoff linked above and the live AWS/GitHub state. Sections below this current-session summary contain older project notes from July 2026 and must be treated as historical until reverified. Do not assume old credentials, resource states, URLs, deployments, or next steps are still current.
 
 ---
 
-## WHO / WHAT
+## CURRENT SESSION HANDOFF — 2026-11-20
 
-- **User:** mtecfix (GitHub), mrtechfixes.ai@gmail.com
-- **AWS Account:** 663877906756, region us-east-1, IAM user: metrotec
-- **Project:** Johnson Legal Team — solo Michigan law firm (Attorney Rodney Johnson)
-- **Repo:** https://github.com/mtecfix/johnson-legal-team (private, master branch, fully pushed)
-- **Local path:** `/mnt/d/KIRO PROJECTS/johnson legal team`
+### Repository and work branch
+- Repository: https://github.com/mtecfix/johnson-legal-team
+- Base branch: `master`
+- Working branch: `fix/php-onboarding-security`
+- Draft PR: https://github.com/mtecfix/johnson-legal-team/pull/3
+- PR title: **Secure and recover the deployed PHP intake API**
+- PR #3 is OPEN and DRAFT. It has not been merged or deployed.
+- This session added a PHP API recovery/reimplementation baseline under `php-api/`, a PHP CI workflow, and frontend authentication/registration corrections.
+- No production AWS resources or records were modified.
+
+### AWS architecture verified in this session (region us-east-1)
+Two separate JLT backend paths exist. Do not conflate them.
+
+1. **Existing client portal**
+   - CloudFormation stack: `johnson-legal-portal`
+   - Node.js 20 Lambda, API Gateway HTTP API, Cognito User Pool, DynamoDB portal table.
+   - The portal API has approximately 40 routes and a JWT authorizer attached to its protected routes.
+   - The portal DynamoDB table contained 147 records at inspection. Do not read client records unless explicitly needed and authorized.
+
+2. **PHP onboarding API**
+   - CloudFormation stack: `jlt-php-api`
+   - Lambda: `jlt-php-api`, runtime `provided.al2023`, handler `public/index.php`, 1024 MB, 28-second timeout; last modified 2026-11-17.
+   - API Gateway HTTP API route: `ANY /api/{proxy+}`, Lambda proxy integration.
+   - The route's API Gateway authorization type is `NONE`. A Cognito JWT authorizer exists on the API but was not attached to that catch-all route.
+   - Backing tables: `jlt-client-onboarding`, `jlt-legal-onboarding`, `jlt-user-profiles`.
+   - HMAC secret is in Secrets Manager; never print or commit its value.
+   - These three tables had zero records at metadata inspection.
+   - Lambda IAM policy is comparatively narrow: access to those three tables, the specific HMAC secret, SES sending under the firm sender address, Cognito AdminCreateUser on the JLT pool, and CloudWatch logging.
+
+### Confirmed PHP/API security and workflow findings
+- Public intake submission can be unauthenticated by design, but it must validate fields and disclosures server-side.
+- The deployed `user-registration.php` accepted an email from the request body and created a profile without validating a Cognito access token or proving ownership of that email. This is an identity/authorization defect.
+- The deployed browser `user-registration.js` called that endpoint without an Authorization header.
+- The deployed approval token was an HMAC of email, intake type, and action only; it did not bind a unique submission ID or expiry.
+- The deployed client approval path processed every pending intake for an email rather than one exact submission.
+- The legal intake table is keyed by email and the deployed endpoint overwrote the latest intake for that email. The old approval-link design was therefore not safely bound to an individual submission.
+- Browser `cognito-auth.js` called Cognito self-service `signUp`, although the inspected user pool is configured for administrator-created users. This is inconsistent with the deployed invite-only registration model.
+- Browser role calculation also included hard-coded email allowlists. Server-side authorization must rely on signed Cognito group claims and backend authorization, not email strings or browser state.
+- The PHP API catch-all route being unauthenticated at API Gateway is not, by itself, proof that every endpoint is public: inspect application middleware and each handler before concluding. The deployed profile endpoint issue above was confirmed from its handler source.
+- Public S3 website buckets are for public site assets. Do not store confidential client documents in them.
+
+### Changes made on the working branch
+- Added `php-api/public/index.php`, `php-api/src/bootstrap.php`, Composer manifest, README, environment example, .gitignore, and smoke test.
+- Added `.github/workflows/php-api-check.yml`.
+- Changed `user-registration.js` to send the Cognito access token to the profile endpoint.
+- Changed `cognito-auth.js` to remove self-service Cognito sign-up in favor of the invite-only intake flow and derive UI roles from Cognito group claims rather than email allowlists.
+- Added submission-specific, expiring HMAC approval links in the PHP recovery baseline.
+- Added server-side validation of legal intake acknowledgements.
+- Added Cognito access-token verification and verified-email matching for profile creation.
+- See PR #3 for the full diff and review notes.
+
+### Critical qualification — PHP source is a recovery baseline, not yet a verified production replacement
+- The deployed PHP package was inspected from the private SAM deployment bucket and relevant endpoint source was reviewed.
+- The new `php-api/` implementation is a **reconstruction/reimplementation** based on the deployed routes, observed DynamoDB keys, environment variable names, and endpoint behavior. It is not a byte-for-byte recovery of the deployed source package.
+- Its compatibility with the exact Bref runtime, existing HMAC secret JSON shape, Lambda event mapping, and all live table schemas has not yet been proven.
+- Do not deploy this code to production or merge PR #3 until the build, integration tests, security review, and test-environment validation are complete.
+
+### Verification status / where work stopped
+- PR #3 is open as a draft; not merged.
+- GitHub reported no commit status entries and no workflow runs were returned during this session. CI is therefore **not verified as passing**.
+- No PHP runtime/build execution or end-to-end test against AWS was completed.
+- No AWS write operations or production deployments were performed.
+- Next technical steps, if resuming this work:
+  1. Inspect the complete deployed PHP bootstrap/helpers and compare them with `php-api/src/bootstrap.php`.
+  2. Confirm the deployed HMAC secret's JSON key/format without exposing the secret value.
+  3. Verify Bref layer/runtime compatibility, request event mapping, and DynamoDB key schemas.
+  4. Fix any source/CI issues and obtain a passing CI run.
+  5. Deploy only to isolated test resources and test intake, approval, retries, expiry, Cognito invitation, and profile authorization.
+  6. Have a human review the PR before merge and separately authorize any production deployment.
+
+### Data handling
+- The account contains multiple projects. Account-wide counts are not Johnson Legal Team resource counts.
+- This session used resource metadata and selected source files only; it did not inspect client case files or DynamoDB client records.
+- Never copy credentials, tokens, secret values, passwords, or personal client information into Markdown, Git, prompts, or logs.
+- The older notes below contained a plaintext password; that literal has been removed. If that historical password was ever valid and remains in use, rotate it.
 
 ---
+
+## HISTORICAL PROJECT NOTES (2026-07-13 AND EARLIER)
+The remainder of this file is retained as historical context. Re-verify before acting on it.
 
 ## THE SYSTEM (3 layers)
 
@@ -31,7 +107,7 @@
 - Routes: /profile, /cases, /documents, /messages, /invoices, /appointments, /admin/*
 - Users (2):
   - mrtechfixes.ai@gmail.com — CONFIRMED (super_admin)
-  - johnsonlegalteam@gmail.com — CONFIRMED (password reset Jul 13: `JLT@2026!secure`)
+  - johnsonlegalteam@gmail.com — CONFIRMED at the time (historical password details removed; verify current account state)
 
 ### Layer 3: Jude AI Agent (PARTIALLY DEPLOYED)
 
