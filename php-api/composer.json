@@ -1,0 +1,13 @@
+{
+  "name": "johnson-legal-team/php-intake-api",
+  "description": "Version-controlled PHP intake and approval API for Johnson Legal Team",
+  "type": "project",
+  "require": {
+    "php": "^8.2",
+    "aws/aws-sdk-php": "^3.337"
+  },
+  "config": {
+    "sort-packages": true,
+    "optimize-autoloader": true
+  }
+}
