@@ -20,11 +20,11 @@ jobs:
           php-version: '8.2'
           extensions: mbstring, curl
           coverage: none
-      - uses: ramsey/composer-install@v3
-        with:
-          working-directory: php-api
       - name: Validate Composer manifest
         run: composer validate --strict
+        working-directory: php-api
+      - name: Install dependencies
+        run: composer install --no-interaction --prefer-dist
         working-directory: php-api
       - name: PHP syntax checks
         run: |
