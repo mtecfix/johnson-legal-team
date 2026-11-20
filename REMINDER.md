@@ -21,9 +21,10 @@
 
 ## Security (do first)
 
-- [ ] **Rotate the firm portal password.** `KIRO-RESUME.md` holds a plaintext password for the firm's portal account.
-      The repo was public until 2026-11-20, so treat it as exposed. Change it, remove it from the file, and decide
-      whether to rewrite git history.
+- [x] **Firm portal password rotated 2026-11-20.** The new value is only in Secrets Manager (`johnsonlegalteam/portal-firm-credentials`;
+      delete that secret once handed over). The old value was removed from `KIRO-RESUME.md` on production, master, sandbox-variants,
+      bucket-mirror and fix/header-logo-left-spacing-25px. It is still in git history, and in the two draft-PR branches until they merge.
+      Decide whether to rewrite history. Enable TOTP MFA on that account.
 - [ ] **Scan git history for other secrets** (the repo was public).
 - [ ] **Replace `metrotec/github-token`** with a fine-grained token: this repo only, Contents read-only.
       The server picks it up automatically.
@@ -80,8 +81,7 @@
 
 - [ ] Stale CloudFront URL `d1rqv10nry9s54.cloudfront.net` in `.env.example`, `admin/config.yml`, `docs/AUTH_FLOW.md`,
       `portal-api/template.yaml`, `lambda/registration_approver.py`. Replace with `https://johnsonlegalteam.org` or remove.
-- [ ] Portal API and Jude API CORS were set to `https://mtecfix.github.io` *(per Jul 13 notes)*. Confirm they allow
-      `https://johnsonlegalteam.org`, since Pages is now off.
+- [x] Portal API and Jude API CORS now allow johnsonlegalteam.org, www and mtecfix.github.io (2026-11-20). Portal CORS is also in the stack and `portal-api/template.yaml`.
 - [ ] `.github/workflows/deploy-pages.yml` is obsolete now that Pages is off. Remove or disable it.
 - [ ] `admin/config.yml` line 14 still has a "TODO before go-live" comment. Check the `repo` value.
 - [ ] Outdated docs: `KIRO-RESUME.md` (says private, `master`, Pages live), `README.md`, `CASE-STUDY.md`, `DEPLOY.md`.
@@ -90,3 +90,14 @@
 - [ ] Bucket `johnson-legal-sam-deploy-663877906756`: versioning off. Enable it with a lifecycle rule if it is kept.
 - [ ] Possibly unused secrets *(per Jul 13 notes)*: `johnson-legal/rds-credentials`, `johnson-legal/google-oauth-client-secret`,
       `johnsonlegalteam/rds-credentials`, `johnsonlegalteam/google-oauth`. Confirm, then delete (about $0.40 per month each).
+
+## Open items found 2026-11-20
+
+- [ ] **Portal API routes are hand-built and not in the template.** Do not `sam deploy` `portal-api/template.yaml` until it declares
+      the real routes (27 JWT method routes plus 13 open OPTIONS routes). A stack update on 2026-11-20 deleted them; they were rebuilt
+      by hand from an inventory. Fix: declare explicit routes, and OPTIONS routes with AuthorizationType NONE, in the template.
+- [ ] **Two draft PRs are open against `master`** (opened 2026-11-20 12:29 to 12:51 ET by something using the mtecfix GitHub token):
+      #2 React preview (`/react-app`, 27 commits) and #3 PHP API recovery baseline plus changes to `cognito-auth.js` and `user-registration.js`
+      (12 commits). `master` is 16 commits behind `production`, so merging them does not reach the live site. Confirm they are yours.
+- [ ] Confirm the SNS subscription `jlt-cost-report` (email to mrtechfixes.ai@gmail.com), then check the first real cost report.
+- [ ] Three `*.metrotec.online` MCP endpoints on the worker answer without credentials. Put Cloudflare Access in front of them.
