@@ -1,4 +1,4 @@
-import { ArrowUpRight, Scale, Landmark, FileCheck2, ShieldCheck, CarFront, Phone, MapPin, Mail, type as _unused } from 'lucide-react';
+import { ArrowUpRight, Scale, Landmark, FileCheck2, ShieldCheck, CarFront, Phone, MapPin, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const icons = { Scale, Landmark, FileCheck2, ShieldCheck, CarFront };
