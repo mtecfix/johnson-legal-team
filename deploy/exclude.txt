@@ -16,6 +16,7 @@
 /CASE-STUDY.md
 /DEPLOY.md
 /KIRO-RESUME.md
+/REMINDER.md
 /PICKUP-HERE.txt
 /LICENSE
 /netlify.toml
