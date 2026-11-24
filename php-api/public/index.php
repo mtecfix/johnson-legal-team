@@ -17,21 +17,46 @@ function persistIntake(string $type, array $item): void {
     ]);
 }
 
-function updateDecision(string $type, string $email, string $submissionId, string $status): void {
-    $key = $type === 'legal'
+function decisionKey(string $type, string $email, string $submissionId): array {
+    return $type === 'legal'
         ? ['email' => ['S' => $email]]
         : ['email' => ['S' => $email], 'submission_id' => ['S' => $submissionId]];
-    $condition = $type === 'legal'
-        ? '#s = :pending AND submission_id = :id'
-        : '#s = :pending';
-    $values = [':s' => ['S' => $status], ':pending' => ['S' => 'pending_review']];
-    if ($type === 'legal') $values[':id'] = ['S' => $submissionId];
+}
+
+/**
+ * Atomically claims a pending decision. Repeating the same action is allowed so
+ * a failed Lambda invocation can resume; a competing approve/deny action cannot.
+ */
+function claimDecision(string $type, string $email, string $submissionId, string $action): void {
     aws('ddb')->updateItem([
-        'TableName' => tableName($type), 'Key' => $key,
-        'UpdateExpression' => 'SET #s = :s, reviewed_at = :r',
-        'ConditionExpression' => $condition,
+        'TableName' => tableName($type),
+        'Key' => decisionKey($type, $email, $submissionId),
+        'UpdateExpression' => 'SET #s = :processing, decision_action = :action, processing_started_at = :r',
+        'ConditionExpression' => '#s = :pending OR (#s = :processing AND decision_action = :action)',
         'ExpressionAttributeNames' => ['#s' => 'status'],
-        'ExpressionAttributeValues' => $values + [':r' => ['S' => nowIso()]],
+        'ExpressionAttributeValues' => [
+            ':pending' => ['S' => 'pending_review'],
+            ':processing' => ['S' => 'decision_processing'],
+            ':action' => ['S' => $action],
+            ':r' => ['S' => nowIso()],
+        ],
+    ]);
+}
+
+/** Finalizes only the action that successfully claimed this exact submission. */
+function finalizeDecision(string $type, string $email, string $submissionId, string $action, string $status): void {
+    aws('ddb')->updateItem([
+        'TableName' => tableName($type),
+        'Key' => decisionKey($type, $email, $submissionId),
+        'UpdateExpression' => 'SET #s = :final, reviewed_at = :r REMOVE decision_action, processing_started_at',
+        'ConditionExpression' => '#s = :processing AND decision_action = :action',
+        'ExpressionAttributeNames' => ['#s' => 'status'],
+        'ExpressionAttributeValues' => [
+            ':final' => ['S' => $status],
+            ':processing' => ['S' => 'decision_processing'],
+            ':action' => ['S' => $action],
+            ':r' => ['S' => nowIso()],
+        ],
     ]);
 }
 
@@ -149,14 +174,30 @@ function approveRegistration(): never {
         || !hash_equals(approvalToken($email, $type, $action, $id, $expires), $token)) {
         approvalPage('Invalid or expired approval link', '<p>Request a new approval link from the system administrator.</p>', 403);
     }
+
     $record = itemGet($type, $email, $id);
-    if (!$record || ($record['submission_id'] ?? '') !== $id || ($record['status'] ?? '') !== 'pending_review') {
+    $status = $record['status'] ?? '';
+    $resumable = $status === 'decision_processing' && ($record['decision_action'] ?? '') === $action;
+    if (!$record || ($record['submission_id'] ?? '') !== $id
+        || ($status !== 'pending_review' && !$resumable)) {
         approvalPage('Submission already handled', '<p>This intake is no longer pending review.</p>', 409);
     }
+
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') !== 'POST') {
         $label = $action === 'approve' ? 'Approve' : 'Deny';
         approvalPage($label . ' intake', '<p>Confirm the ' . strtolower($label) . ' decision for <strong>' . h($email) . '</strong>.</p>'
             . '<form method="post"><button type="submit">' . $label . ' submission</button></form>');
+    }
+
+    // Claim before any external side effects. If the Lambda fails mid-operation,
+    // the same signed link can resume the same action without allowing the opposite decision.
+    try {
+        claimDecision($type, $email, $id, $action);
+    } catch (Aws\DynamoDb\Exception\DynamoDbException $e) {
+        if ($e->getAwsErrorCode() === 'ConditionalCheckFailedException') {
+            approvalPage('Submission already handled', '<p>A decision is already being processed or has been recorded.</p>', 409);
+        }
+        throw $e;
     }
 
     if ($action === 'approve') {
@@ -174,6 +215,7 @@ function approveRegistration(): never {
         } catch (Aws\CognitoIdentityProvider\Exception\CognitoIdentityProviderException $e) {
             if ($e->getAwsErrorCode() !== 'UsernameExistsException') throw $e;
         }
+
         try {
             aws('ddb')->putItem([
                 'TableName' => tableName('profiles'),
@@ -189,16 +231,9 @@ function approveRegistration(): never {
         } catch (Aws\DynamoDb\Exception\DynamoDbException $e) {
             if ($e->getAwsErrorCode() !== 'ConditionalCheckFailedException') throw $e;
         }
-    }
-    try {
-        updateDecision($type, $email, $id, $action === 'approve' ? 'approved' : 'denied');
-    } catch (Aws\DynamoDb\Exception\DynamoDbException $e) {
-        if ($e->getAwsErrorCode() === 'ConditionalCheckFailedException') {
-            approvalPage('Submission already handled', '<p>Another request has already processed this intake.</p>', 409);
-        }
-        throw $e;
-    }
-    if ($action === 'deny') {
+        finalizeDecision($type, $email, $id, $action, 'approved');
+    } else {
+        finalizeDecision($type, $email, $id, $action, 'denied');
         try {
             sendEmail([$email], 'Registration update — Johnson Legal Team',
                 '<p>Thank you for your interest. After review, we are unable to approve portal access at this time.</p>');
@@ -206,6 +241,7 @@ function approveRegistration(): never {
             error_log('[jlt-api] denial saved; client notification failed: ' . $e->getMessage());
         }
     }
+
     approvalPage('Decision recorded', '<p>The submission for <strong>' . h($email) . '</strong> was ' . h($action) . 'd.</p>'
         . ($action === 'approve' ? '<p>Cognito account invitation was requested. If the account already existed, no duplicate was created.</p>' : ''));
 }
