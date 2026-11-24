@@ -26,11 +26,12 @@
 - Added `PHP-COMPATIBILITY-AUDIT-2026-11-24.md` with evidence, compatibility notes, and remaining blockers.
 - Aligned the public registration page with the invite-only workflow: its form now submits contact details to the legal-intake step instead of requesting a password or expecting an authenticated session.
 - Carried phone/address fields from registration into the legal intake and approved client profile.
+- Reviewed the separate Node.js portal API: all application routes use Cognito JWT authorization; `/admin/*` additionally requires `admin` or `super_admin` group claims, and role changes require `super_admin`.
 - Confirmed the deployed S3 website was inspected read-only; no production website objects were changed.
 
 ### Current status
 - Branch: `fix/php-onboarding-security`.
-- Branch comparison: 26 commits ahead of `master`, 1 commit behind; branch is diverged and must be reconciled before merge.
+- Branch comparison: 29 commits ahead of `master`, 1 commit behind; branch is diverged and must be reconciled before merge.
 - The previously observed PHP Actions run 7 passed for an earlier branch head. The newest approval-state-machine, registration-flow, test-suite, and documentation changes still need a confirmed CI run. The GitHub connector did not return a workflow run/status for these latest commits.
 - No production AWS resources, tables, secrets, or live data were modified.
 - No production deployment or merge is approved. Remaining blockers: confirm CI on the latest head, add approval/HMAC/DynamoDB tests, validate the exact Bref build/package, verify actual browser payloads and Cognito staff login, and prepare rollback/recovery procedures.
