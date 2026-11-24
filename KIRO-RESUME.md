@@ -1,13 +1,41 @@
 # KIRO SESSION RESUME — Johnson Legal Team
 # Scan this file first when reopening the project.
-# Current handoff: 2026-11-20
-# Detailed session notes: KIRO-SESSION-2026-11-20.md
+# Current handoff: 2026-11-24
+# Latest audit: PHP-COMPATIBILITY-AUDIT-2026-11-24.md
+# Prior session notes: KIRO-SESSION-2026-11-20.md
 
 > **Current source of truth:** the detailed handoff linked above and the live AWS/GitHub state. Sections below this current-session summary contain older project notes from July 2026 and must be treated as historical until reverified. Do not assume old credentials, resource states, URLs, deployments, or next steps are still current.
 
 ---
 
-## CURRENT SESSION HANDOFF — 2026-11-20
+## CURRENT SESSION UPDATE — 2026-11-24
+
+### PHP production compatibility audit
+- Compared the branch reconstruction with the deployed PHP Lambda ZIP and live AWS configuration.
+- Confirmed runtime compatibility targets: `provided.al2023`, handler `public/index.php`, Bref PHP 8.3 layer v25, `BREF_RUNTIME=fpm`.
+- Confirmed all three DynamoDB table key schemas match the branch's current table access logic. Legal intake remains one item per email; client onboarding uses email + submission_id.
+- Confirmed the deployed HMAC secret is JSON with an `hmac_secret` key; its value was not exposed.
+- Confirmed the Cognito pool is invite-only and contains `admin` and `super_admin` groups.
+- Confirmed the PHP API Gateway catch-all route has AuthorizationType `NONE` and no API Gateway authorizer. PHP handlers must enforce authorization for protected operations.
+- Confirmed the Lambda role's scoped permissions cover the branch's required DynamoDB, SES, Cognito AdminCreateUser, and Secrets Manager calls.
+
+### Additional branch changes
+- Added an atomic `decision_processing` state to prevent competing approve/deny actions from creating an account before the winning decision is established.
+- Same-action retries can resume after a partial Lambda failure; finalization is conditional and duplicate finalization is handled idempotently.
+- Expanded PHP smoke tests to exercise production validators.
+- Added `PHP-COMPATIBILITY-AUDIT-2026-11-24.md` with evidence, compatibility notes, and remaining blockers.
+
+### Current status
+- Branch: `fix/php-onboarding-security`.
+- Branch comparison: 18 commits ahead of `master`, 1 commit behind; branch is diverged and must be reconciled before merge.
+- The previously observed PHP Actions run 7 passed for an earlier branch head. The newest approval-state-machine/test changes still need a confirmed CI run.
+- No production AWS resources, tables, secrets, or live data were modified.
+- No production deployment or merge is approved. Remaining blockers: confirm CI on the latest head, add approval/HMAC/DynamoDB tests, validate the exact Bref build/package, verify actual browser payloads and Cognito staff login, and prepare rollback/recovery procedures.
+- **Read `PHP-COMPATIBILITY-AUDIT-2026-11-24.md` before continuing PHP deployment work.**
+
+---
+
+## HISTORICAL SESSION HANDOFF — 2026-11-20
 
 ### Repository and work branch
 - Repository: https://github.com/mtecfix/johnson-legal-team
