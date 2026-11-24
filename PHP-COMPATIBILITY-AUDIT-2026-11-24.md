@@ -92,6 +92,18 @@ The branch now uses a conditional `decision_processing` state:
 
 If an invocation fails after claiming a decision, retry the same signed link while it remains valid. An item left in `decision_processing` after the link expires requires an administrative recovery procedure; do not manually edit production records without a reviewed runbook.
 
+## Existing Node.js portal authorization review
+
+The separate Node.js portal API was checked at the API Gateway and source level:
+
+- The HTTP API has 40 routes. All application routes use the Cognito JWT authorizer; only `OPTIONS` preflight routes use `AuthorizationType=NONE`.
+- The JWT authorizer is configured with the JLT Cognito issuer and the portal app-client audience.
+- The reviewed portal handler reads claims from API Gateway's verified JWT context, derives the role from the signed `cognito:groups` claim, and rejects requests without a subject.
+- The handler requires `admin` or `super_admin` for `/admin/*` routes. Role changes under `/admin/users` require `super_admin`.
+- Client record reads/writes are partitioned by the authenticated Cognito subject, not a browser-supplied email or user ID.
+
+No obvious missing route-level JWT or admin-group gate was found in this review. The Lambda deployment ZIP itself could not be read from its snapshot bucket due to AccessDenied, so the inspected `portal-api/src/index.js` source mirror was not byte-compared with the deployed package. This is a source-level review, not a penetration test.
+
 ## Validation status
 
 - The PHP GitHub Actions workflow ran successfully for the earlier branch head (run 7). The approval state-machine and test-suite changes made during this audit were committed afterward; a new CI run must be confirmed before treating the current head as passing.
