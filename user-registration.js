@@ -1,156 +1,69 @@
-// User Registration Handler
+// Public client registration: collect contact details, then submit the legal intake.
+// Cognito accounts are invite-only and are created by the firm after review.
 class UserRegistration {
     constructor() {
-        this.userEmail = null;
-        this.userRole = null;
-        this.init();
+        const form = document.getElementById('clientRegistrationForm');
+        if (form) form.addEventListener('submit', event => this.handleSubmit(event));
     }
 
-    init() {
-        // Get user info from sessionStorage
-        this.userEmail = sessionStorage.getItem('user_email');
-        
-        if (!this.userEmail) {
-            window.location.href = 'client-login.html';
-            return;
-        }
-
-        // Determine user role
-        this.userRole = this.getUserRole(this.userEmail);
-        
-        // Setup form based on role
-        this.setupForm();
-        
-        // Setup form submission
-        const form = document.getElementById('userRegistrationForm');
-        if (form) {
-            form.addEventListener('submit', (e) => this.handleSubmit(e));
-        }
-    }
-
-    getUserRole(email) {
-        const superUsers = ['mrtechfixes.ai@gmail.com'];
-        const adminUsers = ['mrtechfixes@gmail.com', 'johnsonlegalteam@gmail.com'];
-        
-        if (superUsers.includes(email)) return 'super_admin';
-        if (adminUsers.includes(email)) return 'admin';
-        return 'client';
-    }
-
-    setupForm() {
-        // Set email field
-        document.getElementById('email').value = this.userEmail;
-        
-        // Update welcome message
-        const welcomeMsg = document.getElementById('welcomeMessage');
-        const roleLabel = this.userRole === 'super_admin' ? 'Super Administrator' : 
-                         this.userRole === 'admin' ? 'Administrator' : 'Client';
-        welcomeMsg.textContent = `Welcome ${roleLabel}! Please complete your profile information.`;
-        
-        // Show appropriate role fields
-        document.querySelectorAll('.role-fields').forEach(el => el.classList.add('d-none'));
-        
-        if (this.userRole === 'super_admin') {
-            document.getElementById('superAdminFields').classList.remove('d-none');
-        } else if (this.userRole === 'admin') {
-            document.getElementById('adminFields').classList.remove('d-none');
-        } else {
-            document.getElementById('clientFields').classList.remove('d-none');
-        }
+    showError(message) {
+        const error = document.getElementById('registrationError');
+        error.textContent = message;
+        error.classList.remove('d-none');
     }
 
     async handleSubmit(event) {
         event.preventDefault();
-        
-        const errorDiv = document.getElementById('registrationError');
-        const successDiv = document.getElementById('registrationSuccess');
-        
-        errorDiv.classList.add('d-none');
-        successDiv.classList.add('d-none');
+        const error = document.getElementById('registrationError');
+        const success = document.getElementById('registrationSuccess');
+        error.classList.add('d-none');
+        success.classList.add('d-none');
 
-        // Collect form data
-        const formData = {
-            email: this.userEmail,
-            role: this.userRole,
-            firstName: document.getElementById('firstName').value,
-            lastName: document.getElementById('lastName').value,
-            phone: document.getElementById('phone').value,
-            address: document.getElementById('address').value,
-            city: document.getElementById('city').value,
-            state: document.getElementById('state').value,
-            zipCode: document.getElementById('zipCode').value,
-            registeredAt: new Date().toISOString()
-        };
+        const value = id => (document.getElementById(id)?.value || '').trim();
+        const email = value('email').toLowerCase();
+        const firstName = value('firstName');
+        const lastName = value('lastName');
+        const phone = value('phone');
 
-        // Add role-specific data
-        if (this.userRole === 'client') {
-            formData.companyName = document.getElementById('companyName').value;
-            formData.preferredContact = document.getElementById('preferredContact').value;
-            formData.timezone = document.getElementById('timezone').value;
-        } else if (this.userRole === 'admin') {
-            formData.department = document.getElementById('department').value;
-            formData.jobTitle = document.getElementById('jobTitle').value;
-            formData.permissions = {
-                canManageClients: document.getElementById('canManageClients').checked,
-                canManageCases: document.getElementById('canManageCases').checked,
-                canManageBilling: document.getElementById('canManageBilling').checked
-            };
-        } else if (this.userRole === 'super_admin') {
-            formData.accessLevel = document.getElementById('accessLevel').value;
-            formData.emergencyContact = document.getElementById('emergencyContact').value;
-            formData.systemRole = document.getElementById('systemRole').value;
+        if (!firstName || !lastName || !phone || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+            this.showError('Enter your first and last name, a valid email address, and phone number.');
+            return;
         }
-
-        // The profile endpoint verifies this Cognito access token server-side.
-        // Never rely on sessionStorage email or the browser-supplied role as identity.
-        const accessToken = sessionStorage.getItem('cognito_access_token');
-        if (!accessToken) {
-            errorDiv.textContent = 'Your secure session has expired. Please sign in again.';
-            errorDiv.classList.remove('d-none');
+        if (!document.getElementById('agreeTerms')?.checked) {
+            this.showError('Please agree to the Terms of Service and Privacy Policy to continue.');
             return;
         }
 
-        try {
-            const response = await fetch('api/user-registration.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${accessToken}`
-                },
-                body: JSON.stringify(formData)
-            });
+        const matterMap = {
+            'criminal-defense': 'criminal-defense',
+            'personal-injury': 'personal-injury',
+            'estate-planning': 'estate-planning',
+            'traffic-tickets': 'traffic',
+            'expungements': 'expungement',
+            'misdemeanors': 'criminal-defense',
+            'other': 'other'
+        };
+        const rawMatter = value('legalMatter');
+        const pending = {
+            email, firstName, lastName, phone,
+            address: value('address'),
+            city: value('city'),
+            state: value('state'),
+            zipCode: value('zipCode'),
+            legalMatter: matterMap[rawMatter] || '',
+            caseDescription: value('caseDescription'),
+            referralSource: value('referralSource'),
+            timestamp: Date.now()
+        };
 
-            const result = await response.json();
+        sessionStorage.setItem('pending_registration', JSON.stringify(pending));
+        success.textContent = 'Your contact details are saved. Continue to the legal intake and required disclosures. Portal access is created only after firm review.';
+        success.classList.remove('d-none');
 
-            if (result.success) {
-                successDiv.innerHTML = `
-                    <h5><i class="fas fa-check-circle"></i> Registration Complete!</h5>
-                    <p>Your profile has been successfully created. You now have full access to the system.</p>
-                `;
-                successDiv.classList.remove('d-none');
-                
-                // Mark registration as complete
-                sessionStorage.setItem('registration_complete', 'true');
-                
-                // Redirect to appropriate portal
-                setTimeout(() => {
-                    window.location.href = 'client-dashboard.html';
-                }, 2000);
-
-            } else {
-                errorDiv.textContent = result.error || 'Registration failed. Please try again.';
-                errorDiv.classList.remove('d-none');
-            }
-
-        } catch (error) {
-            console.error('Registration error:', error);
-            errorDiv.textContent = 'Connection error. Please try again.';
-            errorDiv.classList.remove('d-none');
-        }
+        setTimeout(() => {
+            window.location.href = 'legal-onboarding.html?email=' + encodeURIComponent(email);
+        }, 600);
     }
 }
 
-// Initialize registration
-document.addEventListener('DOMContentLoaded', () => {
-    new UserRegistration();
-});
+document.addEventListener('DOMContentLoaded', () => new UserRegistration());
