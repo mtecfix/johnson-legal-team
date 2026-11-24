@@ -6,42 +6,53 @@ class LegalOnboarding {
 
     init() {
         const form = document.getElementById('legalOnboardingForm');
-        if (form) {
-            form.addEventListener('submit', (e) => this.handleSubmit(e));
+        if (form) form.addEventListener('submit', event => this.handleSubmit(event));
+
+        const params = new URLSearchParams(window.location.search);
+        let pendingData = {};
+        try {
+            pendingData = JSON.parse(sessionStorage.getItem('pending_registration') || '{}');
+        } catch {
+            sessionStorage.removeItem('pending_registration');
         }
-
-        // Get user info from URL params or sessionStorage
-        const urlParams = new URLSearchParams(window.location.search);
-        this.userEmail = urlParams.get('email');
-
-        const pending = sessionStorage.getItem('pending_registration');
-        const pendingData = pending ? JSON.parse(pending) : {};
-
-        if (!this.userEmail) this.userEmail = pendingData.email || '';
+        this.pendingData = pendingData;
+        this.userEmail = (params.get('email') || pendingData.email || '').trim().toLowerCase();
         this.firstName = pendingData.firstName || '';
-        this.lastName  = pendingData.lastName  || '';
+        this.lastName = pendingData.lastName || '';
 
         if (!this.userEmail) {
-            this.showError('Invalid access. Please register first.');
+            this.showError('Invalid access. Please start registration first.');
             return;
         }
+
+        // Carry forward information already entered on the registration page.
+        const matter = document.getElementById('legalMatter');
+        if (matter && pendingData.legalMatter) matter.value = pendingData.legalMatter;
+        const description = document.getElementById('caseDescription');
+        if (description && pendingData.caseDescription) description.value = pendingData.caseDescription;
+        const referral = document.getElementById('referralSource');
+        if (referral && pendingData.referralSource) referral.value = pendingData.referralSource;
     }
 
     async handleSubmit(event) {
         event.preventDefault();
-        
+
         const errorDiv = document.getElementById('onboardingError');
         const successDiv = document.getElementById('onboardingSuccess');
-        
         errorDiv.classList.add('d-none');
         successDiv.classList.add('d-none');
 
-        // Collect form data
         const formData = {
-            email:            this.userEmail,
-            firstName:        this.firstName,
-            lastName:         this.lastName,
-            legalMatter:      document.getElementById('legalMatter').value,
+            email: this.userEmail,
+            firstName: this.firstName,
+            lastName: this.lastName,
+            phone: this.pendingData.phone || '',
+            address: this.pendingData.address || '',
+            city: this.pendingData.city || '',
+            state: this.pendingData.state || '',
+            zipCode: this.pendingData.zipCode || '',
+            referralSource: this.pendingData.referralSource || '',
+            legalMatter: document.getElementById('legalMatter').value,
             urgency: document.getElementById('urgency').value,
             caseDescription: document.getElementById('caseDescription').value,
             preferredContact: document.getElementById('preferredContact').value,
@@ -56,39 +67,33 @@ class LegalOnboarding {
         try {
             const response = await fetch('api/legal-onboarding.php', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(formData)
             });
-
             const result = await response.json();
 
-            if (result.success) {
+            if (response.ok && result.success) {
+                sessionStorage.removeItem('pending_registration');
                 successDiv.innerHTML = `
                     <h5><i class="fas fa-check-circle"></i> Legal Intake Complete!</h5>
-                    <p>Thank you for completing your legal intake form. Your information has been submitted for attorney review.</p>
+                    <p>Thank you. Your information has been submitted for attorney review.</p>
                     <p><strong>Next Steps:</strong></p>
                     <ul>
-                        <li>Our legal team will review your information within 24 hours</li>
-                        <li>You'll receive an email notification regarding your case</li>
-                        <li>If we can assist you, we'll contact you to discuss representation</li>
+                        <li>Our legal team will review your information.</li>
+                        <li>We will contact you about next steps.</li>
+                        <li>If portal access is approved, you will receive an account invitation.</li>
                     </ul>
-                    <p class="mb-0"><strong>For urgent matters, please call us immediately at (833) 659-8378</strong></p>
+                    <p class="mb-0"><strong>For urgent matters, please call (833) 659-8378.</strong></p>
                 `;
                 successDiv.classList.remove('d-none');
-                
                 document.getElementById('legalOnboardingForm').reset();
-                
                 setTimeout(() => {
                     window.location.href = 'client-login.html?message=onboarding_complete';
                 }, 5000);
-
             } else {
                 errorDiv.textContent = result.error || 'Submission failed. Please try again.';
                 errorDiv.classList.remove('d-none');
             }
-
         } catch (error) {
             console.error('Legal onboarding error:', error);
             errorDiv.textContent = 'Connection error. Please try again.';
@@ -103,6 +108,4 @@ class LegalOnboarding {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    new LegalOnboarding();
-});
+document.addEventListener('DOMContentLoaded', () => new LegalOnboarding());
