@@ -104,6 +104,22 @@ The separate Node.js portal API was checked at the API Gateway and source level:
 
 No obvious missing route-level JWT or admin-group gate was found in this review. The Lambda deployment ZIP itself could not be read from its snapshot bucket due to AccessDenied, so the inspected `portal-api/src/index.js` source mirror was not byte-compared with the deployed package. This is a source-level review, not a penetration test.
 
+## Cross-backend onboarding integration gap
+
+The PHP intake workflow and the Node.js client portal currently maintain separate registration/profile data:
+
+- PHP approval writes the intake decision to `jlt-legal-onboarding` or `jlt-client-onboarding`, creates a Cognito user, and writes a profile to `jlt-user-profiles`.
+- The Node.js portal API uses the separate `johnson-legal-portal-PortalTable`, keyed by Cognito subject (`USER#<sub>`) and `PROFILE`.
+- The portal's `GET /profile` reads only that Node.js table. The client dashboard displays "No profile on file yet" when it is empty.
+- The Node.js `GET /admin/registrations` handler queries its own table's `GSI1PK = REG#pending`; it does not read the PHP intake tables.
+- Therefore, email-based PHP approval does not automatically populate the Node.js portal profile or the Node.js admin registrations queue. This is a workflow integration gap, not a missing JWT check.
+
+Before deployment, choose the intended system of record:
+1. Keep email approval as the canonical intake workflow and add a first-login profile-completion step that writes to the Node.js `/profile` API; or
+2. Integrate PHP approval with the Node.js portal table and admin registration workflow, with explicitly scoped IAM permissions and tested idempotency.
+
+The current branch does not make that cross-backend integration and must not be represented as a fully integrated client portal onboarding flow.
+
 ## Validation status
 
 - The PHP GitHub Actions workflow ran successfully for the earlier branch head (run 7). The approval state-machine and test-suite changes made during this audit were committed afterward; a new CI run must be confirmed before treating the current head as passing.
@@ -120,7 +136,8 @@ No obvious missing route-level JWT or admin-group gate was found in this review.
 4. Validate the actual browser payloads for both intake forms and the registration flow.
 5. Confirm Cognito admin-group assignment and staff sign-in behavior. Hosted UI / Google OAuth is not verified by the observed app-client configuration.
 6. Decide whether legal intake should remain one record per email or migrate to a composite key like client onboarding. Current branch intentionally preserves the live email-only key.
-7. Review the PHP endpoint exposure and the separate Node.js portal's server-side authorization before any production security sign-off.
-8. Prepare a rollback plan and obtain explicit approval before any production deployment.
+7. Decide and implement the PHP-to-Node portal registration/profile integration described above.
+8. Review the PHP endpoint exposure and the separate Node.js portal's server-side authorization before any production security sign-off.
+9. Prepare a rollback plan and obtain explicit approval before any production deployment.
 
 **Current disposition: suitable for continued branch-level testing; not approved for production merge or deployment yet.**
