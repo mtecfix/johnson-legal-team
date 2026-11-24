@@ -45,19 +45,26 @@ function claimDecision(string $type, string $email, string $submissionId, string
 
 /** Finalizes only the action that successfully claimed this exact submission. */
 function finalizeDecision(string $type, string $email, string $submissionId, string $action, string $status): void {
-    aws('ddb')->updateItem([
-        'TableName' => tableName($type),
-        'Key' => decisionKey($type, $email, $submissionId),
-        'UpdateExpression' => 'SET #s = :final, reviewed_at = :r REMOVE decision_action, processing_started_at',
-        'ConditionExpression' => '#s = :processing AND decision_action = :action',
-        'ExpressionAttributeNames' => ['#s' => 'status'],
-        'ExpressionAttributeValues' => [
-            ':final' => ['S' => $status],
-            ':processing' => ['S' => 'decision_processing'],
-            ':action' => ['S' => $action],
-            ':r' => ['S' => nowIso()],
-        ],
-    ]);
+    try {
+        aws('ddb')->updateItem([
+            'TableName' => tableName($type),
+            'Key' => decisionKey($type, $email, $submissionId),
+            'UpdateExpression' => 'SET #s = :final, reviewed_at = :r REMOVE decision_action, processing_started_at',
+            'ConditionExpression' => '#s = :processing AND decision_action = :action',
+            'ExpressionAttributeNames' => ['#s' => 'status'],
+            'ExpressionAttributeValues' => [
+                ':final' => ['S' => $status],
+                ':processing' => ['S' => 'decision_processing'],
+                ':action' => ['S' => $action],
+                ':r' => ['S' => nowIso()],
+            ],
+        ]);
+    } catch (Aws\DynamoDb\Exception\DynamoDbException $e) {
+        if ($e->getAwsErrorCode() !== 'ConditionalCheckFailedException') throw $e;
+        $current = itemGet($type, $email, $submissionId);
+        // A parallel request for the same action may have finalized first.
+        if (($current['status'] ?? '') !== $status) throw $e;
+    }
 }
 
 function submitIntake(string $type): never {
