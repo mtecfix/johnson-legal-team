@@ -1,0 +1,19 @@
+/* Practice area section and cards — reference-inspired navy and champagne treatment */
+.practice-section{background:#171f33;color:#f7f5f0;padding-block:76px 88px}
+.practice-section .section-heading{justify-content:center;text-align:center;margin:0 auto 42px}
+.practice-section .section-heading>div{display:grid;justify-items:center;gap:2px}
+.practice-section .section-heading .eyebrow{color:#d6bd8a;font-weight:500;letter-spacing:.08em;font-size:.78rem;margin:0 0 2px}
+.practice-section .section-heading h2{color:#f8f6f1;font-size:clamp(2rem,3.2vw,2.65rem);font-weight:500;letter-spacing:-.025em}
+.practice-section .section-heading>.text-link{display:none}
+.practice-section .practice-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:20px}
+.practice-section .practice-card{position:relative;display:grid;grid-template-columns:58px minmax(0,1fr);align-items:start;column-gap:22px;min-height:200px;padding:30px 27px;background:#252d42;border:1px solid #30394e;border-radius:0;box-shadow:none;color:#f8f6f1;text-decoration:none;transition:background .2s,border-color .2s,transform .2s}
+.practice-section .practice-card:hover{background:#2b354b;border-color:#cbb47e;box-shadow:0 10px 26px #080e1b40;transform:translateY(-3px)}
+.practice-section .practice-card:focus-visible{outline:3px solid #d6bd8a;outline-offset:4px}
+.practice-section .practice-card .card-icon{width:48px;height:52px;display:flex;align-items:flex-start;justify-content:center;margin:0;background:transparent;color:#d6bd8a;border-radius:0}
+.practice-card__content{display:flex;flex-direction:column;gap:18px;min-width:0}
+.practice-card__title{font:600 1.55rem/1.2 var(--font-display);color:#fbf9f5}
+.practice-card__description{font-size:.9rem;line-height:1.58;color:#e0e3e9}
+.practice-card__arrow{position:absolute;right:18px;bottom:17px;color:#d6bd8a;opacity:0;transform:translate(-3px,3px);transition:opacity .2s,transform .2s}
+.practice-section .practice-card:hover .practice-card__arrow,.practice-section .practice-card:focus-visible .practice-card__arrow{opacity:1;transform:translate(0,0)}
+@media(max-width:900px){.practice-section .practice-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.practice-section .practice-card{min-height:190px;padding:26px 22px;column-gap:16px}}
+@media(max-width:640px){.practice-section{padding-block:58px 64px}.practice-section .practice-grid{grid-template-columns:1fr;gap:14px}.practice-section .practice-card{min-height:unset;padding:24px 22px;grid-template-columns:48px minmax(0,1fr)}.practice-card__title{font-size:1.4rem}.practice-card__content{gap:12px}}
