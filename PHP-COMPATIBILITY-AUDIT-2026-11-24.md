@@ -65,6 +65,20 @@ Confirmed differences addressed by the branch:
 5. The deployed frontend attempted Cognito self-service registration even though the pool is invite-only. The branch changes this to an intake-and-review flow.
 6. The branch's profile-registration browser request now sends the Cognito access token.
 
+## Browser form compatibility check
+
+The deployed static site was also inspected read-only. The public `user-registration.html` form uses `clientRegistrationForm`, but its original JavaScript listened for `userRegistrationForm` and expected an already-authenticated session. The page itself is a new-client form and is not a signed-in profile-completion page. It also asked applicants to create a password even though Cognito is invite-only. This mismatch would prevent the intended registration flow from working reliably.
+
+The branch now:
+- Binds the public registration script to the actual `clientRegistrationForm` element.
+- Removes password collection from the pre-approval registration page.
+- Saves the applicant's contact details and selected legal matter in session storage, then routes to the legal intake.
+- Prefills the legal matter and case description on the legal intake page.
+- Carries phone/address fields into the intake request and writes them to the profile when the firm approves the submission.
+- Maps legacy registration-page matter values (traffic tickets, expungements, misdemeanors) to values accepted by the legal intake API.
+
+The live S3 website files were not changed. These are branch-only fixes pending review and deployment.
+
 ## Additional remediation made during this audit
 
 The branch's approval sequence previously performed Cognito user creation and profile creation before conditionally updating the intake decision. A competing approve/deny request could therefore create an account even if the opposite decision won the status update.
