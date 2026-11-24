@@ -4,12 +4,14 @@ import { Link } from 'react-router-dom';
 const icons = { Scale, Landmark, FileCheck2, ShieldCheck, CarFront };
 export function PracticeCard({ item }) {
   const Icon = icons[item.icon] || Scale;
-  return <article className="practice-card">
-    <div className="card-icon"><Icon size={23} strokeWidth={1.7} /></div>
-    <h3>{item.title}</h3>
-    <p>{item.description}</p>
-    <Link className="text-link" to={`/practice-areas/${item.slug}`}>Explore service <ArrowUpRight size={16} /></Link>
-  </article>;
+  return <Link className="practice-card" to={`/practice-areas/${item.slug}`} aria-label={`Learn about ${item.title}`}>
+    <span className="card-icon" aria-hidden="true"><Icon size={38} strokeWidth={1.35} /></span>
+    <span className="practice-card__content">
+      <span className="practice-card__title">{item.title}</span>
+      <span className="practice-card__description">{item.description}</span>
+    </span>
+    <ArrowUpRight className="practice-card__arrow" size={17} aria-hidden="true" />
+  </Link>;
 }
 export function ContactCard({ kind, value, href, children }) {
   const Icon = kind === 'phone' ? Phone : kind === 'email' ? Mail : MapPin;
