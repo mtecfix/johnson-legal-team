@@ -95,6 +95,9 @@ function submitIntake(string $type): never {
     $item = [
         'email' => $email, 'submission_id' => $submissionId,
         'first_name' => value($data, 'firstName', 100), 'last_name' => value($data, 'lastName', 100),
+        'phone' => value($data, 'phone', 30), 'address' => value($data, 'address', 255),
+        'city' => value($data, 'city', 100), 'state' => value($data, 'state', 50),
+        'zip_code' => value($data, 'zipCode', 10),
         'legal_matter' => $matter, 'urgency' => $urgency,
         'case_description' => value($data, 'caseDescription', 5000),
         'preferred_contact' => $contact, 'best_time' => value($data, 'bestTime', 20),
@@ -111,7 +114,8 @@ function submitIntake(string $type): never {
     $title = $type === 'legal' ? 'New legal intake' : 'New client onboarding';
     try {
         sendEmail(adminEmails(), $title . ' — ' . $email, emailHtml($title, [
-            'Email' => $email, 'Legal matter' => $matter, 'Urgency' => $urgency,
+            'Email' => $email, 'Phone' => (string)($item['phone'] ?? ''),
+            'Legal matter' => $matter, 'Urgency' => $urgency,
             'Description' => (string)$item['case_description'], 'Preferred contact' => $contact,
         ], $approve, $deny));
     } catch (Throwable $e) {
@@ -230,6 +234,11 @@ function approveRegistration(): never {
                     'email' => $email, 'role' => 'client',
                     'first_name' => $record['first_name'] ?? '',
                     'last_name' => $record['last_name'] ?? '',
+                    'phone' => $record['phone'] ?? '',
+                    'address' => $record['address'] ?? '',
+                    'city' => $record['city'] ?? '',
+                    'state' => $record['state'] ?? '',
+                    'zip_code' => $record['zip_code'] ?? '',
                     'registered_at' => nowIso(), 'status' => 'active',
                     'source' => $type . '_onboarding',
                 ]),
