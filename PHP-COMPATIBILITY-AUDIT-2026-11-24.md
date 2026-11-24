@@ -124,6 +124,7 @@ The current branch does not make that cross-backend integration and must not be 
 
 - The PHP GitHub Actions workflow ran successfully for the earlier branch head (run 7). The approval state-machine and test-suite changes made during this audit were committed afterward; a new CI run must be confirmed before treating the current head as passing.
 - The smoke test was expanded to exercise the actual production validators (legal matter, urgency, email normalization, required fields, field length, and HTML escaping). It is still a smoke suite, not a complete unit/integration suite.
+- CI was changed to PHP 8.3 to match the deployed Bref runtime. The repository does not yet contain a Composer lock file, so dependency resolution is not fully reproducible; generate and commit `composer.lock` in a network-enabled build environment before production packaging.
 - No end-to-end test was run against the live API, Cognito, SES, or DynamoDB.
 - No Lambda package was built from this branch and compared byte-for-byte with the deployed package.
 - No production deployment was performed.
@@ -132,7 +133,7 @@ The current branch does not make that cross-backend integration and must not be 
 
 1. Confirm CI passes on the latest branch head.
 2. Add tests for the approval state machine, HMAC expiry/signature, and DynamoDB conditional behavior using mocks/local test doubles.
-3. Validate the exact Bref PHP 8.3 layer packaging and Composer vendor output with a reproducible build.
+3. Generate/commit `composer.lock`, then validate the exact Bref PHP 8.3 layer packaging and Composer vendor output with a reproducible build.
 4. Validate the actual browser payloads for both intake forms and the registration flow.
 5. Confirm Cognito admin-group assignment and staff sign-in behavior. Hosted UI / Google OAuth is not verified by the observed app-client configuration.
 6. Decide whether legal intake should remain one record per email or migrate to a composite key like client onboarding. Current branch intentionally preserves the live email-only key.
