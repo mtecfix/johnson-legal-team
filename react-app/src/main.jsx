@@ -4,6 +4,7 @@ import { HashRouter } from 'react-router-dom';
 import App from './App.jsx';
 import './styles/tokens.css';
 import './styles/global.css';
+import './styles/practice-cards.css';
 
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
