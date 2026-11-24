@@ -34,6 +34,7 @@
 - Branch: `fix/php-onboarding-security`.
 - Branch comparison: `fix/php-onboarding-security` is ahead of `master` and 1 commit behind; branch is diverged and must be reconciled before merge. Check the live GitHub comparison for the current commit count.
 - The previously observed PHP Actions run 7 passed for an earlier branch head. The newest approval-state-machine, registration-flow, test-suite, and documentation changes still need a confirmed CI run. The GitHub connector did not return a workflow run/status for these latest commits.
+- CI now targets PHP 8.3, matching Bref production. `composer.lock` is still missing, so dependency resolution must be locked in a network-enabled build before a reproducible production package can be approved.
 - No production AWS resources, tables, secrets, or live data were modified.
 - No production deployment or merge is approved. Remaining blockers: confirm CI on the latest head, add approval/HMAC/DynamoDB tests, validate the exact Bref build/package, verify actual browser payloads and Cognito staff login, and prepare rollback/recovery procedures.
 - **Read `PHP-COMPATIBILITY-AUDIT-2026-11-24.md` before continuing PHP deployment work.**
