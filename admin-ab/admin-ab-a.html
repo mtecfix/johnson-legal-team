@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>JLT Admin — Variant A (Navy/Gold)</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root{
+  --navy:#1B365D;--navy-dark:#0F1F38;--navy-mid:#264a7a;
+  --gold:#D4AF37;--gold-light:#E8CD6F;--gold-pale:#fdf8e7;
+  --bg:#F1F3F6;--card:#fff;--border:#E2E5EA;
+  --text:#1F2937;--muted:#6B7280;--success:#059669;--danger:#DC2626;--warn:#F59E0B;
+  --sidebar-w:256px;--radius:10px;--shadow:0 1px 4px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;}
+
+/* ── Sidebar ── */
+.sidebar{width:var(--sidebar-w);background:var(--navy-dark);color:#fff;display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+.sidebar-brand{padding:20px 20px 16px;border-bottom:1px solid rgba(255,255,255,.07);}
+.brand-logo{display:flex;align-items:center;gap:10px;}
+.brand-logo .icon{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),var(--gold-light));border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--navy-dark);font-size:16px;}
+.brand-logo h1{font-size:13px;font-weight:700;letter-spacing:.4px;line-height:1.3;}
+.brand-logo p{font-size:10px;color:rgba(255,255,255,.4);margin-top:1px;}
+.sidebar-nav{flex:1;overflow-y:auto;padding:12px 0;}
+.nav-group-label{font-size:9px;font-weight:700;letter-spacing:1.2px;color:rgba(255,255,255,.25);text-transform:uppercase;padding:14px 20px 4px;}
+.sidebar-nav a{display:flex;align-items:center;gap:11px;padding:9px 20px;color:rgba(255,255,255,.6);text-decoration:none;font-size:13px;border-left:2px solid transparent;transition:all .15s;}
+.sidebar-nav a:hover{background:rgba(255,255,255,.05);color:#fff;}
+.sidebar-nav a.active{background:rgba(212,175,55,.1);color:var(--gold);border-left-color:var(--gold);font-weight:600;}
+.sidebar-nav a i{width:16px;text-align:center;font-size:13px;}
+.sidebar-nav .badge-soon{font-size:9px;background:rgba(255,255,255,.1);color:rgba(255,255,255,.4);padding:1px 6px;border-radius:8px;margin-left:auto;}
+.sidebar-footer{padding:14px 20px;border-top:1px solid rgba(255,255,255,.07);font-size:11px;color:rgba(255,255,255,.35);}
+
+/* ── Main ── */
+.main{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:50;}
+.topbar h2{font-size:15px;font-weight:600;flex:1;}
+.topbar .user-chip{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);}
+.topbar .avatar{width:30px;height:30px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;}
+.topbar .role-badge{background:var(--gold-pale);color:var(--navy);font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;border:1px solid var(--gold-light);}
+.btn-logout{background:none;border:1px solid var(--border);border-radius:6px;padding:5px 12px;font-size:12px;color:var(--muted);cursor:pointer;}
+.btn-logout:hover{background:var(--bg);}
+
+/* ── Content ── */
+.content{padding:24px;flex:1;}
+
+/* ── Stat cards ── */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;display:flex;align-items:center;gap:14px;box-shadow:var(--shadow);}
+.stat-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.stat-icon.navy{background:rgba(27,54,93,.1);color:var(--navy);}
+.stat-icon.gold{background:rgba(212,175,55,.12);color:#b8942e;}
+.stat-icon.green{background:rgba(5,150,105,.1);color:var(--success);}
+.stat-icon.red{background:rgba(220,38,38,.1);color:var(--danger);}
+.stat-info h3{font-size:22px;font-weight:700;line-height:1;}
+.stat-info p{font-size:11px;color:var(--muted);margin-top:3px;}
+
+/* ── Panel cards ── */
+.panel{display:none;}.panel.active{display:block;}
+.panel-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;}
+.panel-card-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.panel-card-header h2{font-size:14px;font-weight:600;margin:0;}
+.panel-card-body{padding:20px;}
+
+/* ── AB Label ── */
+.ab-label{position:fixed;top:12px;right:16px;z-index:999;background:var(--navy);color:var(--gold);font-size:11px;font-weight:700;padding:4px 12px;border-radius:20px;letter-spacing:.5px;}
+.ab-switch{position:fixed;top:12px;right:100px;z-index:999;}
+.ab-switch a{font-size:11px;background:rgba(0,0,0,.15);color:#fff;padding:4px 12px;border-radius:20px;text-decoration:none;border:1px solid rgba(255,255,255,.2);}
+
+/* ── Plugin slots ── */
+.plugin-slot{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden;margin-bottom:20px;}
+.plugin-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;}
+.plugin-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.plugin-header h3{font-size:14px;font-weight:600;margin:0;line-height:1.2;}
+.plugin-badge{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);background:var(--bg);border:1px solid var(--border);padding:1px 7px;border-radius:10px;}
+.plugin-status{margin-left:auto;font-size:9px;font-weight:700;letter-spacing:.6px;padding:3px 10px;border-radius:20px;}
+.plugin-status.wip{background:#FEF3C7;color:#92400E;border:1px solid #FDE68A;}
+.plugin-status.live{background:#D1FAE5;color:#065F46;border:1px solid #A7F3D0;}
+.plugin-placeholder{padding:36px 20px;text-align:center;background:repeating-linear-gradient(45deg,transparent,transparent 10px,rgba(0,0,0,.012) 10px,rgba(0,0,0,.012) 20px);}
+.ph-label{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:10px;}
+.ph-code{display:block;background:#F9FAFB;border:1px solid var(--border);border-radius:6px;padding:10px 14px;font-size:11px;color:#6366F1;text-align:left;white-space:pre-wrap;word-break:break-all;font-family:'Courier New',monospace;}
+
+/* ── Dashboard grid ── */
+.dash-grid{display:grid;grid-template-columns:1fr 340px;gap:20px;}
+.recent-list{list-style:none;}
+.recent-list li{padding:10px 0;border-bottom:1px solid var(--border);font-size:13px;display:flex;align-items:center;gap:10px;color:var(--muted);}
+.recent-list li:last-child{border:none;}
+.recent-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+@media(max-width:900px){.stats-row{grid-template-columns:repeat(2,1fr);}.dash-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<span class="ab-label">VARIANT A</span>
+<a class="ab-switch" href="admin-ab-b.html">Switch to B →</a>
+
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="brand-logo">
+      <div class="icon"><i class="fas fa-scale-balanced"></i></div>
+      <div><h1>JOHNSON LEGAL</h1><p>Admin Portal</p></div>
+    </div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-group-label">Overview</div>
+    <a href="#" data-section="dashboard" class="active"><i class="fas fa-th-large"></i> Dashboard</a>
+    <a href="#" data-section="leads"><i class="fas fa-bolt"></i> Leads <span class="badge-soon">HubSpot</span></a>
+    <div class="nav-group-label">Practice</div>
+    <a href="#" data-section="cases"><i class="fas fa-briefcase"></i> Cases</a>
+    <a href="#" data-section="contacts"><i class="fas fa-users"></i> Contacts</a>
+    <a href="#" data-section="calendar"><i class="fas fa-calendar-alt"></i> Calendar <span class="badge-soon">GCal</span></a>
+    <a href="#" data-section="documents"><i class="fas fa-folder-open"></i> Documents <span class="badge-soon">Dropbox</span></a>
+    <a href="#" data-section="messages"><i class="fas fa-envelope"></i> Messages <span class="badge-soon">SignalWire</span></a>
+    <div class="nav-group-label">Finance</div>
+    <a href="#" data-section="invoices"><i class="fas fa-file-invoice-dollar"></i> Invoices <span class="badge-soon">Stripe</span></a>
+    <a href="#" data-section="payments"><i class="fas fa-credit-card"></i> Payments <span class="badge-soon">Stripe</span></a>
+    <div class="nav-group-label">Admin</div>
+    <a href="#" data-section="registrations"><i class="fas fa-user-plus"></i> Registrations</a>
+    <a href="#" data-section="users"><i class="fas fa-shield-alt"></i> User Roles</a>
+    <a href="#" data-section="system"><i class="fas fa-server"></i> System</a>
+  </nav>
+  <div class="sidebar-footer">JLT Admin v2.0-AB</div>
+</aside>
+
+<div class="main">
+  <header class="topbar">
+    <h2 id="pageTitle">Dashboard</h2>
+    <div class="user-chip">
+      <div class="avatar">RJ</div>
+      <span id="userEmail">johnsonlegalteam@gmail.com</span>
+      <span class="role-badge">super_admin</span>
+      <button class="btn-logout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+    </div>
+  </header>
+  <div class="content">
+
+    <!-- ═══ DASHBOARD ═══ -->
+    <div class="panel active" id="panelDashboard">
+      <div class="stats-row">
+        <div class="stat-card"><div class="stat-icon navy"><i class="fas fa-users"></i></div><div class="stat-info"><h3 id="statClients">—</h3><p>Clients</p></div></div>
+        <div class="stat-card"><div class="stat-icon green"><i class="fas fa-briefcase"></i></div><div class="stat-info"><h3 id="statCases">—</h3><p>Open Cases</p></div></div>
+        <div class="stat-card"><div class="stat-icon gold"><i class="fas fa-calendar-day"></i></div><div class="stat-info"><h3 id="statDeadlines">—</h3><p>Upcoming Deadlines</p></div></div>
+        <div class="stat-card"><div class="stat-icon red"><i class="fas fa-user-plus"></i></div><div class="stat-info"><h3 id="statRegistrations">—</h3><p>Pending Registrations</p></div></div>
+      </div>
+      <div class="dash-grid">
+        <div class="panel-card">
+          <div class="panel-card-header"><h2>Recent Cases</h2><a href="#" data-section="cases" style="font-size:12px;color:var(--gold);">View All →</a></div>
+          <div class="panel-card-body">
+            <ul class="recent-list">
+              <li><span class="recent-dot" style="background:#059669"></span><span><!-- TODO: PortalAPI.admin.listCases() → render rows --></span></li>
+              <li><span class="recent-dot" style="background:#F59E0B"></span><em style="color:var(--muted);font-size:12px;">Cases data loads here via PortalAPI.admin.listCases()</em></li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="panel-card">
+            <div class="panel-card-header"><h2>Quick Actions</h2></div>
+            <div class="panel-card-body">
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                <button class="btn btn-sm btn-outline-secondary w-100" data-section="cases">+ New Case</button>
+                <button class="btn btn-sm btn-outline-secondary w-100" data-section="contacts">+ New Contact</button>
+                <button class="btn btn-sm btn-outline-secondary w-100" data-section="invoices">+ New Invoice</button>
+              </div>
+            </div>
+          </div>
+          <div class="panel-card" style="margin-top:16px;">
+            <div class="panel-card-header"><h2>New Business</h2></div>
+            <div class="panel-card-body">
+              <p style="font-size:12px;color:var(--muted);"><!-- TODO: adapter.hubspot or jude-leads API → recent leads --></p>
+              <code style="font-size:10px;color:#6366F1;">import LeadsFeed from './adapters/leads.hubspot'</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ LEADS ═══ -->
+    <div class="panel" id="panelLeads">
+        <div class="plugin-slot" id="plugin-leads">
+          <div class="plugin-header">
+            <span class="plugin-icon" style="background:#FF7A5915;color:#FF7A59"><i class="fas fa-bolt"></i></span>
+            <div>
+              <h3>Leads Pipeline</h3>
+              <span class="plugin-badge">HubSpot</span>
+            </div>
+            <span class="plugin-status wip">PLUG-IN PENDING</span>
+          </div>
+          <div class="plugin-placeholder">
+            <i class="fas fa-bolt" style="font-size:32px;color:#FF7A59;opacity:.25;margin-bottom:12px;display:block;"></i>
+            <p class="ph-label">Leads Pipeline — HubSpot adapter</p>
+            <code class="ph-code">/* TODO: import { list, create, update } from './adapters/leads.hubspot' */</code>
+          </div>
+        </div>
+    </div>
+
+    <!-- ═══ CASES ═══ -->
+    <div class="panel" id="panelCases">
+      <div class="plugin-slot">
+        <div class="plugin-header">
+          <span class="plugin-icon" style="background:#1B365D15;color:#1B365D"><i class="fas fa-briefcase"></i></span>
+          <div><h3>Cases</h3><span class="plugin-badge">Portal API — DynamoDB</span></div>
+          <span class="plugin-status live">API LIVE</span>
+        </div>
+        <div class="plugin-placeholder">
+          <p class="ph-label">Cases table — data ready via existing API</p>
+          <code class="ph-code">/* TODO: PortalAPI.admin.listCases() → React DataTable component
+   Columns: case_id | client | type | status | opened | deadline
+   Actions: Edit | Close | Delete
+   Filter tabs: All | Open | Closed | Pending */</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CONTACTS ═══ -->
+    <div class="panel" id="panelContacts">
+      <div class="plugin-slot">
+        <div class="plugin-header">
+          <span class="plugin-icon" style="background:#1B365D15;color:#1B365D"><i class="fas fa-users"></i></span>
+          <div><h3>Contacts / Clients</h3><span class="plugin-badge">Portal API — DynamoDB</span></div>
+          <span class="plugin-status live">API LIVE</span>
+        </div>
+        <div class="plugin-placeholder">
+          <p class="ph-label">Client records — full CRUD via existing API</p>
+          <code class="ph-code">/* TODO: PortalAPI.admin.listClients() → React contact cards
+   Fields: name | email | phone | address | cases[] | invoices[]
+   Actions: Edit | Add Case | Send Message | View Portal */</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ CALENDAR ═══ -->
+    <div class="panel" id="panelCalendar">
+        <div class="plugin-slot" id="plugin-calendar">
+          <div class="plugin-header">
+            <span class="plugin-icon" style="background:#4285F415;color:#4285F4"><i class="fas fa-calendar-alt"></i></span>
+            <div>
+              <h3>Calendar & Deadlines</h3>
+              <span class="plugin-badge">Google Calendar</span>
+            </div>
+            <span class="plugin-status wip">PLUG-IN PENDING</span>
+          </div>
+          <div class="plugin-placeholder">
+            <i class="fas fa-calendar-alt" style="font-size:32px;color:#4285F4;opacity:.25;margin-bottom:12px;display:block;"></i>
+            <p class="ph-label">Calendar & Deadlines — Google Calendar adapter</p>
+            <code class="ph-code">/* TODO: import { list, create, update } from './adapters/calendar.google-calendar' */</code>
+          </div>
+        </div>
+      <div class="plugin-slot" style="margin-top:0;">
+        <div class="plugin-header">
+          <span class="plugin-icon" style="background:#00B5AD15;color:#00B5AD"><i class="fas fa-calendar-check"></i></span>
+          <div><h3>Client Booking</h3><span class="plugin-badge">Calendly Embed</span></div>
+          <span class="plugin-status wip">PLUG-IN PENDING</span>
+        </div>
+        <div class="plugin-placeholder">
+          <code class="ph-code">/* TODO: <div class="calendly-inline-widget" data-url="https://calendly.com/YOUR_LINK"></div>
+   <script src="https://assets.calendly.com/assets/external/widget.js"></script> */</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ DOCUMENTS ═══ -->
+    <div class="panel" id="panelDocuments">
+        <div class="plugin-slot" id="plugin-documents">
+          <div class="plugin-header">
+            <span class="plugin-icon" style="background:#0061FF15;color:#0061FF"><i class="fas fa-folder-open"></i></span>
+            <div>
+              <h3>Documents & E-Sign</h3>
+              <span class="plugin-badge">Dropbox Sign + S3</span>
+            </div>
+            <span class="plugin-status wip">PLUG-IN PENDING</span>
+          </div>
+          <div class="plugin-placeholder">
+            <i class="fas fa-folder-open" style="font-size:32px;color:#0061FF;opacity:.25;margin-bottom:12px;display:block;"></i>
+            <p class="ph-label">Documents & E-Sign — Dropbox Sign + S3 adapter</p>
+            <code class="ph-code">/* TODO: import { list, create, update } from './adapters/documents.dropbox-sign-+-s3' */</code>
+          </div>
+        </div>
+    </div>
+
+    <!-- ═══ MESSAGES ═══ -->
+    <div class="panel" id="panelMessages">
+        <div class="plugin-slot" id="plugin-messages">
+          <div class="plugin-header">
+            <span class="plugin-icon" style="background:#7B2CBF15;color:#7B2CBF"><i class="fas fa-envelope"></i></span>
+            <div>
+              <h3>Messages</h3>
+              <span class="plugin-badge">SignalWire (SMS) + SES (Email)</span>
+            </div>
+            <span class="plugin-status wip">PLUG-IN PENDING</span>
+          </div>
+          <div class="plugin-placeholder">
+            <i class="fas fa-envelope" style="font-size:32px;color:#7B2CBF;opacity:.25;margin-bottom:12px;display:block;"></i>
+            <p class="ph-label">Messages — SignalWire (SMS) + SES (Email) adapter</p>
+            <code class="ph-code">/* TODO: import { list, create, update } from './adapters/messages.signalwire-(sms)-+-ses-(email)' */</code>
+          </div>
+        </div>
+    </div>
+
+    <!-- ═══ INVOICES ═══ -->
+    <div class="panel" id="panelInvoices">
+        <div class="plugin-slot" id="plugin-invoices">
+          <div class="plugin-header">
+            <span class="plugin-icon" style="background:#635BFF15;color:#635BFF"><i class="fas fa-file-invoice-dollar"></i></span>
+            <div>
+              <h3>Invoices</h3>
+              <span class="plugin-badge">Stripe</span>
+            </div>
+            <span class="plugin-status wip">PLUG-IN PENDING</span>
+          </div>
+          <div class="plugin-placeholder">
+            <i class="fas fa-file-invoice-dollar" style="font-size:32px;color:#635BFF;opacity:.25;margin-bottom:12px;display:block;"></i>
+            <p class="ph-label">Invoices — Stripe adapter</p>
+            <code class="ph-code">/* TODO: import { list, create, update } from './adapters/invoices.stripe' */</code>
+          </div>
+        </div>
+    </div>
+
+    <!-- ═══ PAYMENTS ═══ -->
+    <div class="panel" id="panelPayments">
+        <div class="plugin-slot" id="plugin-payments">
+          <div class="plugin-header">
+            <span class="plugin-icon" style="background:#635BFF15;color:#635BFF"><i class="fas fa-credit-card"></i></span>
+            <div>
+              <h3>Payments</h3>
+              <span class="plugin-badge">Stripe Checkout</span>
+            </div>
+            <span class="plugin-status wip">PLUG-IN PENDING</span>
+          </div>
+          <div class="plugin-placeholder">
+            <i class="fas fa-credit-card" style="font-size:32px;color:#635BFF;opacity:.25;margin-bottom:12px;display:block;"></i>
+            <p class="ph-label">Payments — Stripe Checkout adapter</p>
+            <code class="ph-code">/* TODO: import { list, create, update } from './adapters/payments.stripe-checkout' */</code>
+          </div>
+        </div>
+    </div>
+
+    <!-- ═══ REGISTRATIONS ═══ -->
+    <div class="panel" id="panelRegistrations">
+      <div class="plugin-slot">
+        <div class="plugin-header">
+          <span class="plugin-icon" style="background:#05966915;color:#059669"><i class="fas fa-user-plus"></i></span>
+          <div><h3>Pending Registrations</h3><span class="plugin-badge">Portal API — DynamoDB</span></div>
+          <span class="plugin-status live">API LIVE</span>
+        </div>
+        <div class="plugin-placeholder">
+          <code class="ph-code">/* TODO: PortalAPI.admin.listRegistrations() → approve/deny UI
+   Fields: name | email | requested_role | submitted_at
+   Actions: Approve | Deny */</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ USERS ═══ -->
+    <div class="panel" id="panelUsers">
+      <div class="plugin-slot">
+        <div class="plugin-header">
+          <span class="plugin-icon" style="background:#DC262615;color:#DC2626"><i class="fas fa-shield-alt"></i></span>
+          <div><h3>User Roles</h3><span class="plugin-badge">Cognito — JLT-staff pool</span></div>
+          <span class="plugin-status live">API LIVE</span>
+        </div>
+        <div class="plugin-placeholder">
+          <code class="ph-code">/* TODO: PortalAPI.admin.listUsers() → role management table
+   Pools: JLT-staff (us-east-1_LCFHrjZSC) | johnson-legal-portal (us-east-1_dqqgSRKwn)
+   Roles: super_admin | admin | staff
+   Actions: Change Role | Disable | Reset Password */</code>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ SYSTEM ═══ -->
+    <div class="panel" id="panelSystem">
+      <div class="plugin-slot">
+        <div class="plugin-header">
+          <span class="plugin-icon" style="background:#37415115;color:#374151"><i class="fas fa-server"></i></span>
+          <div><h3>System Health</h3><span class="plugin-badge">AWS Lambda + DynamoDB + Cognito</span></div>
+          <span class="plugin-status wip">PLUG-IN PENDING</span>
+        </div>
+        <div class="plugin-placeholder">
+          <code class="ph-code">/* TODO: health check dashboard
+   Lambdas: jude-leads | jude-notify-owner | jude-inbox-monitor | johnson-legal-portal-PortalFunction
+   APIs: portal-api (2hp2bdxsz6) | jude-api (mpiai89295)
+   EventBridge: jude-inbox-monitor-schedule (DISABLED) | pulse-schedule (ENABLED)
+   Last deploy: show git commit hash from S3 object metadata */</code>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+<script>
+// ── Nav wiring ───────────────────────────────────────────────────────────────
+const panels = document.querySelectorAll('.panel');
+const navLinks = document.querySelectorAll('.sidebar-nav a[data-section]');
+const pageTitle = document.getElementById('pageTitle');
+const sectionLabels = {
+  dashboard:'Dashboard',leads:'Leads',cases:'Cases',contacts:'Contacts',
+  calendar:'Calendar',documents:'Documents',messages:'Messages',
+  invoices:'Invoices',payments:'Payments',registrations:'Registrations',
+  users:'User Roles',system:'System'
+};
+function showSection(id) {
+  panels.forEach(p => p.classList.remove('active'));
+  navLinks.forEach(a => a.classList.remove('active'));
+  const panel = document.getElementById('panel' + id.charAt(0).toUpperCase() + id.slice(1));
+  if (panel) panel.classList.add('active');
+  const link = document.querySelector(`.sidebar-nav a[data-section="${id}"]`);
+  if (link) link.classList.add('active');
+  pageTitle.textContent = sectionLabels[id] || id;
+}
+navLinks.forEach(a => {
+  a.addEventListener('click', e => { e.preventDefault(); showSection(a.dataset.section); });
+});
+// Quick action buttons in dashboard
+document.querySelectorAll('button[data-section]').forEach(b => {
+  b.addEventListener('click', () => showSection(b.dataset.section));
+});
+</script>
+</body></html>

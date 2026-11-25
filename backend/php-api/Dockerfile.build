@@ -1,0 +1,5 @@
+# Build/test image only (not deployed). Matches the Bref php-83 layer version.
+FROM php:8.3-cli
+RUN apt-get update -qq && apt-get install -y -qq --no-install-recommends curl unzip >/dev/null && rm -rf /var/lib/apt/lists/*
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+WORKDIR /app

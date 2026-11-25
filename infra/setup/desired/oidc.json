@@ -1,0 +1,6 @@
+{
+  "clients": [
+    "sts.amazonaws.com"
+  ],
+  "url": "token.actions.githubusercontent.com"
+}

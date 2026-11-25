@@ -42,6 +42,27 @@
             max-width: 450px;
             width: 100%;
         }
+        /* Desktop (992px+): text and portrait sit side by side. The hero height lives in one
+           variable so the portrait always stays at 80% of it. */
+        @media (min-width: 992px) {
+            .hero-section {
+                --hero-height: 500px;
+                height: var(--hero-height);
+            }
+            .hero-section img.hero-portrait {
+                height: calc(var(--hero-height) * 0.8);
+                width: auto;
+                max-width: 100%;
+                object-fit: cover;
+            }
+        }
+        /* Below 992px the columns stack, so the portrait cannot fit inside the hero; hide it
+           (phones already hid the previous photo). */
+        @media (max-width: 991.98px) {
+            .hero-section img.hero-portrait {
+                display: none;
+            }
+        }
     </style>
     <meta property="og:title" content="Johnson Legal Team | Michigan Attorneys">
     <meta property="og:description" content="Michigan attorneys specializing in personal injury, estate planning, criminal defense, and family law. Serving Wayne and Oakland County.">
@@ -55,7 +76,7 @@
     <header class="site-header">
         <div class="container">
             <nav class="navbar navbar-expand-lg navbar-dark">
-                <a class="navbar-brand" href="index.html">
+                <a class="navbar-brand" href="/">
                     <img src="images/logo-cropped.png" alt="Johnson Legal Team" style="width: 330px; height: auto;">
                 </a>
                 
@@ -66,10 +87,10 @@
                 <div class="collapse navbar-collapse" id="navbarNav">
                     <ul class="navbar-nav me-auto">
                         <li class="nav-item"><a class="nav-link" href="#" id="loginDashboardLink">Login</a></li>
-                        <li class="nav-item"><a class="nav-link" href="practice-areas.html">Practice&nbsp;Areas</a></li>
-                        <li class="nav-item"><a class="nav-link" href="blog.html">Blog</a></li>
-                        <li class="nav-item"><a class="nav-link" href="about.html">About</a></li>
-                        <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                        <li class="nav-item"><a class="nav-link" href="practice-areas">Practice&nbsp;Areas</a></li>
+                        <li class="nav-item"><a class="nav-link" href="blog">Blog</a></li>
+                        <li class="nav-item"><a class="nav-link" href="about">About</a></li>
+                        <li class="nav-item"><a class="nav-link" href="contact">Contact</a></li>
                     </ul>
                     
                     <div class="d-none d-lg-block">
@@ -90,10 +111,10 @@
                 <div class="col-lg-6 order-1 order-lg-1">
                     <h1>Michigan Estate Planning Attorney</h1>
                     <p class="lead">Experienced Legal Representation You Can Trust</p>
-                    <a href="#contact" class="btn btn-primary">Get Consultation</a>
+                    <a href="#contact" class="btn btn-primary">Call to Learn More</a>
                 </div>
                 <div class="col-lg-6 order-2 order-lg-2">
-                    <img src="images/attorney-rodney-johnson.png" alt="Attorney Rodney Johnson - Johnson Legal Team" class="img-fluid rounded" style="max-width: 60%; height: auto;">
+                    <img src="images/attorney-rodney-johnson-hero.webp" alt="Attorney Rodney Johnson - Johnson Legal Team" class="img-fluid rounded hero-portrait" width="533" height="800">
                     <style>
                         @media (max-width: 768px) {
                             .hero-section {
@@ -128,15 +149,12 @@
                     
                     <p>As experienced attorneys with over 10 years of combined experience, Johnson Legal Team specializes in probate, estate planning, and family legal matters throughout Michigan. Our dedicated lawyers provide comprehensive estate administration, will contests, guardianship services, and criminal defense representation. Whether you need assistance with complex estate disputes or routine legal matters, our commitment to client success and personalized attention sets us apart.</p>
                     <div class="row mt-4">
-                        <div class="col-4 text-center">
-                            <h4 id="casesCounter">0+</h4>
-                            <p>Cases Won</p>
-                        </div>
-                        <div class="col-4 text-center">
+                        
+                        <div class="col-6 text-center">
                             <h4>10+</h4>
                             <p>Years Experience</p>
                         </div>
-                        <div class="col-4 text-center">
+                        <div class="col-6 text-center">
                             <h4>24/7</h4>
                             <p>Client Support</p>
                         </div>
@@ -183,7 +201,7 @@
                                             <div id="collapsePersonalInjury" class="accordion-collapse collapse" data-bs-parent="#practiceAreasAccordion">
                                                 <div class="accordion-body" style="background-color: #f8f9fa; padding: 1rem;">
                                                     <p><strong>We fight for maximum compensation for accident victims.</strong> Our personal injury attorneys handle car accidents, slip and falls, medical malpractice, product liability, wrongful death, and workplace injuries. We work on a contingency fee basis - you don't pay unless we win. Our team investigates your accident, negotiates with insurance companies, and takes cases to trial when necessary to secure compensation for medical bills, lost wages, and pain and suffering.</p>
-                                                    <a href="personal-injury.html" class="btn btn-sm mt-2" style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: var(--accent-secondary); border: 1px solid #ea580c; font-weight: 600;">Learn More →</a>
+                                                    <a href="personal-injury" class="btn btn-sm mt-2" style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: var(--accent-secondary); border: 1px solid #ea580c; font-weight: 600;">Learn More →</a>
                                                 </div>
                                             </div>
                                         </div>
@@ -198,7 +216,7 @@
                                             <div id="collapseEstate" class="accordion-collapse collapse" data-bs-parent="#practiceAreasAccordion">
                                                 <div class="accordion-body" style="background-color: #f8f9fa; padding: 1rem;">
                                                     <p><strong>Protect your legacy and guide your family through estate matters.</strong> We provide comprehensive estate administration, will preparation, trust creation and administration, guardianships, conservatorships, and probate court representation. Our experienced attorneys help families navigate complex Michigan probate laws, contest invalid wills, and ensure proper distribution of assets according to your wishes.</p>
-                                                    <a href="probate-estate-planning.html" class="btn btn-sm mt-2" style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: var(--accent-secondary); border: 1px solid #ea580c; font-weight: 600;">Learn More →</a>
+                                                    <a href="probate-estate-planning" class="btn btn-sm mt-2" style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: var(--accent-secondary); border: 1px solid #ea580c; font-weight: 600;">Learn More →</a>
                                                 </div>
                                             </div>
                                         </div>
@@ -213,7 +231,7 @@
                                             <div id="collapseExpungements" class="accordion-collapse collapse" data-bs-parent="#practiceAreasAccordion">
                                                 <div class="accordion-body" style="background-color: #f8f9fa; padding: 1rem;">
                                                     <p><strong>Clear your record and reclaim your future.</strong> Michigan's expanded expungement laws allow eligible individuals to set aside criminal convictions, including automatic expungements, multiple conviction expungements, and marijuana offense expungements. We help you determine eligibility, file petitions, and represent you in court to remove barriers to employment, housing, and professional licenses.</p>
-                                                    <a href="expungements.html" class="btn btn-sm mt-2" style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: var(--accent-secondary); border: 1px solid #ea580c; font-weight: 600;">Learn More →</a>
+                                                    <a href="expungements" class="btn btn-sm mt-2" style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: var(--accent-secondary); border: 1px solid #ea580c; font-weight: 600;">Learn More →</a>
                                                 </div>
                                             </div>
                                         </div>
@@ -228,7 +246,7 @@
                                             <div id="collapseMisdemeanors" class="accordion-collapse collapse" data-bs-parent="#practiceAreasAccordion">
                                                 <div class="accordion-body" style="background-color: #f8f9fa; padding: 1rem;">
                                                     <p><strong>Defend your rights and protect your future.</strong> We provide aggressive defense for assault and battery, DUI/OWI, retail fraud, domestic violence, and other misdemeanor charges. Our attorneys challenge evidence, negotiate plea bargains, pursue diversion programs like HYTA for young offenders, and fight to minimize the impact on your criminal record, employment, and freedom.</p>
-                                                    <a href="misdemeanors.html" class="btn btn-sm mt-2" style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: var(--accent-secondary); border: 1px solid #ea580c; font-weight: 600;">Learn More →</a>
+                                                    <a href="misdemeanors" class="btn btn-sm mt-2" style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: var(--accent-secondary); border: 1px solid #ea580c; font-weight: 600;">Learn More →</a>
                                                 </div>
                                             </div>
                                         </div>
@@ -243,7 +261,7 @@
                                             <div id="collapseTraffic" class="accordion-collapse collapse" data-bs-parent="#practiceAreasAccordion">
                                                 <div class="accordion-body" style="background-color: #f8f9fa; padding: 1rem;">
                                                     <p><strong>Fight your ticket and save your license.</strong> We handle speeding violations, reckless driving, license suspensions, and driving while license suspended charges. Our attorneys work to reduce points on your license, avoid insurance increases, prevent license suspension, and keep you on the road. Often our fees cost less than the long-term insurance rate increases.</p>
-                                                    <a href="traffic-tickets.html" class="btn btn-sm mt-2" style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: var(--accent-secondary); border: 1px solid #ea580c; font-weight: 600;">Learn More →</a>
+                                                    <a href="traffic-tickets" class="btn btn-sm mt-2" style="background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%); color: var(--accent-secondary); border: 1px solid #ea580c; font-weight: 600;">Learn More →</a>
                                                 </div>
                                             </div>
                                         </div>
@@ -270,7 +288,7 @@
                                                 </div>
                                             </div>
                                             <p class="phone-number">(833) 659-8378</p>
-                                            <a href="contact.html" class="btn btn-outline-primary">Get Your Consultation</a>
+                                            <a href="contact" class="btn btn-outline-primary">Discuss Your Case</a>
                                         </div>
                                     </div>
                                 </div>
@@ -299,10 +317,10 @@
                     </div>
                     <div class="d-flex justify-content-md-end align-items-center flex-wrap small mb-2">
                         <a href="#" id="loginDashboardLinkFooter" class="text-white text-decoration-none me-3">Login</a>
-                        <a href="practice-areas.html" class="text-white text-decoration-none me-3">Practice Areas</a>
-                        <a href="blog.html" class="text-white text-decoration-none me-3">Blog</a>
-                        <a href="about.html" class="text-white text-decoration-none me-3">About</a>
-                        <a href="contact.html" class="text-white text-decoration-none me-3">Contact</a>
+                        <a href="practice-areas" class="text-white text-decoration-none me-3">Practice Areas</a>
+                        <a href="blog" class="text-white text-decoration-none me-3">Blog</a>
+                        <a href="about" class="text-white text-decoration-none me-3">About</a>
+                        <a href="contact" class="text-white text-decoration-none me-3">Contact</a>
                     </div>
                     <div class="d-flex justify-content-md-end align-items-center flex-wrap">
                         <a href="https://www.linkedin.com/company/johnson-legal-team-birmingham" class="me-2" style="color: var(--accent-secondary) !important;"><i class="fab fa-linkedin-in"></i></a>
@@ -319,8 +337,8 @@
                         <div class="d-flex flex-wrap">
                             <span class="me-2">©2026 Johnson Legal Team</span>
                             <span class="me-2">| All Rights Reserved</span>
-                            <a href="privacy-policy.html" class="text-white text-decoration-none me-2">| Privacy Policy</a>
-                            <a href="terms-of-service.html" class="text-white text-decoration-none">| Terms of Service</a>
+                            <a href="privacy-policy" class="text-white text-decoration-none me-2">| Privacy Policy</a>
+                            <a href="terms-of-service" class="text-white text-decoration-none">| Terms of Service</a>
                         </div>
                     </div>
                     <p class="small text-muted mt-2 mb-0">Disclaimer: No legal advice is offered on this website. No attorney-client relationship is created until there is an engagement letter signed by the client and an authorized representative of the firm.</p>
@@ -349,27 +367,9 @@
             form.reset();
         }
         
-        // Animate cases counter
-        function animateCounter() {
-            const counter = document.getElementById('casesCounter');
-            let current = 0;
-            const target = 99;
-            const increment = target / 50;
-            
-            const timer = setInterval(() => {
-                current += increment;
-                if (current >= target) {
-                    counter.textContent = target + '+';
-                    clearInterval(timer);
-                } else {
-                    counter.textContent = Math.floor(current) + '+';
-                }
-            }, 40);
-        }
         
         // Initialize
         window.addEventListener('load', () => {
-            animateCounter();
             
             // Initialize captcha when page loads
             document.addEventListener('DOMContentLoaded', function() {

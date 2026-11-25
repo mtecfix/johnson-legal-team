@@ -1,0 +1,20 @@
+// Offline tests with a mocked upstream.
+import { handle } from './jlt-api-proxy.js';
+let last; let fail = 0;
+globalThis.fetch = async (u, init) => { last = { u, init, body: init.body ? await new Response(init.body).text() : null };
+  if (String(u).includes('boom')) throw new Error('down');
+  return new Response('{"ok":true}', { status: 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'public' } }); };
+const check = (n, ok) => { console.log((ok ? 'PASS ' : 'FAIL ') + n); if (!ok) fail++; };
+const S = 'https://johnsonlegalteam.org';
+let r = await handle(new Request(S + '/api/legal-onboarding.php', { method: 'POST', headers: { 'Content-Type': 'application/json', 'CF-Connecting-IP': '1.2.3.4', Cookie: 'secret=1', Authorization: 'x' }, body: '{"a":1}' }), 'https://up');
+check('POST forwarded with body', last.u === 'https://up/api/legal-onboarding.php' && last.init.method === 'POST' && last.body === '{"a":1}');
+check('content-type + client ip forwarded', last.init.headers.get('content-type') === 'application/json' && last.init.headers.get('x-forwarded-for') === '1.2.3.4');
+check('cookies/authorization not forwarded', !last.init.headers.get('cookie') && !last.init.headers.get('authorization'));
+check('response no-store', r.headers.get('cache-control') === 'no-store' && r.status === 200);
+r = await handle(new Request(S + '/api/approve-registration.php?type=legal&email=a%40b.co&action=approve&token=t'), 'https://up');
+check('GET query string preserved', last.u === 'https://up/api/approve-registration.php?type=legal&email=a%40b.co&action=approve&token=t' && last.init.body === undefined);
+last = null; r = await handle(new Request(S + '/api/auth.php'), 'https://up');
+check('unknown path 404, backend not called', r.status === 404 && last === null);
+r = await handle(new Request(S + '/api/health'), 'https://boom');
+check('upstream failure -> 502 JSON', r.status === 502 && (await r.json()).error.includes('833'));
+console.log(fail ? `${fail} FAILURES` : 'ALL TESTS PASSED'); process.exit(fail ? 1 : 0);

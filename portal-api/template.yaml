@@ -21,9 +21,9 @@ Globals:
 
 Parameters:
   CorsOrigin:
-    Type: String
-    Default: https://d1rqv10nry9s54.cloudfront.net
-    Description: Allowed browser origin for the portal frontend.
+    Type: CommaDelimitedList
+    Default: https://johnsonlegalteam.org,https://www.johnsonlegalteam.org,https://mtecfix.github.io
+    Description: Comma-separated browser origins allowed to call the portal API.
 
 Resources:
 
@@ -119,13 +119,20 @@ Resources:
       UserPoolId: !Ref PortalUserPool
 
   # --- HTTP API with a Cognito JWT authorizer -------------------------------
+  # WARNING (2026-11-20): do NOT `sam deploy` this template to the live stack yet.
+  # The live API (2hp2bdxsz6) uses 27 method-specific JWT routes plus 13 open OPTIONS routes
+  # with no integration, created by hand. This template declares `ANY /path` routes behind the
+  # JWT authorizer instead. Deploying it replaces the live routes, browser preflight (OPTIONS)
+  # then returns 401, and the portal stops working from the website. Declare the real routes
+  # here first (explicit methods, plus OPTIONS routes with AuthorizationType NONE).
   PortalHttpApi:
     Type: AWS::Serverless::HttpApi
     Properties:
       CorsConfiguration:
-        AllowOrigins: [!Ref CorsOrigin]
+        AllowOrigins: !Ref CorsOrigin
         AllowHeaders: [Authorization, Content-Type]
         AllowMethods: [GET, POST, PUT, DELETE, OPTIONS]
+        MaxAge: 86400
       Auth:
         DefaultAuthorizer: CognitoJwt
         Authorizers:

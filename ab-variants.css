@@ -1,0 +1,121 @@
+/* Sandbox A/B/C/D variant styles. Scoped to .ab-* classes and body.ab-v-* so the original pages are unaffected.
+ * Colors come from --ab-* variables; variant C redefines them (teal/amber theme instead of navy/orange). */
+body{--ab-primary:#1a365d;--ab-accent:#ea580c;--ab-accent-light:#ea580c}
+.ab-badge{position:fixed;left:8px;bottom:8px;z-index:2000;background:var(--ab-primary);color:#fff;font:600 12px/1 system-ui,sans-serif;padding:6px 10px;border-radius:12px;opacity:.9;pointer-events:none}
+.ab-callpanel{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;margin:20px 0;padding:20px 24px;background:var(--ab-primary);color:#fff;border-radius:10px;border-left:6px solid var(--ab-accent)}
+.ab-callpanel-text strong{display:block;font-size:1.25rem}
+.ab-callpanel-text span{opacity:.9}
+.ab-callpanel-actions{display:flex;flex-wrap:wrap;gap:10px}
+.ab-callpanel .btn-outline-primary{color:#fff;border-color:#fff}
+.ab-callpanel .btn-outline-primary:hover{background:#fff;color:var(--ab-primary)}
+.ab-steps{margin:24px 0;padding:24px;background:#f8f9fa;border-radius:10px}
+.ab-steps-title{font-size:1.4rem;margin-bottom:16px;text-align:center}
+.ab-step{height:100%;padding:16px;background:#fff;border-radius:8px;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.ab-step h3{font-size:1.05rem;margin:8px 0 6px}
+.ab-step p{margin:0;font-size:.95rem;color:#495057}
+.ab-step-num{display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:50%;background:var(--ab-accent);color:#fff;font-weight:700}
+.ab-compact-cta{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin:12px 0 20px}
+.ab-compact-phone{font-weight:600;color:var(--ab-primary);text-decoration:none}
+.ab-compact-phone:hover{text-decoration:underline}
+.ab-hub-band{padding:12px 0}
+.ab-stickybar{position:fixed;left:0;right:0;bottom:0;z-index:1999;display:flex;gap:10px;padding:10px 12px;background:var(--ab-primary);box-shadow:0 -2px 8px rgba(0,0,0,.25)}
+.ab-stickybar .btn{flex:1;font-weight:600;min-height:48px}
+@media (max-width:576px){.ab-callpanel{padding:16px}.ab-callpanel-actions .btn{width:100%}}
+
+/* ---------- Variant C: teal/amber color scheme ---------- */
+body.ab-v-c{
+  --ab-primary:#115e59;--ab-accent:#b45309;--ab-accent-light:#fcd34d;
+  --accent-primary:#115e59;--accent-secondary:#b45309;--accent-tertiary:#0d9488;
+  --secondary-bg:#f0fdfa;--border:#99f6e4;
+}
+body.ab-v-c .btn-primary:hover{background:#92400e;box-shadow:0 4px 12px rgba(180,83,9,.3)}
+body.ab-v-c .btn-outline-primary{color:#115e59;border-color:#115e59}
+body.ab-v-c .btn-outline-primary:hover{background:#115e59;color:#fff}
+body.ab-v-c .navbar-nav .nav-link:hover,
+body.ab-v-c .navbar-nav .nav-link.active,
+body.ab-v-c .site-title,
+body.ab-v-c .page-header h1{color:#fcd34d !important}
+body.ab-v-c .page-header{background:linear-gradient(rgba(0,0,0,.6),rgba(0,0,0,.6)),linear-gradient(rgba(17,94,89,.55),rgba(15,118,110,.55)),url('images/US-Justice.png') !important;background-size:cover !important;background-position:center !important}
+body.ab-v-c .law-sidebar .card-header,
+body.ab-v-c .law-sidebar .list-group-item:hover{background:linear-gradient(135deg,#0f766e 0%,#115e59 100%) !important;box-shadow:0 4px 12px rgba(15,118,110,.3)}
+body.ab-v-c .law-sidebar .list-group-item:hover a{color:#fcd34d !important}
+body.ab-v-c .law-sidebar h5{color:#b45309}
+body.ab-v-c .practice-detail-card .btn[style]{background:linear-gradient(135deg,#115e59 0%,#0f766e 100%) !important;border:1px solid #b45309 !important;color:#fcd34d !important}
+body.ab-v-c .alert-info{background:#ccfbf1;border-color:#5eead4;color:#134e4a}
+body.ab-v-c .accordion-button:not(.collapsed){background:#ccfbf1;color:#134e4a}
+body.ab-v-c .ab-steps{background:#f0fdfa}
+
+/* ---------- Variant D: mobile only (viewport under 768px). Desktop hides the sticky bar. ---------- */
+body.ab-v-d{padding-bottom:70px}
+body.ab-v-d .ab-badge{bottom:76px}
+@media (max-width:767.98px){
+  body.ab-v-d .ab-compact-cta{flex-direction:column;align-items:stretch;text-align:center}
+  body.ab-v-d .ab-compact-cta .btn{width:100%;min-height:52px;font-size:1.1rem}
+  body.ab-v-d .ab-compact-phone{font-size:1.1rem;padding:8px}
+}
+@media (min-width:768px){
+  body.ab-v-d{padding-bottom:0}
+  body.ab-v-d .ab-stickybar{display:none}
+  body.ab-v-d .ab-badge{bottom:8px}
+}
+
+/* ---------- Variant B: mirrored layout (desktop >= 992px; phones keep the normal stacked layout) ----------
+ * Header: navigation menu + search move to the left, logo moves to the right.
+ * Service pages: the "Michigan Laws" sidebar moves from the left column to the right column. */
+@media (min-width:992px){
+  body.ab-v-b .site-header .navbar{flex-direction:row-reverse}
+  body.ab-v-b .site-header .navbar-brand{margin-right:0;margin-left:1rem}
+  body.ab-v-b .site-header .navbar-nav.me-auto{margin-right:0 !important;margin-left:0 !important}
+  body.ab-v-b .site-header .navbar-collapse{justify-content:space-between}
+  body.ab-v-b .site-header .navbar-collapse > .d-lg-block{order:-1;margin-right:1rem}
+  body.ab-v-b .row > .col-lg-3{order:2}
+  body.ab-v-b .row > .col-lg-9{order:1}
+  body.ab-v-b .law-sidebar .list-group-item:hover{transform:translateX(-5px)}
+}
+
+/* Layout fixes found in screenshot review (2026-11-15) */
+@media (min-width:992px){
+  /* B: site .search-bar caps at 200px, so its button overflowed into "Login" once the bar moved left. */
+  body.ab-v-b .site-header .search-bar{max-width:none}
+  body.ab-v-b .site-header .navbar-collapse > .d-lg-block{margin-right:1.5rem}
+}
+@media (max-width:767.98px){
+  /* D: lift the chat bubble (inline-positioned by chat-widget.js) above the sticky call/message bar. */
+  body.ab-v-d #legal-chat-widget{bottom:84px !important}
+}
+
+/* ---------- Variant C: typography + component colors (teal/amber) ----------
+ * Bootstrap 5.1 builds bg-*/text-* utilities from --bs-*-rgb, so overriding those re-themes
+ * badges, tinted boxes and status text. Links and JS-injected widgets need explicit rules. */
+body.ab-v-c{
+  --primary-text:#1e3a37;--secondary-text:#36524f;--accent-tertiary:#b45309;
+  --bs-primary-rgb:17,94,89;--bs-info-rgb:13,148,136;--bs-success-rgb:4,120,87;--bs-warning-rgb:180,83,9;
+  color:#1e3a37;
+}
+body.ab-v-c h1,body.ab-v-c h2,body.ab-v-c h3,body.ab-v-c h4,body.ab-v-c h5,body.ab-v-c h6{color:#115e59}
+body.ab-v-c .lead,body.ab-v-c p{color:#1e3a37}
+body.ab-v-c a{color:#0f766e}
+body.ab-v-c .text-muted{color:#4b6b67 !important}
+body.ab-v-c .accordion-button{color:#134e4a}
+body.ab-v-c .accordion-button:focus{box-shadow:0 0 0 .25rem rgba(15,118,110,.25);border-color:#5eead4}
+body.ab-v-c .law-sidebar .statute-link{color:#4b6b67}
+/* Text inside dark/tinted containers stays light. */
+body.ab-v-c .site-header a,body.ab-v-c .site-header p,body.ab-v-c .site-header h5,
+body.ab-v-c .bg-primary:not(.bg-opacity-10) *,body.ab-v-c .text-white,body.ab-v-c .text-white *,
+body.ab-v-c .contact-widget *,body.ab-v-c .page-header p,body.ab-v-c .law-sidebar .card-header h5{color:#fff}
+body.ab-v-c .page-header h1,body.ab-v-c .contact-widget h2{color:#fcd34d !important}
+body.ab-v-c .law-sidebar .list-group-item:hover h5{color:#fff}
+body.ab-v-c .btn-primary,body.ab-v-c .btn-primary:hover{color:#fff}
+body.ab-v-c .carousel-indicators [data-bs-target]{background-color:#fcd34d}
+/* chat-widget.js (inline styles) */
+body.ab-v-c #chat-button,body.ab-v-c #chat-window > div:first-child{background:linear-gradient(135deg,#0f766e 0%,#115e59 100%) !important}
+body.ab-v-c #send-button{background:#0f766e !important}
+/* search.js results dropdown (inline styles) */
+body.ab-v-c .search-results{border-color:#b45309 !important}
+body.ab-v-c .search-result-item{color:#115e59 !important}
+body.ab-v-c .search-result-item > div:first-child{color:#b45309 !important}
+
+/* ---------- Variant C: contrast fixes (2026-11-15 review) ---------- */
+body.ab-v-c .bg-primary:not(.bg-opacity-10){background:linear-gradient(135deg,#115e59 0%,#0f766e 100%) !important}
+body.ab-v-c .bg-primary:not(.bg-opacity-10) h3,body.ab-v-c .bg-primary:not(.bg-opacity-10) h4{color:#fcd34d}
+body.ab-v-c footer .text-muted,body.ab-v-c .site-header .text-muted{color:#cfe7e3 !important}

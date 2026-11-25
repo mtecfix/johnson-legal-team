@@ -1,0 +1,143 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: JLT daily AWS cost report (Lambda + EventBridge Scheduler + SSM scope parameter). Run setup.sh first.
+
+Parameters:
+  ExportBucket:
+    Type: String
+    Description: Bucket that receives the Data Export (created by setup.sh)
+  TopicArn:
+    Type: String
+    Description: SNS topic the report is published to (created by setup.sh)
+  CodeBucket:
+    Type: String
+  CodeKey:
+    Type: String
+  PatternsJson:
+    Type: String
+    Description: JSON scope list (patterns.json), stored in SSM
+  ScheduleExpression:
+    Type: String
+    Default: cron(0 7 * * ? *)
+  ScheduleTimezone:
+    Type: String
+    Default: America/Detroit
+
+Resources:
+  PatternsParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: /jlt/cost-report/patterns
+      Type: String
+      Tier: Standard
+      Description: Resource-id substrings that count as JLT in the daily cost report
+      Value: !Ref PatternsJson
+      Tags:
+        project: johnson-legal
+
+  LogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/jlt-cost-report
+      RetentionInDays: 30
+
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: jlt-cost-report-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: lambda.amazonaws.com}
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: least-privilege
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub '${LogGroup.Arn}:*'
+              - Effect: Allow
+                Action: s3:ListBucket
+                Resource: !Sub 'arn:aws:s3:::${ExportBucket}'
+              - Effect: Allow
+                Action: s3:GetObject
+                Resource: !Sub 'arn:aws:s3:::${ExportBucket}/cur/*'
+              - Effect: Allow
+                Action: sns:Publish
+                Resource: !Ref TopicArn
+              - Effect: Allow
+                Action: ssm:GetParameter
+                Resource: !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/jlt/cost-report/patterns'
+              - Effect: Allow
+                Action: ce:GetCostAndUsage   # only used by the one-off preview mode
+                Resource: '*'
+      Tags:
+        - {Key: project, Value: johnson-legal}
+
+  Function:
+    Type: AWS::Lambda::Function
+    DependsOn: LogGroup
+    Properties:
+      FunctionName: jlt-cost-report
+      Description: Daily JLT AWS cost and usage report to SNS
+      Runtime: python3.12
+      Architectures: [arm64]
+      Handler: handler.lambda_handler
+      MemorySize: 256
+      Timeout: 120
+      Role: !GetAtt FunctionRole.Arn
+      Code:
+        S3Bucket: !Ref CodeBucket
+        S3Key: !Ref CodeKey
+      Environment:
+        Variables:
+          EXPORT_BUCKET: !Ref ExportBucket
+          EXPORT_PREFIX: cur/jlt-cur2-daily/data
+          TOPIC_ARN: !Ref TopicArn
+          PATTERN_PARAM: /jlt/cost-report/patterns
+      Tags:
+        - {Key: project, Value: johnson-legal}
+
+  SchedulerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: jlt-cost-report-scheduler-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: {Service: scheduler.amazonaws.com}
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals: {'aws:SourceAccount': !Ref 'AWS::AccountId'}
+      Policies:
+        - PolicyName: invoke-report
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: lambda:InvokeFunction
+                Resource: !GetAtt Function.Arn
+
+  DailySchedule:
+    Type: AWS::Scheduler::Schedule
+    Properties:
+      Name: jlt-cost-report-daily
+      Description: Daily 7:00 AM Detroit time JLT cost report
+      State: ENABLED
+      FlexibleTimeWindow: {Mode: 'OFF'}
+      ScheduleExpression: !Ref ScheduleExpression
+      ScheduleExpressionTimezone: !Ref ScheduleTimezone
+      Target:
+        Arn: !GetAtt Function.Arn
+        RoleArn: !GetAtt SchedulerRole.Arn
+        Input: '{"mode": "report"}'
+        RetryPolicy: {MaximumRetryAttempts: 2, MaximumEventAgeInSeconds: 3600}
+
+Outputs:
+  FunctionName:
+    Value: !Ref Function
+  ScheduleName:
+    Value: !Ref DailySchedule

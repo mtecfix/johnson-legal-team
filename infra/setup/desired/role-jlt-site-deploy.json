@@ -1,0 +1,48 @@
+{
+  "description": "GitHub Actions environment 'production' (johnson-legal-team): write johnsonlegalteam.org + read Cloudflare purge token",
+  "inline_policy": {
+    "Statement": [
+      {
+        "Action": "s3:ListBucket",
+        "Effect": "Allow",
+        "Resource": "arn:aws:s3:::johnsonlegalteam.org",
+        "Sid": "ListSiteBucket"
+      },
+      {
+        "Action": [
+          "s3:PutObject",
+          "s3:DeleteObject"
+        ],
+        "Effect": "Allow",
+        "Resource": "arn:aws:s3:::johnsonlegalteam.org/*",
+        "Sid": "WriteSiteObjects"
+      },
+      {
+        "Action": "secretsmanager:GetSecretValue",
+        "Effect": "Allow",
+        "Resource": "arn:aws:secretsmanager:us-east-1:663877906756:secret:johnsonlegalteam/cloudflare-purge-*",
+        "Sid": "ReadPurgeToken"
+      }
+    ],
+    "Version": "2012-10-17"
+  },
+  "inline_policy_name": "deploy-site-bucket",
+  "trust": {
+    "Statement": [
+      {
+        "Action": "sts:AssumeRoleWithWebIdentity",
+        "Condition": {
+          "StringEquals": {
+            "token.actions.githubusercontent.com:aud": "sts.amazonaws.com",
+            "token.actions.githubusercontent.com:sub": "repo:mtecfix/johnson-legal-team:environment:production"
+          }
+        },
+        "Effect": "Allow",
+        "Principal": {
+          "Federated": "arn:aws:iam::663877906756:oidc-provider/token.actions.githubusercontent.com"
+        }
+      }
+    ],
+    "Version": "2012-10-17"
+  }
+}

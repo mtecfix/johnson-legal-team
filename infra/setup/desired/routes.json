@@ -1,0 +1,54 @@
+[
+  {
+    "pattern": "johnsonlegalteam.org/expungements*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "johnsonlegalteam.org/misdemeanors*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "johnsonlegalteam.org/personal-injury*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "johnsonlegalteam.org/practice-areas*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "johnsonlegalteam.org/probate-estate-planning*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "johnsonlegalteam.org/traffic-tickets*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "www.johnsonlegalteam.org/expungements*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "www.johnsonlegalteam.org/misdemeanors*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "www.johnsonlegalteam.org/personal-injury*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "www.johnsonlegalteam.org/practice-areas*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "www.johnsonlegalteam.org/probate-estate-planning*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "www.johnsonlegalteam.org/traffic-tickets*",
+    "script": "jlt-ab-split"
+  },
+  {
+    "pattern": "johnsonlegalteam.org/api/*",
+    "script": "jlt-api-proxy"
+  }
+]

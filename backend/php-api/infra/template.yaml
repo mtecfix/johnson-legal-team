@@ -1,0 +1,197 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: >-
+  Johnson Legal Team form API (PHP on Lambda via Bref v3): registration, legal intake, client onboarding,
+  admin approval links. DynamoDB on-demand, SES email, Cognito user creation on approval.
+
+Parameters:
+  CodeBucket: { Type: String, Default: johnson-legal-sam-deploy-663877906756 }
+  CodeKey: { Type: String, Description: S3 key of the Lambda zip built by build.sh }
+  BrefLayerArn: { Type: String, Default: 'arn:aws:lambda:us-east-1:873528684822:layer:php-83:25' }
+  UserPoolId: { Type: String, Default: us-east-1_dqqgSRKwn }
+  AdminEmails: { Type: String, Default: 'johnsonlegalteam@gmail.com,mrtechfixes@gmail.com,mrtechfixes.ai@gmail.com' }
+  FromEmail: { Type: String, Default: 'Johnson Legal Team <webmaster@johnsonlegalteam.org>' }
+  SiteUrl: { Type: String, Default: 'https://johnsonlegalteam.org' }
+
+Resources:
+  UserProfilesTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: jlt-user-profiles
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: [{ AttributeName: email, AttributeType: S }]
+      KeySchema: [{ AttributeName: email, KeyType: HASH }]
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification: { SSEEnabled: true }
+      Tags: [{ Key: Project, Value: johnson-legal }]
+
+  LegalOnboardingTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: jlt-legal-onboarding
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions: [{ AttributeName: email, AttributeType: S }]
+      KeySchema: [{ AttributeName: email, KeyType: HASH }]
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification: { SSEEnabled: true }
+      Tags: [{ Key: Project, Value: johnson-legal }]
+
+  ClientOnboardingTable:
+    Type: AWS::DynamoDB::Table
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+    Properties:
+      TableName: jlt-client-onboarding
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - { AttributeName: email, AttributeType: S }
+        - { AttributeName: submission_id, AttributeType: S }
+      KeySchema:
+        - { AttributeName: email, KeyType: HASH }
+        - { AttributeName: submission_id, KeyType: RANGE }
+      PointInTimeRecoverySpecification: { PointInTimeRecoveryEnabled: true }
+      SSESpecification: { SSEEnabled: true }
+      Tags: [{ Key: Project, Value: johnson-legal }]
+
+  ApprovalLinkSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Name: johnsonlegalteam/php-api-hmac
+      Description: HMAC key for signing admin approve/deny links (jlt-php-api)
+      GenerateSecretString:
+        SecretStringTemplate: '{}'
+        GenerateStringKey: hmac_secret
+        PasswordLength: 64
+        ExcludePunctuation: true
+      Tags: [{ Key: Project, Value: johnson-legal }]
+
+  FunctionLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: /aws/lambda/jlt-php-api
+      RetentionInDays: 30
+
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: jlt-php-api-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement: [{ Effect: Allow, Principal: { Service: lambda.amazonaws.com }, Action: sts:AssumeRole }]
+      Policies:
+        - PolicyName: jlt-php-api
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: Logs
+                Effect: Allow
+                Action: [logs:CreateLogStream, logs:PutLogEvents]
+                Resource: !Sub '${FunctionLogGroup.Arn}:*'
+              - Sid: Tables
+                Effect: Allow
+                Action: [dynamodb:GetItem, dynamodb:PutItem, dynamodb:UpdateItem, dynamodb:Query]
+                Resource: [!GetAtt UserProfilesTable.Arn, !GetAtt LegalOnboardingTable.Arn, !GetAtt ClientOnboardingTable.Arn]
+              - Sid: SendFromFirmDomain
+                Effect: Allow
+                Action: ses:SendEmail
+                Resource: '*'
+                Condition:
+                  StringEquals: { 'ses:FromAddress': webmaster@johnsonlegalteam.org }
+              - Sid: CreatePortalLogin
+                Effect: Allow
+                Action: cognito-idp:AdminCreateUser
+                Resource: !Sub 'arn:aws:cognito-idp:${AWS::Region}:${AWS::AccountId}:userpool/${UserPoolId}'
+              - Sid: ApprovalSecret
+                Effect: Allow
+                Action: secretsmanager:GetSecretValue
+                Resource: !Ref ApprovalLinkSecret
+      Tags: [{ Key: Project, Value: johnson-legal }]
+
+  Function:
+    Type: AWS::Lambda::Function
+    DependsOn: FunctionLogGroup
+    Properties:
+      FunctionName: jlt-php-api
+      Description: JLT form API (Bref PHP 8.3 FPM)
+      Runtime: provided.al2023
+      Handler: public/index.php
+      Architectures: [x86_64]
+      Layers: [!Ref BrefLayerArn]
+      MemorySize: 1024
+      Timeout: 28
+      ReservedConcurrentExecutions: 5
+      Role: !GetAtt FunctionRole.Arn
+      Code: { S3Bucket: !Ref CodeBucket, S3Key: !Ref CodeKey }
+      Environment:
+        Variables:
+          BREF_RUNTIME: fpm
+          TABLE_USER_PROFILES: !Ref UserProfilesTable
+          TABLE_LEGAL_ONBOARDING: !Ref LegalOnboardingTable
+          TABLE_CLIENT_ONBOARDING: !Ref ClientOnboardingTable
+          HMAC_SECRET_ARN: !Ref ApprovalLinkSecret
+          COGNITO_USER_POOL_ID: !Ref UserPoolId
+          ADMIN_EMAILS: !Ref AdminEmails
+          FROM_EMAIL: !Ref FromEmail
+          SITE_URL: !Ref SiteUrl
+      Tags: [{ Key: Project, Value: johnson-legal }]
+
+  HttpApi:
+    Type: AWS::ApiGatewayV2::Api
+    Properties:
+      Name: jlt-php-api
+      ProtocolType: HTTP
+      Tags: { Project: johnson-legal }
+
+  Integration:
+    Type: AWS::ApiGatewayV2::Integration
+    Properties:
+      ApiId: !Ref HttpApi
+      IntegrationType: AWS_PROXY
+      IntegrationUri: !GetAtt Function.Arn
+      PayloadFormatVersion: '2.0'
+      TimeoutInMillis: 29000
+
+  ApiRoute:
+    Type: AWS::ApiGatewayV2::Route
+    Properties:
+      ApiId: !Ref HttpApi
+      RouteKey: 'ANY /api/{proxy+}'
+      Target: !Sub 'integrations/${Integration}'
+
+  Stage:
+    Type: AWS::ApiGatewayV2::Stage
+    Properties:
+      ApiId: !Ref HttpApi
+      StageName: $default
+      AutoDeploy: true
+      DefaultRouteSettings: { ThrottlingRateLimit: 5, ThrottlingBurstLimit: 10 }
+
+  InvokePermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref Function
+      Action: lambda:InvokeFunction
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub 'arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${HttpApi}/*/*/api/*'
+
+  ErrorAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmName: jlt-php-api-errors
+      AlarmDescription: jlt-php-api Lambda errors (check /aws/lambda/jlt-php-api)
+      Namespace: AWS/Lambda
+      MetricName: Errors
+      Dimensions: [{ Name: FunctionName, Value: !Ref Function }]
+      Statistic: Sum
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 1
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      TreatMissingData: notBreaching
+
+Outputs:
+  ApiEndpoint: { Value: !GetAtt HttpApi.ApiEndpoint }
+  FunctionName: { Value: !Ref Function }
