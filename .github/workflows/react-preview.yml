@@ -1,0 +1,27 @@
+name: React preview validation
+
+on:
+  push:
+    branches: [feature/react-ui-design-system]
+    paths:
+      - 'react-app/**'
+      - '.github/workflows/react-preview.yml'
+  pull_request:
+    paths:
+      - 'react-app/**'
+      - '.github/workflows/react-preview.yml'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: react-app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npm run check
+      - run: npm run build
