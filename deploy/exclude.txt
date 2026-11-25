@@ -31,3 +31,16 @@ client_secret_*.json
 .DS_Store
 *.pyc
 __pycache__
+
+# --- Added 2026-11-25 (Pages staging work) -------------------------------------------------
+# These paths are repo-only. Neither the S3 bucket nor the GitHub Pages staging copy should
+# publish them. Most do not exist on production yet; they are listed now so that merging the
+# open draft PRs (#2 react-app, #3 php-api) cannot publish source code by accident.
+# The React app is built separately and published at /react/ on Pages only (deploy-pages.yml).
+/react-app/
+/php-api/
+/_archive/
+/_secrets-local/
+/jude-backend/
+KIRO-*.md
+PHP-COMPATIBILITY-AUDIT-*.md

@@ -3,8 +3,36 @@ name: Deploy static site to GitHub Pages
 # Publishes the repo (static HTML/JS/CSS + markdown content) to GitHub Pages,
 # which serves over HTTPS on a *.github.io domain (free).
 
+# --- Current behavior (updated 2026-11-25) ---------------------------------------------------
+# This is the public STAGING copy of johnsonlegalteam.org:
+#   https://mtecfix.github.io/johnson-legal-team/          the full site, built from master
+#   https://mtecfix.github.io/johnson-legal-team/react/    the React redesign (react-app/), once it exists on master
+#
+# How it relates to production:
+#   - Staging = master, rebuilt on every push to master.
+#   - Production (S3 bucket johnsonlegalteam.org) = the production branch, deployed only by
+#     .github/workflows/deploy-s3.yml after a manual approval.
+#   - Check changes here first, then promote master to production.
+#
+# Why it builds with deploy/build_site.py instead of the old rsync list:
+#   The S3 workflow uses the same script and deploy/exclude.txt, so this site contains exactly
+#   the files S3 would receive (plus /react/). The old rsync list was shorter and published
+#   backend/, infra/, deploy/ and internal notes. check_site.py (pre-deploy checks and secret
+#   scan) now runs here too, so a bad build never reaches either site.
+#
+# A GitHub repo has ONE Pages site, so there is exactly one Pages deploy workflow. The separate
+# React-only deploy (deploy-react-preview.yml on PR #2) was retired because it overwrote this
+# site and was rejected by the github-pages environment (only master may deploy to it).
+#
+# The Pages copy is public. Every page gets noindex, nofollow (deploy/pages_noindex.py) so it is
+# not indexed as a duplicate of johnsonlegalteam.org. The S3 build does not run that step.
+#
+# Pull requests run the build and checks only. They never deploy.
+
 on:
   push:
+    branches: [master]
+  pull_request:
     branches: [master]
   workflow_dispatch:
 
@@ -18,37 +46,59 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Prepare artifact (exclude backend/archive/secrets)
+
+      # Same builder and exclude list as the S3 deploy (deploy/exclude.txt).
+      # Replaces the old inline rsync exclude list from the previous version of this workflow.
+      - name: Build site (same as S3)
+        run: python3 deploy/build_site.py _site
+
+      # Pre-deploy checks and secret scan, identical to the S3 workflow's plan job.
+      - name: Pre-deploy checks
+        run: python3 deploy/check_site.py _site
+
+      # The React app only exists on master after PR #2 merges. Until then these steps are skipped
+      # and Pages serves only the static site. Once react-app/ is on master it appears at /react/.
+      # vite.config.js uses base './' and hash routing, so it works from a subfolder.
+      - name: Set up Node.js (React app)
+        if: ${{ hashFiles('react-app/package.json') != '' }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build React app into _site/react
+        if: ${{ hashFiles('react-app/package.json') != '' }}
+        working-directory: react-app
         run: |
-          mkdir -p _site
-          rsync -a ./ _site/ \
-            --exclude '.git' \
-            --exclude '_site' \
-            --exclude 'portal-api' \
-            --exclude '_archive' \
-            --exclude '_secrets-local' \
-            --exclude '.github' \
-            --exclude 'jude-backend' \
-            --exclude 'lambda' \
-            --exclude 'docs' \
-            --exclude 'PICKUP-HERE.txt' \
-            --exclude 'DEPLOY.md' \
-            --exclude '*.sql' \
-            --exclude 'rds-credentials.json' \
-            --exclude 'client_secret_*.json' \
-            --exclude '.env*' \
-            --exclude 'api' \
-            --exclude 'package.json'
-          touch _site/.nojekyll
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
+          npm run check
+          npm run build
+          mkdir -p ../_site/react
+          cp -r dist/. ../_site/react/
+
+      # Must run after the React copy so /react/index.html is covered too.
+      - name: Mark every page noindex (staging only)
+        run: python3 deploy/pages_noindex.py _site
+
+      # Pages is not Jekyll. Without this file, folders starting with an underscore would be dropped.
+      - name: Disable Jekyll
+        run: touch _site/.nojekyll
+
       - uses: actions/upload-pages-artifact@v3
+        if: ${{ github.event_name != 'pull_request' }}
         with:
           path: _site
+
+  deploy:
+    needs: build
+    if: ${{ github.event_name != 'pull_request' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
       - id: deployment
         uses: actions/deploy-pages@v4

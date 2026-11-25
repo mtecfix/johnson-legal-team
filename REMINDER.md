@@ -14,6 +14,9 @@
 - **Rollback:** bucket versioning is on. Revert on `production`, or restore the earlier object version.
 - **Mirror check on 2026-11-20:** the bucket matched a fresh build of commit `734b4c0` (141 files, 0 differences).
 - **Repo is private** (changed 2026-11-20). GitHub Pages is off, so `mtecfix.github.io/johnson-legal-team` returns 404.
+- **Update 2026-11-25:** the repo is public again and GitHub Pages is ON (workflow mode). `https://mtecfix.github.io/johnson-legal-team/` is the public
+  staging copy of the site, rebuilt from `master` (same build and exclude list as S3, every page noindex). The React redesign appears at `/react/` once
+  PR #2 merges. See `.github/workflows/deploy-pages.yml`. The two lines above are kept as history and are no longer accurate.
 - **Worker server copy:** `/home/ec2-user/jl-work/jlt-mirror` on metrotec-worker. It pulls through
   `/usr/local/bin/git-credential-sm`, which reads secret `metrotec/github-token` at call time. No token is stored on disk.
   The older `/home/ec2-user/jl-work/jlt` clone has no credentials set up.
